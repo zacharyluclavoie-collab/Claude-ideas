@@ -360,6 +360,23 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 .tr.got{opacity:1;border:1px solid rgba(255,210,63,.4)}
 .tr b{font-size:13px;font-weight:600}.tr small{grid-column:2;font-size:11px;color:var(--ink-dim);letter-spacing:0;font-weight:500}
 @media (max-width:350px){.tab{padding:6px 8px;font-size:11px}}
+/* ---- icons ---- */
+.ico svg.ic{width:34px;height:34px;display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.mi{width:16px;height:16px;vertical-align:-3px;margin-right:4px;flex:none}
+.chip small svg.mi{width:13px;height:13px;margin-right:3px;vertical-align:-2px}
+#combo svg.mi{width:17px;height:17px;margin-right:0}
+.amt{display:inline-flex;align-items:center}
+.ti{width:14px;height:14px;vertical-align:-2px;margin-right:5px}
+.tab{display:inline-flex;align-items:center}
+.tri{width:22px;height:22px;display:block}
+.rr svg.rg{width:22px;height:22px;display:block;margin:0 auto 3px}
+.hubic{width:44px;height:44px;display:block}
+.card.max .ico{filter:grayscale(.35)}
+#bColl .mi{margin:0;width:18px;height:18px}
+.shop-h{gap:6px}
+.tab{padding:6px 9px}
+@media (max-width:380px){.tab svg.ti{display:none}.tab{padding:6px 9px}}
+@media (max-width:350px){.tab{padding:6px 7px;font-size:11px;letter-spacing:.02em}#qDot{margin-left:4px}#bAmt{min-width:0}.shop-h .amt{padding:5px 8px}.shop-h{padding-left:2px;padding-right:2px;gap:4px}.tabs{gap:2px}}
 </style>
 </head>
 <body>
@@ -375,6 +392,17 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
       <path d="M7 3h10l5 6.2L12 21.5 2 9.2z" fill="url(#gg)"/>
       <path d="M2 9.2h20M7 3l-1.6 6.2L12 21.5M17 3l1.6 6.2L12 21.5M9.6 9.2 12 3l2.4 6.2" fill="none" stroke="rgba(255,255,255,.65)" stroke-width=".8" stroke-linejoin="round"/>
     </symbol>
+
+<linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f8ff"/><stop offset=".5" stop-color="#9aa8c4"/><stop offset="1" stop-color="#5a6685"/></linearGradient>
+<linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#ffc933"/><stop offset="1" stop-color="#e07a00"/></linearGradient>
+<linearGradient id="gWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6b078"/><stop offset="1" stop-color="#8a5226"/></linearGradient>
+<linearGradient id="gGreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b6ffc4"/><stop offset=".55" stop-color="#34d36e"/><stop offset="1" stop-color="#139046"/></linearGradient>
+<linearGradient id="gRed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb0bb"/><stop offset=".5" stop-color="#ff3d5f"/><stop offset="1" stop-color="#a50f33"/></linearGradient>
+<linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c2eeff"/><stop offset=".5" stop-color="#3fa8ff"/><stop offset="1" stop-color="#2358d0"/></linearGradient>
+<linearGradient id="gPurple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ead2ff"/><stop offset=".5" stop-color="#a46bff"/><stop offset="1" stop-color="#5426b0"/></linearGradient>
+<linearGradient id="gDark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#40356f"/><stop offset="1" stop-color="#120a2e"/></linearGradient>
+<linearGradient id="gFire" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3a8"/><stop offset=".5" stop-color="#ffa63a"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient>
+<symbol id="ic-pick" viewBox="0 0 48 48"><path d="M13 42 L31 17" stroke="url(#gWood)" stroke-width="5.5" stroke-linecap="round"/><path d="M7 20 C14 7 32 5 42 14 L38.5 19.5 C30 14 21 14.5 13 24 Z" fill="url(#gMetal)" stroke="#ffffffaa" stroke-width="1" stroke-linejoin="round"/><path d="M12 17 C19 10 28 9 36 12" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></symbol><symbol id="ic-luck" viewBox="0 0 48 48"><g fill="url(#gGreen)" stroke="#0e6b34" stroke-width="1"><circle cx="17.5" cy="17.5" r="9"/><circle cx="30.5" cy="17.5" r="9"/><circle cx="17.5" cy="30" r="9"/><circle cx="30.5" cy="30" r="9"/></g><path d="M24 30 Q25 40 33 44" stroke="#139046" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="24" cy="24" r="4.5" fill="#d8ffe2"/><path d="M13 14 Q15 11 19 11 M26 14 Q28 11 32 11" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></symbol><symbol id="ic-gob" viewBox="0 0 48 48"><path d="M10 25 L1 15 L14 19 Z M38 25 L47 15 L34 19 Z" fill="url(#gGreen)" stroke="#0e6b34" stroke-width="1" stroke-linejoin="round"/><ellipse cx="24" cy="26" rx="15" ry="14" fill="url(#gGreen)" stroke="#0e6b34" stroke-width="1.2"/><path d="M12 20 Q18 16 21 20 M36 20 Q30 16 27 20" stroke="#0e6b34" stroke-width="2.4" fill="none" stroke-linecap="round"/><ellipse cx="18" cy="24" rx="3.4" ry="2.6" fill="#ffe45e"/><ellipse cx="30" cy="24" rx="3.4" ry="2.6" fill="#ffe45e"/><circle cx="18.6" cy="24" r="1.2" fill="#2a0f00"/><circle cx="29.4" cy="24" r="1.2" fill="#2a0f00"/><path d="M15 32 Q24 40 33 32" fill="#2a1030"/><path d="M18 33.5 L20 37 L22 34.5 M26 34.5 L28 37 L30 33.5" fill="#fff" stroke="#fff" stroke-width="1"/></symbol><symbol id="ic-dwarf" viewBox="0 0 48 48"><path d="M9 25 L39 25 L36 41 Q24 48 12 41 Z" fill="url(#gWood)" stroke="#6b3d17" stroke-width="1.2" stroke-linejoin="round"/><ellipse cx="24" cy="26" rx="10" ry="9" fill="#ffd2b0"/><path d="M8 24 A16 14 0 0 1 40 24 Z" fill="url(#gMetal)" stroke="#fff9" stroke-width="1"/><rect x="6" y="22" width="36" height="5" rx="2.5" fill="url(#gGold)"/><path d="M24 8 V22" stroke="#fff" stroke-width="2" opacity=".7"/><circle cx="19" cy="26" r="1.7" fill="#2a1030"/><circle cx="29" cy="26" r="1.7" fill="#2a1030"/><ellipse cx="24" cy="30.5" rx="3.2" ry="2.6" fill="#ff9d8a"/></symbol><symbol id="ic-drill" viewBox="0 0 48 48"><path d="M24 3 L34 28 L14 28 Z" fill="url(#gMetal)" stroke="#fff9" stroke-width="1" stroke-linejoin="round"/><path d="M19 22 L31 18 M17.5 26 L33 22.5 M22 12 L29 10" stroke="#3b4668" stroke-width="2" stroke-linecap="round"/><rect x="10" y="28" width="28" height="14" rx="4" fill="url(#gBlue)" stroke="#173a91" stroke-width="1.2"/><circle cx="17" cy="35" r="2.4" fill="#ffe45e"/><circle cx="24" cy="35" r="2.4" fill="#7cff6b"/><circle cx="31" cy="35" r="2.4" fill="#ff5d73"/><path d="M13 31.5 H35" stroke="#fff" stroke-width="1.4" opacity=".7"/></symbol><symbol id="ic-reac" viewBox="0 0 48 48"><path d="M24 3 L39 13 L39 34 L24 45 L9 34 L9 13 Z" fill="url(#gBlue)" stroke="#173a91" stroke-width="1.3" stroke-linejoin="round"/><path d="M24 3 L24 45 M9 13 L24 24 L39 13 M9 34 L24 24 L39 34" stroke="#fff" stroke-width="1" opacity=".5" fill="none"/><path d="M27.5 9 L16 26 H23 L20.5 39 L32.5 21 H25.5 Z" fill="url(#gGold)" stroke="#8a4a00" stroke-width="1" stroke-linejoin="round"/></symbol><symbol id="ic-forge" viewBox="0 0 48 48"><path d="M24.0 4.0 L29.3 17.7 L44.0 18.5 L32.6 27.8 L36.3 42.0 L24.0 34.0 L11.7 42.0 L15.4 27.8 L4.0 18.5 L18.7 17.7 Z" fill="url(#gGold)" stroke="#a85a00" stroke-width="1.3" stroke-linejoin="round"/><path d="M24.0 13.0 L27.2 20.6 L35.4 21.3 L29.1 26.7 L31.1 34.7 L24.0 30.4 L16.9 34.7 L18.9 26.7 L12.6 21.3 L20.8 20.6 Z" fill="#fff6b8" opacity=".9"/><circle cx="24" cy="25" r="3.4" fill="#fff"/></symbol><symbol id="ic-hole" viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="url(#gDark)"/><ellipse cx="24" cy="24" rx="21" ry="7.5" transform="rotate(-25 24 24)" fill="none" stroke="url(#gFire)" stroke-width="4.5"/><circle cx="24" cy="24" r="14.5" fill="none" stroke="url(#gPurple)" stroke-width="2.2" stroke-dasharray="9 7" stroke-linecap="round"/><circle cx="24" cy="24" r="8.5" fill="#030108" stroke="#a46bff" stroke-width="1.3"/><circle cx="38" cy="12" r="1.5" fill="#fff"/><circle cx="9" cy="34" r="1.1" fill="#fff"/></symbol><symbol id="ic-hammer" viewBox="0 0 48 48"><g transform="rotate(38 24 24)"><rect x="21" y="16" width="6.5" height="30" rx="3" fill="url(#gWood)" stroke="#6b3d17" stroke-width="1"/><rect x="8" y="4" width="32" height="15" rx="3.5" fill="url(#gMetal)" stroke="#ffffffaa" stroke-width="1"/><path d="M12 8 H36" stroke="#fff" stroke-width="1.6" opacity=".8" stroke-linecap="round"/></g><path d="M5 40 L11 35 L8 31 L14 27" stroke="#ffd23f" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="ic-bit" viewBox="0 0 48 48"><rect x="14" y="3" width="20" height="11" rx="2.5" fill="url(#gGold)" stroke="#8a4a00" stroke-width="1.2"/><path d="M16 14 H32 L24 46 Z" fill="url(#gMetal)" stroke="#fff9" stroke-width="1" stroke-linejoin="round"/><path d="M17.5 19 L30 23 M19 26 L28 29.5 M21 33 L26.5 35.5" stroke="#3b4668" stroke-width="2.2" stroke-linecap="round"/><path d="M20 7 H28" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/></symbol><symbol id="ic-warp" viewBox="0 0 48 48"><rect x="9" y="3" width="30" height="5" rx="2.5" fill="url(#gGold)"/><rect x="9" y="40" width="30" height="5" rx="2.5" fill="url(#gGold)"/><path d="M13 8 H35 Q35 18 27 24 Q35 30 35 40 H13 Q13 30 21 24 Q13 18 13 8 Z" fill="#c9ecff" fill-opacity=".35" stroke="url(#gMetal)" stroke-width="2.2" stroke-linejoin="round"/><path d="M16 9.5 H32 Q31 15 24 21 Q17 15 16 9.5 Z" fill="url(#gGold)"/><path d="M24 24 V33" stroke="#ffc933" stroke-width="1.6"/><path d="M16 39 Q24 28 32 39 Z" fill="url(#gGold)"/></symbol><symbol id="ic-radar" viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="url(#gDark)" stroke="url(#gGreen)" stroke-width="2.5"/><circle cx="24" cy="24" r="14" fill="none" stroke="#34d36e" stroke-width="1.3" opacity=".7"/><circle cx="24" cy="24" r="7" fill="none" stroke="#34d36e" stroke-width="1.3" opacity=".7"/><path d="M24 3 V45 M3 24 H45" stroke="#34d36e" stroke-width="1" opacity=".4"/><path d="M24 24 L24 5.5 A18.5 18.5 0 0 1 40 14 Z" fill="#7cff6b" opacity=".55"/><circle cx="33" cy="30" r="2.4" fill="#ffe45e"/><circle cx="16" cy="17" r="1.8" fill="#ff5d73"/></symbol><symbol id="ic-q-tap" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="#7fe0ff" stroke-width="2" opacity=".45"/><circle cx="24" cy="24" r="13.5" fill="none" stroke="#7fe0ff" stroke-width="2.6" opacity=".8"/><circle cx="24" cy="24" r="7" fill="url(#gBlue)" stroke="#fff" stroke-width="1.5"/><path d="M24 24 L32 42 L28 38 L24 45 L22 36 L16 40 Z" fill="#fff" stroke="#2358d0" stroke-width="1.2" stroke-linejoin="round" transform="translate(5 -2) scale(.9)"/></symbol><symbol id="ic-q-crit" viewBox="0 0 48 48"><path d="M24.0 2.0 L27.8 14.8 L39.6 8.4 L33.2 20.2 L46.0 24.0 L33.2 27.8 L39.6 39.6 L27.8 33.2 L24.0 46.0 L20.2 33.2 L8.4 39.6 L14.8 27.8 L2.0 24.0 L14.8 20.2 L8.4 8.4 L20.2 14.8 Z" fill="url(#gGold)" stroke="#a85a00" stroke-width="1.2" stroke-linejoin="round"/><path d="M28.6 12.9 L27.9 20.1 L35.1 19.4 L29.5 24.0 L35.1 28.6 L27.9 27.9 L28.6 35.1 L24.0 29.5 L19.4 35.1 L20.1 27.9 L12.9 28.6 L18.5 24.0 L12.9 19.4 L20.1 20.1 L19.4 12.9 L24.0 18.5 Z" fill="url(#gFire)"/><circle cx="24" cy="24" r="3.2" fill="#fff"/></symbol><symbol id="ic-q-combo" viewBox="0 0 48 48"><path d="M24 3 C27 13 38 17 36 30 C35 38 30 45 24 45 C17 45 11 39 12 31 C13 25 17 23 18 16 C21 19 23 12 24 3 Z" fill="url(#gFire)" stroke="#b02a00" stroke-width="1.2" stroke-linejoin="round"/><path d="M24 22 C26 28 31 29 30 35 C29.5 39 27 42 24 42 C20.5 42 18 39 18.5 35.5 C19 32 22 30 22 26 C23 27.5 23.5 25 24 22 Z" fill="#fff6b0"/></symbol><symbol id="ic-q-buy" viewBox="0 0 48 48"><path d="M16 17 V13 A8 8 0 0 1 32 13 V17" fill="none" stroke="#ead2ff" stroke-width="3.2" stroke-linecap="round"/><path d="M8 17 H40 L37.5 43 H10.5 Z" fill="url(#gPurple)" stroke="#3f1a8a" stroke-width="1.3" stroke-linejoin="round"/><path d="M24 24 L30 30 L24 38 L18 30 Z" fill="#c2eeff" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M11 20 H37" stroke="#fff" stroke-width="1.4" opacity=".5"/></symbol><symbol id="ic-q-earn" viewBox="0 0 48 48"><path d="M13 5 H35 L44 18 L24 44 L4 18 Z" fill="url(#gBlue)" stroke="#173a91" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 18 H44 M13 5 L18 18 L24 44 M35 5 L30 18 L24 44 M18 18 L24 5 L30 18" stroke="#fff" stroke-width="1.1" fill="none" stroke-linejoin="round" opacity=".7"/></symbol><symbol id="ic-q-gold" viewBox="0 0 48 48"><path d="M24.0 3.0 L29.6 17.3 L44.9 18.2 L33.0 27.9 L36.9 42.8 L24.0 34.5 L11.1 42.8 L15.0 27.9 L3.1 18.2 L18.4 17.3 Z" fill="url(#gGold)" stroke="#a85a00" stroke-width="1.3" stroke-linejoin="round"/><path d="M24 9 L27.5 21 L38 22 L29 28 L31 39 L24 33 Z" fill="#fff6b8" opacity=".55"/></symbol><symbol id="ic-q-rain" viewBox="0 0 48 48"><path d="M13 31 A8.5 8.5 0 0 1 13.5 14.5 A11.5 11.5 0 0 1 35 12.5 A9.5 9.5 0 0 1 36 31 Z" fill="url(#gBlue)" stroke="#173a91" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 22 Q16 17 21 18" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".7"/><path d="M15 36 L12.5 44 M25 36 L22.5 44 M35 36 L32.5 44" stroke="#6fd0ff" stroke-width="3.2" stroke-linecap="round"/><path d="M20 38 L18 42" stroke="#ffe45e" stroke-width="2.6" stroke-linecap="round"/></symbol><symbol id="ic-q-boss" viewBox="0 0 48 48"><path d="M24 4 L41 13 L44 32 L31 44 L14 43 L5 28 L9 12 Z" fill="url(#gMetal)" stroke="#2d3555" stroke-width="1.4" stroke-linejoin="round"/><path d="M26 5 L21 17 L29 24 L19 33 L24 44" stroke="#12062a" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/><path d="M26 5 L21 17 L29 24 L19 33 L24 44" stroke="#ffe45e" stroke-width="1.3" fill="none" stroke-linejoin="round" stroke-linecap="round"/><circle cx="15" cy="22" r="2" fill="#ff3d5f"/></symbol><symbol id="ic-q-wr" viewBox="0 0 48 48"><path d="M24 26 L24.0 7.0 A19 19 0 0 1 40.5 16.5 Z" fill="#ff5d73" stroke="#fff" stroke-width="1.2"/><path d="M24 26 L40.5 16.5 A19 19 0 0 1 40.5 35.5 Z" fill="#ffb100" stroke="#fff" stroke-width="1.2"/><path d="M24 26 L40.5 35.5 A19 19 0 0 1 24.0 45.0 Z" fill="#ffe45e" stroke="#fff" stroke-width="1.2"/><path d="M24 26 L24.0 45.0 A19 19 0 0 1 7.5 35.5 Z" fill="#34d36e" stroke="#fff" stroke-width="1.2"/><path d="M24 26 L7.5 35.5 A19 19 0 0 1 7.5 16.5 Z" fill="#3fa8ff" stroke="#fff" stroke-width="1.2"/><path d="M24 26 L7.5 16.5 A19 19 0 0 1 24.0 7.0 Z" fill="#a46bff" stroke="#fff" stroke-width="1.2"/><circle cx="24" cy="26" r="5" fill="#120a2e" stroke="#fff" stroke-width="1.5"/><path d="M24 2 L19 11 H29 Z" fill="#fff" stroke="#120a2e" stroke-width="1"/></symbol><symbol id="ic-trophy" viewBox="0 0 48 48"><path d="M14 5 H34 V18 A10 10 0 0 1 24 28 A10 10 0 0 1 14 18 Z" fill="url(#gGold)" stroke="#a85a00" stroke-width="1.3" stroke-linejoin="round"/><path d="M14 9 H7.5 V14 A7 7 0 0 0 14.5 21 M34 9 H40.5 V14 A7 7 0 0 1 33.5 21" fill="none" stroke="url(#gGold)" stroke-width="3" stroke-linecap="round"/><rect x="21" y="28" width="6" height="8" fill="url(#gGold)"/><rect x="14" y="36" width="20" height="7" rx="2.5" fill="url(#gGold)" stroke="#a85a00" stroke-width="1.2"/><path d="M24 9 L26 14 L31 14.5 L27.2 17.8 L28.3 22.8 L24 20.2 L19.7 22.8 L20.8 17.8 L17 14.5 L22 14 Z" fill="#fff" opacity=".85"/></symbol><symbol id="ic-lock" viewBox="0 0 48 48"><path d="M15 22 V16 A9 9 0 0 1 33 16 V22" fill="none" stroke="#9aa8c4" stroke-width="4.5" stroke-linecap="round"/><rect x="8" y="21" width="32" height="23" rx="6" fill="url(#gMetal)" stroke="#3b4668" stroke-width="1.3"/><circle cx="24" cy="31.5" r="3.6" fill="#1b1340"/><path d="M24 33 V39" stroke="#1b1340" stroke-width="3" stroke-linecap="round"/></symbol><symbol id="ic-shard" viewBox="0 0 48 48"><path d="M24 2 L39 16 L24 46 L9 16 Z" fill="url(#gBlue)" stroke="#173a91" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 16 H39 M24 2 L18 16 L24 46 M24 2 L30 16 L24 46" stroke="#fff" stroke-width="1.1" fill="none" opacity=".7" stroke-linejoin="round"/></symbol><symbol id="ic-rgem" viewBox="0 0 48 48"><path d="M13 5 H35 L44 18 L24 44 L4 18 Z" fill="currentColor" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 18 H44 M13 5 L18 18 L24 44 M35 5 L30 18 L24 44 M18 18 L24 5 L30 18" stroke="#fff" stroke-width="1.2" fill="none" stroke-linejoin="round" opacity=".7"/></symbol><symbol id="ic-star" viewBox="0 0 48 48"><path d="M24.0 3.0 L29.6 17.3 L44.9 18.2 L33.0 27.9 L36.9 42.8 L24.0 34.5 L11.1 42.8 L15.0 27.9 L3.1 18.2 L18.4 17.3 Z" fill="url(#gGold)" stroke="#a85a00" stroke-width="1.3" stroke-linejoin="round"/><path d="M24 9 L27.5 21 L38 22 L29 28 L31 39 L24 33 Z" fill="#fff6b8" opacity=".55"/></symbol><symbol id="ic-flame" viewBox="0 0 48 48"><path d="M24 3 C27 13 38 17 36 30 C35 38 30 45 24 45 C17 45 11 39 12 31 C13 25 17 23 18 16 C21 19 23 12 24 3 Z" fill="url(#gFire)" stroke="#b02a00" stroke-width="1.2" stroke-linejoin="round"/><path d="M24 22 C26 28 31 29 30 35 C29.5 39 27 42 24 42 C20.5 42 18 39 18.5 35.5 C19 32 22 30 22 26 C23 27.5 23.5 25 24 22 Z" fill="#fff6b0"/></symbol><symbol id="ic-tab-up" viewBox="0 0 48 48"><path d="M10 27 L24 13 L38 27 M10 40 L24 26 L38 40" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="ic-tab-q" viewBox="0 0 48 48"><path d="M12 5 V44" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><path d="M12 8 H40 L32 18 L40 28 H12 Z" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
   <div class="bg"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
@@ -403,7 +431,7 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
       <div class="pill" id="buffPill"><span id="buffTxt"></span><div id="buffBar"><i id="buffFill"></i></div></div>
       <div class="pill" id="frenzy"><span id="frenzyTxt">FRENZY x7</span><div id="frenzyBar"><i id="frenzyFill"></i></div></div>
     </div>
-    <div class="pill" id="comboPill"><div id="combo"><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
+    <div class="pill" id="comboPill"><div id="combo"><svg class="mi" viewBox="0 0 48 48"><use href="#ic-flame"/></svg><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
         <i id="hring"></i>
     <div id="hint">TAP THE GEM</div>
             <div id="flash"></div>
@@ -413,7 +441,7 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
   <button id="shopBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Upgrades<b id="shopBadge" hidden>0</b></button>
 
   <section id="shop">
-    <div class="shop-h"><div class="tabs"><button class="tab on" id="tabUp" type="button">Upgrades</button><button class="tab" id="tabQ" type="button">Quests<b id="qDot" hidden>0</b></button></div><span id="achN" hidden></span><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl">Gems</button><button class="amt" id="closeShop" aria-label="Close upgrades"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
+    <div class="shop-h"><div class="tabs"><button class="tab on" id="tabUp" type="button"><svg class="ti" viewBox="0 0 48 48"><use href="#ic-tab-up"/></svg>Upgrades</button><button class="tab" id="tabQ" type="button"><svg class="ti" viewBox="0 0 48 48"><use href="#ic-tab-q"/></svg>Quests<b id="qDot" hidden>0</b></button></div><span id="achN" hidden></span><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl" aria-label="Gems and trophies"><svg class="mi" viewBox="0 0 24 24"><use href="#gem"/></svg></button><button class="amt" id="closeShop" aria-label="Close upgrades"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
     <button id="ascend" type="button"></button>
     <div id="list"></div>
     <div id="qlist" hidden></div>
@@ -447,14 +475,14 @@ const TIERS = [
   { name: 'Cosmic',   h: 300, s: 90, at: 1.2e9,  shape: 'star', n: 8, cosmic: true },
 ];
 const UPS = [
-  { id: 'pick',  name: 'Sharp Pick',    ico: '⛏️', base: 15,     g: 1.34, desc: () => `+${fmt(upMult('pick') * globalMult())} per tap, per level` },
+  { id: 'pick',  name: 'Sharp Pick',    ico: '⛏️', base: 15,     g: 1.34, max: 100, desc: () => `+${fmt(upMult('pick') * globalMult())} per tap, per level` },
   { id: 'luck',  name: 'Lucky Cut',     ico: '🍀', base: 120,    g: 1.75, max: 18, desc: () => `Crit chance ${Math.round(critChance() * 100)}%  ·  crits hit x5` },
-  { id: 'gob',   name: 'Goblin Miner',  ico: '👺', base: 50,     g: 1.15, rate: 1,      desc: autoDesc },
-  { id: 'dwarf', name: 'Dwarf Crew',    ico: '⚒️', base: 600,    g: 1.15, rate: 10,      desc: autoDesc },
-  { id: 'drill', name: 'Gem Drill',     ico: '🤖', base: 7500,   g: 1.15, rate: 110,     desc: autoDesc },
-  { id: 'reac',  name: 'Crystal Reactor', ico: '⚡', base: 9e4,  g: 1.15, rate: 1300,    desc: autoDesc },
-  { id: 'forge', name: 'Star Forge',    ico: '🌟', base: 1.2e6,  g: 1.15, rate: 16000,   desc: autoDesc },
-  { id: 'hole',  name: 'Black Hole',    ico: '🕳️', base: 2e7,    g: 1.15, rate: 200000,  desc: autoDesc },
+  { id: 'gob',   name: 'Goblin Miner',  ico: '👺', base: 50,     g: 1.15, max: 150, rate: 1,      desc: autoDesc },
+  { id: 'dwarf', name: 'Dwarf Crew',    ico: '⚒️', base: 600,    g: 1.15, max: 150, rate: 10,      desc: autoDesc },
+  { id: 'drill', name: 'Gem Drill',     ico: '🤖', base: 7500,   g: 1.15, max: 120, rate: 110,     desc: autoDesc },
+  { id: 'reac',  name: 'Crystal Reactor', ico: '⚡', base: 9e4,  g: 1.15, max: 100, rate: 1300,    desc: autoDesc },
+  { id: 'forge', name: 'Star Forge',    ico: '🌟', base: 1.2e6,  g: 1.15, max: 80, rate: 16000,   desc: autoDesc },
+  { id: 'hole',  name: 'Black Hole',    ico: '🕳️', base: 2e7,    g: 1.15, max: 60, rate: 200000,  desc: autoDesc },
   { id: 'hammer', name: 'Crack Hammer',  ico: '🔨', base: 400,   g: 1.35, max: 25, gate: () => rareGate(), desc: () => `Taps hit rare gems for ${1 + lvl('hammer')} (+1 each level)` },
   { id: 'bit',    name: 'Drill Bit',     ico: '🪚', base: 2500,  g: 1.38, max: 25, gate: () => rareGate(), desc: () => `Drills rare gems for ${(lvl('bit') * .6).toFixed(1)} dmg / sec on its own` },
   { id: 'warp',   name: 'Time Warp',     ico: '⏳', base: 8000,  g: 1.6,  max: 10, gate: () => rareGate(), desc: () => `+${(lvl('warp') * 1.5).toFixed(1)}s to break a rare gem` },
@@ -1112,7 +1140,7 @@ function renderQuests() {
   S.quests.forEach((q, i) => {
     const d = QDEF.find(x => x.id === q.id), done = q.p >= q.n;
     const div = document.createElement('div'); div.className = 'qc' + (done ? ' done' : '');
-    div.innerHTML = `<span class="ico">${d.ico}</span><span class="meta"><b>${d.txt(q.n)}</b><span class="qbar"><i></i></span><small></small></span>${done ? '<button class="claim" type="button">CLAIM</button>' : ''}`;
+    div.innerHTML = `<span class="ico"><svg class="ic" viewBox="0 0 48 48"><use href="#ic-q-${d.id}"/></svg></span><span class="meta"><b>${d.txt(q.n)}</b><span class="qbar"><i></i></span><small></small></span>${done ? '<button class="claim" type="button">CLAIM</button>' : ''}`;
     if (done) div.querySelector('.claim').addEventListener('click', () => claimQuest(i));
     qlist.appendChild(div);
   });
@@ -1141,7 +1169,7 @@ $('#tabQ').addEventListener('click', () => { audio(); setTab('q'); });
 const list = $('#list'), cards = {};
 UPS.forEach(u => {
   const b = document.createElement('button'); b.className = 'card'; b.type = 'button';
-  b.innerHTML = `<span class="ico">${u.ico}</span><span class="meta"><b>${u.name}<em>Lv 0</em><i class="mile" hidden>x1</i></b><small></small></span><span class="buy"><svg><use href="#gem"/></svg><span></span></span>`;
+  b.innerHTML = `<span class="ico"><svg class="ic" viewBox="0 0 48 48"><use href="#ic-${u.id}"/></svg></span><span class="meta"><b>${u.name}<em>Lv 0</em><i class="mile" hidden>x1</i></b><small></small></span><span class="buy"><svg><use href="#gem"/></svg><span></span></span>`;
   list.appendChild(b);
   cards[u.id] = { b, mile: b.querySelector('.mile'), lv: b.querySelector('em'), desc: b.querySelector('small'), cost: b.querySelector('.buy span'), buy: b.querySelector('.buy'), last: '' };
   let hold = 0;
@@ -1196,9 +1224,9 @@ function refreshShop(force) {
     const sig = [l, can ? 1 : 0, tier, amt, p.cost, S.shards || 0, achCount()].join('|');
     if (!force && sig === cd.last) return;
     cd.last = sig;
-    cd.lv.textContent = maxed ? 'MAX' : 'Lv ' + l;
+    cd.lv.textContent = maxed ? 'MAX' : 'Lv ' + l + (u.max ? '/' + u.max : '');
     const nm = nextMile(u.id);
-    cd.desc.innerHTML = u.desc(u) + (nm && !maxed ? ` <span class="nm">· x2 @ ${nm}</span>` : '');
+    cd.desc.innerHTML = u.desc(u) + (nm && !maxed && nm <= (u.max || 1e9) ? ` <span class="nm">· x2 @ ${nm}</span>` : '');
     const mm = upMult(u.id); cd.mile.hidden = mm <= 1; cd.mile.textContent = 'x' + mm;
     cd.cost.textContent = maxed ? 'Maxed' : (p.n > 1 ? 'x' + p.n + '  ' : '') + fmt(p.cost);
     cd.buy.querySelector('svg').style.display = maxed ? 'none' : '';
@@ -1211,8 +1239,8 @@ function refreshMeta() {
   const g = ascGain();
   el.ascend.style.display = g > 0 ? 'block' : 'none';
   if (g > 0) el.ascend.textContent = `ASCEND  +${g} ★  ·  +${g * 5}% gems forever`;
-  const sh = S.shards || 0; el.shards.hidden = !sh || !!chal; el.shards.textContent = '★ ' + sh;
-  const sd = S.shd || 0; el.shd.hidden = !sd || !!chal; el.shd.textContent = '◆ ' + fmt(sd);
+  const sh = S.shards || 0; el.shards.hidden = !sh || !!chal; { const sv = String(sh); if (el.shards._v !== sv) { el.shards._v = sv; el.shards.innerHTML = '<svg class="mi" viewBox="0 0 48 48"><use href="#ic-star"/></svg>' + sv; } }
+  const sd = S.shd || 0; el.shd.hidden = !sd || !!chal; { const sv = fmt(sd); if (el.shd._v !== sv) { el.shd._v = sv; el.shd.innerHTML = '<svg class="mi" viewBox="0 0 48 48"><use href="#ic-shard"/></svg>' + sv; } }
   el.achN.textContent = `🏆 ${achCount()}/${ACH.length}`;
 }
 let achT = 0;
@@ -1224,7 +1252,7 @@ function checkAch() {
   else if (!S.tips.chal && tier >= 2) { S.tips.chal = 1; toast('Try the 60s Speedrun (stopwatch button)', 4200); }
   const got = [];
   ACH.forEach(a => { if (!S.ach[a[0]] && a[3]()) { S.ach[a[0]] = 1; got.push(a[1]); } });
-  if (got.length) { toast(`🏆 ${got.join(' · ')}  (+2% gems each)`, 3200); tone(note(19), .2, 'triangle', .1); tone(note(26), .3, 'sine', .1, .1); refreshMeta(); }
+  if (got.length) { toast(`Trophy: ${got.join(' · ')}  (+2% gems each)`, 3200); tone(note(19), .2, 'triangle', .1); tone(note(26), .3, 'sine', .1, .1); refreshMeta(); }
 }
 
 /* ---------- HUD, toast, tools ---------- */
@@ -1364,7 +1392,7 @@ function wheelResult() {
   const pay = Math.floor((baseRate() * (frenzy > 0 ? FRENZY_MULT : 1) * 3 + tapPower() * 16) * Rr.pay); addGems(pay);
   wheel.pay = pay; wheel.shd = shd;
   S.pity = r === 0 ? (S.pity || 0) + 1 : 0; WH.cv.parentElement.classList.add('win');
-  WH.title.textContent = r === 6 ? 'IMPOSSIBLE' : 'YOU GOT'; WH.hub.textContent = '★';
+  WH.title.textContent = r === 6 ? 'IMPOSSIBLE' : 'YOU GOT'; WH.hub.innerHTML = '<svg class="hubic" viewBox="0 0 48 48"><use href="#ic-star"/></svg>';
   const bf = BUFF[r]; if (bf && (!buff || bf.m >= buff.m)) { buff = { r, m: bf.m, t: bf.d, max: bf.d }; el.buffTxt.textContent = Rr.name.toUpperCase() + ' BUFF  x' + bf.m; }
   const col = Rr.rainbow ? '#e6b8ff' : hsl(Rr.h, 100, Math.max(Rr.l, 66));
   WH.res.innerHTML = `<canvas class="wh-gem" width="236" height="236" style="--gc:${col}"></canvas><b style="color:${col};text-shadow:0 0 28px ${col}">${Rr.name.toUpperCase()}</b><span>+${fmt(pay)} gems</span><em>+${shd} ◆ shards${bf ? '  ·  x' + bf.m + ' gems for ' + bf.d + 's' : ''}</em><small>TAP TO CONTINUE</small>`;
@@ -1463,9 +1491,9 @@ function showCollection() {
   sheet.className = 'result'; sheet.style.display = 'grid';
   sheet.innerHTML = `<div class="rcard"><small>GEM COLLECTION</small><h2 style="font-size:34px;margin:6px 0 14px">${mt + 1} of ${TIERS.length}</h2><div class="coll"></div>
     <div class="rtitle">RARE GEMS DESTROYED</div>
-    <div class="rares">${RAR.map((Rr, i) => { const n = rare(i), c = Rr.rainbow ? '#c58bff' : hsl(Rr.h, Math.max(Rr.s, 40), Math.max(Rr.l, 62)); return `<div class="rr" style="--c:${c}"><b>${i === 6 && !n ? '???' : Rr.name}</b><span>${n}</span></div>`; }).join('')}</div>
+    <div class="rares">${RAR.map((Rr, i) => { const n = rare(i), c = Rr.rainbow ? '#c58bff' : hsl(Rr.h, Math.max(Rr.s, 40), Math.max(Rr.l, 62)); return `<div class="rr" style="--c:${c}"><svg class="rg" viewBox="0 0 48 48" style="color:${c}"><use href="#ic-rgem"/></svg><b>${i === 6 && !n ? '???' : Rr.name}</b><span>${n}</span></div>`; }).join('')}</div>
     <div class="rtitle">TROPHIES ${achCount()} / ${ACH.length}</div>
-    <div class="tlist">${ACH.map(a => `<div class="tr ${S.ach[a[0]] ? 'got' : ''}"><span>${S.ach[a[0]] ? '🏆' : '🔒'}</span><b>${a[1]}</b><small>${a[2]}</small></div>`).join('')}</div>
+    <div class="tlist">${ACH.map(a => `<div class="tr ${S.ach[a[0]] ? 'got' : ''}"><svg class="tri" viewBox="0 0 48 48"><use href="#ic-${S.ach[a[0]] ? 'trophy' : 'lock'}"/></svg><b>${a[1]}</b><small>${a[2]}</small></div>`).join('')}</div>
     <div class="rtitle">RARE SHARDS: ${S.shd || 0} ◆ = +${((S.shd || 0) * .04).toFixed(1)}% gems</div>
     <div class="rbtn"><button class="go" id="cShare">Make my share card</button><button id="cRgb">RGB lights: ${S.rgb === false ? 'Off' : 'On'}</button><button id="cReset">Reset progress</button><button id="cClose">Close</button></div></div>`;
   const grid = sheet.querySelector('.coll');
