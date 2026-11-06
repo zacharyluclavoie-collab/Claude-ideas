@@ -311,12 +311,26 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 .wh-box canvas{display:block;width:100%;height:100%;border-radius:50%}
 .wh-ptr{position:absolute;top:-16px;left:50%;margin-left:-14px;z-index:3;border:14px solid transparent;border-top:28px solid #fff;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
 .wh-hub{position:absolute;inset:36%;border-radius:50%;z-index:2;display:grid;place-items:center;font-size:28px;background:radial-gradient(circle,#2a1a58,#0b0620);border:3px solid rgba(255,255,255,.85);box-shadow:0 0 20px rgba(0,0,0,.6)}
-.rgb .wh-box::before{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;background:conic-gradient(from var(--ang),var(--rainbow));animation:angspin 3s linear infinite}
+.rgb .wh-box::before{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;background:conic-gradient(var(--rainbow));animation:spinT 3s linear infinite}
+@keyframes spinT{to{transform:rotate(360deg)}}
 .wh-res{min-height:120px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .wh-res b{font-size:clamp(38px,12vw,54px);line-height:1;animation:rpop .6s var(--spring)}
 .wh-res span{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
 .wh-res em{font-style:normal;font-size:16px;font-weight:600;color:#7ff3ff}
 .wh-res small{font-size:12px;letter-spacing:.2em;color:var(--ink-faint);margin-top:6px;animation:throb .8s ease-in-out infinite alternate}
+/* ---- rarity buff + wheel lights ---- */
+.lane #buffPill{display:none;flex-direction:column;align-items:center;gap:5px}
+.lane #buffPill.on{display:flex}
+#buffTxt{font-weight:700;font-size:14px;letter-spacing:.08em;color:#12062a;padding:5px 14px;border-radius:99px;background:var(--rc,#ffd23f);box-shadow:0 0 24px var(--rc,#ffd23f)}
+#buffBar{width:150px;height:4px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden;position:relative}
+#buffBar i{position:absolute;inset:0;background:var(--rc,#ffd23f);transform-origin:left}
+.wh-box{width:min(80vw,310px,40vh)}
+.wh-res{min-height:210px}
+.wh-gem{width:118px;height:118px;filter:drop-shadow(0 0 18px var(--gc,#fff));animation:rpop .6s var(--spring)}
+.led{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px;border-radius:50%;z-index:2;--c:hsl(calc(var(--i)*15) 100% 66%);background:var(--c);transform:rotate(calc(var(--i)*15deg)) translateY(calc(var(--R) * -1));animation:ledb .5s steps(1) infinite}
+.led:nth-child(odd){animation-delay:.25s}
+.win .led{animation-duration:.16s}
+@keyframes ledb{50%{opacity:.2}}
 </style>
 </head>
 <body>
@@ -357,6 +371,7 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
       <div class="pill" id="bossPill"><div id="bossBox"><div class="bb-top"><small id="bossLbl">MYSTERY GEM</small><b id="bossT">13</b></div><div class="hpbar"><i id="hpFill"></i><span id="hpTxt"></span></div></div></div>
       <div id="toast"></div>
       <div class="pill" id="timer"><small>TIME</small><b id="timerN">60</b></div>
+      <div class="pill" id="buffPill"><span id="buffTxt"></span><div id="buffBar"><i id="buffFill"></i></div></div>
       <div class="pill" id="frenzy"><span id="frenzyTxt">FRENZY x7</span><div id="frenzyBar"><i id="frenzyFill"></i></div></div>
     </div>
     <div class="pill" id="comboPill"><div id="combo"><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
@@ -430,8 +445,9 @@ const RAR = [
 ];
 const rare = r => (S.rare && S.rare[r]) || 0;
 const rarCol = (r, t) => { const R = RAR[r]; return [R.rainbow ? (t * 120) % 360 : R.h, R.s, R.l]; };
-function rollRarity() {
-  const k = 1 + .25 * lvl('radar'); const ws = RAR.map((r, i) => i ? r.w * k : r.w);
+const BUFF = [null, { m: 1.25, d: 12 }, { m: 1.5, d: 15 }, { m: 2, d: 20 }, { m: 3, d: 25 }, { m: 4, d: 30 }, { m: 10, d: 45 }];
+function rollRarity(min = 0) {
+  const k = 1 + .25 * lvl('radar'); const ws = RAR.map((r, i) => i < min ? 0 : i ? r.w * k : r.w);
   let x = Math.random() * ws.reduce((a, b) => a + b, 0);
   for (let i = 0; i < ws.length; i++) { x -= ws[i]; if (x <= 0) return i; }
   return 0;
@@ -459,11 +475,11 @@ const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
 
 /* ---------- state ---------- */
 const KEY = 'gemrush.v1';
-const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {}, rare: {}, shd: 0, rgb: true });
+const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {}, rare: {}, shd: 0, rgb: true, pity: 0 });
 let S = newState();
 try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
 UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
-let boss = null, rain = null, bossT = 22, rainT = 55, KS = 0, chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
+let buff = null, boss = null, rain = null, bossT = 22, rainT = 55, KS = 0, chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
 const save = () => { if (chal) return; try { S.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
 /* ---------- math helpers ---------- */
@@ -485,7 +501,8 @@ const globalMult = () => chal ? 1 : 1 + .05 * (S.shards || 0) + .02 * achCount()
 const tapPower = () => (1 + lvl('pick')) * upMult('pick') * globalMult();
 const critChance = () => .03 + .025 * lvl('luck');
 const baseRate = () => UPS.reduce((s, u) => s + (u.rate ? u.rate * lvl(u.id) * upMult(u.id) : 0), 0) * globalMult();
-const perSec = () => baseRate() * (frenzy > 0 ? FRENZY_MULT : 1);
+const buffMult = () => buff ? buff.m : 1;
+const perSec = () => baseRate() * (frenzy > 0 ? FRENZY_MULT : 1) * buffMult();
 const costOf = u => Math.floor(u.base * Math.pow(u.g, lvl(u.id)));
 const comboMult = () => 1 + Math.min(combo, 100) * .02;
 const ascGain = () => chal ? 0 : (S.total >= ASC_AT ? Math.floor(5 * Math.sqrt(S.total / ASC_AT)) : 0);
@@ -683,10 +700,11 @@ function genCracks() {
 }
 const hsl = (h, s, l, a = 1) => `hsl(${h} ${s}% ${l}% / ${a})`;
 
-let GLOSS;
+let GLOSS, gemHue = null, gemSat = null;
 function drawGem(t, ti, tilt, sq) {
   const T = TIERS[ti], g = gemFor(ti);
-  const hue = T.cosmic ? (t * 40) % 360 : T.h;
+  const rb = T.cosmic || gemHue === -1, sat = gemSat !== null ? gemSat : T.s;
+  const hue = gemHue !== null && gemHue >= 0 ? gemHue : rb ? (t * 40) % 360 : T.h;
   const sweepX = ((t * .5) % 3.4) - 1.7;
   ctx.save();
   ctx.translate(GX, GY + Math.sin(t * 1.6) * R * .035);
@@ -700,8 +718,8 @@ function drawGem(t, ti, tilt, sq) {
     const d = f.cx - sweepX - f.cy * .3, sweep = Math.exp(-d * d * 4);
     const zl = f.z === 2 ? 76 : f.z === 0 ? 58 : 40;
     const L = Math.min(93, zl + (f.k - .5) * 24 + sweep * 28 + Math.sin(t * 2 + f.i * 1.3) * 3);
-    const h = hue + (f.k - .5) * 20 + (T.cosmic ? f.cx * 70 + f.cy * 30 : 0);
-    ctx.fillStyle = hsl(h, f.z === 2 ? T.s * .7 : T.s, L);
+    const h = hue + (f.k - .5) * 20 + (rb ? f.cx * 70 + f.cy * 30 : 0);
+    ctx.fillStyle = hsl(h, f.z === 2 ? sat * .7 : sat, L);
     path(f.p); ctx.fill();
   }
   ctx.beginPath();
@@ -856,6 +874,11 @@ function drawBackdrop(t, hue, heat) {
     ['#ff3d6a', '#ffb100', '#7cff6b', '#4fe0ff', '#a46bff', '#ff4fa0', '#ff3d6a'].forEach((c, i) => cg.addColorStop(i / 6, c));
     ctx.globalAlpha = .4; ctx.lineWidth = R * .07; ctx.strokeStyle = cg; ctx.beginPath(); ctx.arc(0, 0, R * 1.2, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
   }
+  if (buff) {
+    const c = rarCol(buff.r, t), hh = Math.round(c[0] / 10) * 10;
+    ctx.globalAlpha = .28 + .1 * Math.sin(t * 5);
+    ctx.drawImage(glowSprite(`bf${hh}_${c[1]}_${c[2]}`, [[0, hsl(hh, c[1], c[2], 1)], [1, hsl(hh, c[1], c[2], 0)]]), -R * 2.1, -R * 2.1, R * 4.2, R * 4.2); ctx.globalAlpha = 1;
+  }
   if (boss) {
     const c = boss.r < 0 ? [45, 100, 62] : rarCol(boss.r, t), hh = Math.round(c[0] / 10) * 10;
     ctx.globalAlpha = .3 + .22 * Math.sin(t * 9);
@@ -923,7 +946,7 @@ const el = {
   bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
   prog: $('.prog'), chip: $('.chip'), shopBtn: $('#shopBtn'), badge: $('#shopBadge'), fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
   frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
-  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), shd: $('#shd'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), bossLbl: $('#bossLbl'), hpTxt: $('#hpTxt'), hpFill: $('#hpFill'), bossT: $('#bossT'),
+  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), shd: $('#shd'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), buffPill: $('#buffPill'), buffTxt: $('#buffTxt'), buffFill: $('#buffFill'), bossLbl: $('#bossLbl'), hpTxt: $('#hpTxt'), hpFill: $('#hpFill'), bossT: $('#bossT'),
 };
 let spinA = 0, spinV = 0, spinTarget = 0, sq = 1, sqv = 0, tilt = 0, tiltv = 0, shake = 0, flashA = 0, bump = 0, heat = 0, t = 0, toastT = 0;
 
@@ -961,7 +984,7 @@ function doTap(x, y, auto) {
   combo++; lastTap = now; comboPeak = Math.max(comboPeak, combo);
   if (combo >= 3) el.comboN.animate([{ transform: 'scale(1.45)' }, { transform: 'scale(1)' }], { duration: 170, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   const crit = Math.random() < critChance();
-  let g = tapPower() * comboMult() * (frenzy > 0 ? FRENZY_MULT : 1) * (crit ? 5 : 1);
+  let g = tapPower() * comboMult() * (frenzy > 0 ? FRENZY_MULT : 1) * buffMult() * (crit ? 5 : 1);
   g = Math.max(1, Math.round(g));
   addGems(g); S.taps++;
   if (boss) { tone(rnd(90, 170), .08, 'square', .06, 0, .5); boss.hp -= (crit ? 3 : 1) + lvl('hammer'); shake = Math.max(shake, 5); if (boss.hp <= 0) endBoss(true); }
@@ -1158,7 +1181,7 @@ function doAscend(g) {
 
 /* ---------- events: boss gem + gem rain ---------- */
 const RAIN = [];
-function clearEvents() { wheel = null; WH.wrap.style.display = 'none'; boss = null; rain = null; RAIN.length = 0; bossT = rnd(30, 45); rainT = rnd(45, 65); el.app.classList.remove('boss-on'); }
+function clearEvents() { buff = null; wheel = null; WH.wrap.style.display = 'none'; boss = null; rain = null; RAIN.length = 0; bossT = rnd(30, 45); rainT = rnd(45, 65); el.app.classList.remove('boss-on'); }
 function startBoss(fr) {
   const n = 30 + tier * 6;
   boss = { hp: n, max: n, t: 13 + lvl('warp') * 1.5, r: -1, force: fr }; genCracks();
@@ -1205,11 +1228,14 @@ function drawWheel() {
 }
 const easeOut4 = u => 1 - Math.pow(1 - u, 4);
 function startWheel(force) {
-  const r = force !== undefined ? force : rollRarity();
+  let r = force !== undefined ? force : rollRarity(), prot = false;
+  if (force === undefined && (S.pity || 0) >= 6 && r === 0) { r = rollRarity(1); prot = true; }
   const m = wDeg[r] * .28, phi = wStart[r] + m + Math.random() * (wDeg[r] - 2 * m);
-  wheel = { r, t: 0, dur: 4.8, to: 360 * (5 + Math.floor(Math.random() * 2)) - phi, state: 'spin', lastPeg: -1 };
+  wheel = { r, prot, t: 0, dur: 4.8, to: 360 * (5 + Math.floor(Math.random() * 2)) - phi, state: 'spin', lastPeg: -1 };
   if (!wheelDrawn) { drawWheel(); wheelDrawn = true; }
-  WH.cv.style.transform = 'rotate(0deg)'; WH.res.innerHTML = ''; WH.title.textContent = 'SPINNING'; WH.hub.textContent = '?';
+  WH.cv.style.transform = 'rotate(0deg)'; WH.res.innerHTML = ''; WH.title.textContent = prot ? 'BAD LUCK PROTECTION' : 'SPINNING'; WH.hub.textContent = '?';
+  const box = WH.cv.parentElement; box.classList.remove('win');
+  if (!box.querySelector('.led')) { WH.wrap.style.display = 'flex'; box.style.setProperty('--R', (box.offsetWidth / 2 - 4) + 'px'); for (let i = 0; i < 24; i++) { const l = document.createElement('i'); l.className = 'led'; l.style.setProperty('--i', i); box.appendChild(l); } }
   WH.wrap.style.display = 'flex'; toast('', 1); pill(el.toast, false);
 }
 function updateWheel(dt) {
@@ -1226,11 +1252,16 @@ function wheelResult() {
   const r = wheel.r, Rr = RAR[r];
   if (!S.rare) S.rare = {}; S.rare[r] = (S.rare[r] || 0) + 1;
   const shd = 90 * (r + 1); S.shd = (S.shd || 0) + shd;
-  const pay = Math.floor((perSec() * 4 + tapPower() * 20) * Rr.pay); addGems(pay);
+  const pay = Math.floor((baseRate() * (frenzy > 0 ? FRENZY_MULT : 1) * 3 + tapPower() * 16) * Rr.pay); addGems(pay);
   wheel.pay = pay; wheel.shd = shd;
+  S.pity = r === 0 ? (S.pity || 0) + 1 : 0; WH.cv.parentElement.classList.add('win');
   WH.title.textContent = r === 6 ? 'IMPOSSIBLE' : 'YOU GOT'; WH.hub.textContent = '★';
+  const bf = BUFF[r]; if (bf && (!buff || bf.m >= buff.m)) { buff = { r, m: bf.m, t: bf.d, max: bf.d }; el.buffTxt.textContent = Rr.name.toUpperCase() + ' BUFF  x' + bf.m; }
   const col = Rr.rainbow ? '#e6b8ff' : hsl(Rr.h, 100, Math.max(Rr.l, 66));
-  WH.res.innerHTML = `<b style="color:${col};text-shadow:0 0 28px ${col}">${Rr.name.toUpperCase()}</b><span>+${fmt(pay)} gems</span><em>+${shd} ◆ shards</em><small>TAP TO CONTINUE</small>`;
+  WH.res.innerHTML = `<canvas class="wh-gem" width="236" height="236" style="--gc:${col}"></canvas><b style="color:${col};text-shadow:0 0 28px ${col}">${Rr.name.toUpperCase()}</b><span>+${fmt(pay)} gems</span><em>+${shd} ◆ shards${bf ? '  ·  x' + bf.m + ' gems for ' + bf.d + 's' : ''}</em><small>TAP TO CONTINUE</small>`;
+  { const gc = WH.res.querySelector('canvas'), gx = gc.getContext('2d'); gemHue = Rr.rainbow ? -1 : Rr.h; gemSat = Rr.s;
+    try { withCanvas(gx, 236, 236, 118, 122, 92, () => drawGem(1.3, tier, 0, 1)); } finally { gemHue = null; gemSat = null; } }
+  if (buff) el.buffPill.style.setProperty('--rc', hsl(Rr.rainbow ? 300 : Rr.h, 100, Math.max(Rr.l, 64)));
   sndEvolve(); if (r >= 3) setTimeout(sndFrenzy, 250); whoosh(.8, 300, 6000, .2); vib([30, 30, 70]);
   if (r === 6) tone(note(31), .8, 'sine', .15, .3);
 }
@@ -1467,6 +1498,14 @@ function update(dt) {
   } else heat = Math.max(0, heat - dt * 2);
 
   updateWheel(dt);
+  if (buff) {
+    buff.t -= dt; const bc = rarCol(buff.r, t);
+    if (!RM && Math.random() < dt * 28) add({ k: 'spark', x: GX + rnd(-R, R), y: GY + R * rnd(.3, 1), vx: rnd(-20, 20), vy: rnd(-240, -100), g: -60, drag: .8, life: rnd(.5, .9), max: .9, sz: rnd(3, 6), h: bc[0] + rnd(-10, 10) });
+    el.buffFill.style.transform = `scaleX(${clamp(buff.t / buff.max, 0, 1)})`;
+    if (buff.r === 6) el.buffPill.style.setProperty('--rc', hsl((t * 120) % 360, 100, 66));
+    if (buff.t <= 0) { buff = null; toast('Buff over', 1600); }
+  }
+  pill(el.buffPill, !!buff);
   updateEvents(dt);
   // combo fire + shooting stars
   if (combo >= 25 && !RM) {
@@ -1568,7 +1607,7 @@ function setQ(n) { Q = n; DPRCAP = [1, 1.5, 2][n]; maxP = [140, 260, 420][n]; re
 function frame(ts) {
   const raw = ts - last, dt = Math.min(.05, raw / 1000); last = ts;
   if (raw < 120) ema = ema * .96 + raw * .04;
-  qAcc += dt; if (qAcc > 2.5) { qAcc = 0; if (ema > 36 && Q > 0 && !document.hidden) { setQ(Q - 1); ema = 20; } }
+  qAcc += dt; if (qAcc > 1.5) { qAcc = 0; if (ema > 34 && Q > 0 && !document.hidden) { setQ(Q - 1); ema = 30; } }
   update(dt); draw();
   requestAnimationFrame(frame);
 }
@@ -1608,7 +1647,7 @@ function frame(ts) {
   addEventListener('pagehide', save);
   requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
   // test/recording hooks
-  window.__gem = { skipWheel: () => { if (!wheel) return; if (wheel.state === 'spin') { wheel.t = wheel.dur; updateWheel(0); } closeWheel(); }, wheelInfo: () => wheel && { r: wheel.r, state: wheel.state }, bossInfo: () => boss && { hp: boss.hp, max: boss.max, t: boss.t, r: boss.r }, step: sec => { for (let i = 0; i < sec * 30; i++) update(1 / 30); }, roll: rollRarity, icon: (size, ti) => { const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), T = TIERS[ti], hue = T.cosmic ? 300 : T.h; const bg = x.createLinearGradient(0, 0, size, size); bg.addColorStop(0, '#1d1048'); bg.addColorStop(1, '#05030b'); x.fillStyle = bg; x.fillRect(0, 0, size, size); const gl = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * .55); gl.addColorStop(0, hsl(hue, 100, 55, .65)); gl.addColorStop(1, hsl(hue, 100, 45, 0)); x.fillStyle = gl; x.fillRect(0, 0, size, size); withCanvas(x, size, size, size / 2, size * .5, size * .29, () => { drawBackdrop(1, hue, 0); drawGem(1.1, ti, 0, 1); }); return c.toDataURL('image/png'); }, coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+  window.__gem = { buffInfo: () => buff && { r: buff.r, m: buff.m, t: buff.t }, pity: () => S.pity, skipWheel: () => { if (!wheel) return; if (wheel.state === 'spin') { wheel.t = wheel.dur; updateWheel(0); } closeWheel(); }, wheelInfo: () => wheel && { r: wheel.r, state: wheel.state }, bossInfo: () => boss && { hp: boss.hp, max: boss.max, t: boss.t, r: boss.r }, step: sec => { for (let i = 0; i < sec * 30; i++) update(1 / 30); }, roll: rollRarity, icon: (size, ti) => { const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), T = TIERS[ti], hue = T.cosmic ? 300 : T.h; const bg = x.createLinearGradient(0, 0, size, size); bg.addColorStop(0, '#1d1048'); bg.addColorStop(1, '#05030b'); x.fillStyle = bg; x.fillRect(0, 0, size, size); const gl = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * .55); gl.addColorStop(0, hsl(hue, 100, 55, .65)); gl.addColorStop(1, hsl(hue, 100, 45, 0)); x.fillStyle = gl; x.fillRect(0, 0, size, size); withCanvas(x, size, size, size / 2, size * .5, size * .29, () => { drawBackdrop(1, hue, 0); drawGem(1.1, ti, 0, 1); }); return c.toDataURL('image/png'); }, coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
 })();
 })();
 </script>
