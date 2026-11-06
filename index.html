@@ -129,7 +129,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .buy svg{width:15px;height:15px}
 .card.max .buy{background:none;border:0;color:var(--gold)}
 
-#toast{position:absolute;left:50%;bottom:calc(max(200px,min(37%,330px)) + 74px);transform:translate(-50%,20px);opacity:0;padding:9px 16px;border-radius:14px;background:rgba(15,9,34,.85);border:1px solid var(--glass-line);font-size:14px;font-weight:500;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.4,1);pointer-events:none;text-align:center;z-index:5;max-width:90%}
+#toast{position:absolute;left:50%;bottom:calc(max(200px,min(37%,330px)) + 56px);transform:translate(-50%,20px);opacity:0;padding:9px 16px;border-radius:14px;background:rgba(15,9,34,.85);border:1px solid var(--glass-line);font-size:14px;font-weight:500;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.4,1);pointer-events:none;text-align:center;z-index:5;max-width:90%}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .clean #toast{bottom:96px}
 
@@ -175,6 +175,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .clean .tools button:not(#bClean){opacity:.0;pointer-events:none}
 .clean #bClean{opacity:.5}
 .clean #hint{bottom:12%}
+#bossBox{display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:99px;background:rgba(40,4,16,.72);border:1px solid rgba(255,90,110,.75);box-shadow:0 0 26px rgba(255,60,90,.5);animation:throb .45s ease-in-out infinite alternate;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#bossBox small{font-size:11px;letter-spacing:.16em;color:#ff9aab;font-weight:700;white-space:nowrap}
+.hpbar{width:104px;height:10px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}
+.hpbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff3d6a,#ffa24a);transform-origin:left;box-shadow:0 0 12px #ff5577}
+#bossT{font-size:18px;font-variant-numeric:tabular-nums;min-width:2ch;text-align:right}
+.boss-on #frenzy{top:62px}
+.tools button.half{background:var(--glass);opacity:.8}
+@media (max-width:380px){.chip small#tierNum{display:none}}
 @media (max-height:700px){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
 @media (prefers-reduced-motion:reduce){.blob,.prog i::after,#hint{animation:none}}
 </style>
@@ -216,6 +224,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <div class="pill" id="comboPill"><div id="combo"><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
     <div class="pill" id="frenzy"><span id="frenzyTxt">FRENZY x7</span><div id="frenzyBar"><i id="frenzyFill"></i></div></div>
     <div id="hint">TAP THE GEM</div>
+    <div class="pill" id="bossPill"><div id="bossBox"><small>BOSS GEM</small><div class="hpbar"><i id="hpFill"></i></div><b id="bossT">13</b></div></div>
     <div class="pill" id="timer"><small>TIME</small><b id="timerN">60</b></div>
     <div id="flash"></div>
     <div id="banner"><small>EVOLVED</small><b id="bannerT">EMERALD</b></div>
@@ -244,14 +253,14 @@ const FONT = '700 {S}px Fredoka, ui-rounded, system-ui, sans-serif';
 
 /* ---------- data ---------- */
 const TIERS = [
-  { name: 'Quartz',   h: 205, s: 45, at: 0,      m: 3, tw: .50 },
-  { name: 'Citrine',  h: 42,  s: 95, at: 200,    m: 4, tw: .52 },
-  { name: 'Emerald',  h: 152, s: 80, at: 2.5e3,    m: 4, tw: .48 },
-  { name: 'Sapphire', h: 220, s: 90, at: 3e4,  m: 5, tw: .55 },
-  { name: 'Ruby',     h: 352, s: 88, at: 4e5,    m: 5, tw: .50 },
-  { name: 'Amethyst', h: 278, s: 75, at: 5e6,    m: 6, tw: .52 },
-  { name: 'Diamond',  h: 190, s: 70, at: 8e7,  m: 6, tw: .56 },
-  { name: 'Cosmic',   h: 300, s: 90, at: 1.2e9,   m: 8, tw: .50, cosmic: true },
+  { name: 'Quartz',   h: 205, s: 45, at: 0,      shape: 'crystal' },
+  { name: 'Citrine',  h: 42,  s: 95, at: 200,    shape: 'brilliant', m: 4, tw: .52 },
+  { name: 'Emerald',  h: 152, s: 80, at: 2.5e3,  shape: 'emerald' },
+  { name: 'Sapphire', h: 220, s: 90, at: 3e4,    shape: 'round', n: 10 },
+  { name: 'Ruby',     h: 352, s: 88, at: 4e5,    shape: 'heart' },
+  { name: 'Amethyst', h: 278, s: 75, at: 5e6,    shape: 'marquise' },
+  { name: 'Diamond',  h: 190, s: 70, at: 8e7,    shape: 'brilliant', m: 6, tw: .56 },
+  { name: 'Cosmic',   h: 300, s: 90, at: 1.2e9,  shape: 'star', n: 8, cosmic: true },
 ];
 const UPS = [
   { id: 'pick',  name: 'Sharp Pick',    ico: '⛏️', base: 15,     g: 1.34, desc: () => `+${fmt(upMult('pick') * globalMult())} per tap, per level` },
@@ -278,16 +287,18 @@ const ACH = [
   ['t5', 'Violet hour', 'Reach Amethyst', () => tier >= 5],
   ['t7', 'Out of this world', 'Reach Cosmic', () => tier >= 7],
   ['as', 'Reborn', 'Ascend once', () => (S.shards || 0) > 0],
+  ['bo', 'Gem breaker', 'Beat a boss gem', () => (S.bosses || 0) >= 1],
+  ['rn', 'Rainmaker', 'Catch 100 rain gems', () => (S.rains || 0) >= 100],
 ];
 const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
 
 /* ---------- state ---------- */
 const KEY = 'gemrush.v1';
-const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), muted: false, shards: 0, ach: {}, fr: 0 });
+const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0 });
 let S = newState();
 try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
 UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
-let chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
+let boss = null, rain = null, bossT = 32, rainT = 55, KS = 0, chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
 const save = () => { if (chal) return; try { S.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
 /* ---------- math helpers ---------- */
@@ -315,23 +326,32 @@ const comboMult = () => 1 + Math.min(combo, 100) * .02;
 const ascGain = () => chal ? 0 : (S.total >= ASC_AT ? Math.floor(5 * Math.sqrt(S.total / ASC_AT)) : 0);
 
 /* ---------- audio ---------- */
-let AC;
+let AC, SFX, MUS, NB, mStep = 0, mNext = 0, mTimer = 0, arpI = 4;
 function audio() {
-  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (!AC) {
+    try {
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      SFX = AC.createGain(); SFX.gain.value = 1; SFX.connect(AC.destination);
+      MUS = AC.createGain(); MUS.gain.value = .34; MUS.connect(AC.destination);
+      NB = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = NB.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      startMusic();
+    } catch (e) { AC = null; }
+  }
   if (AC && AC.state === 'suspended') AC.resume();
 }
-function tone(f, d = .16, type = 'triangle', vol = .12, when = 0, slide = 0) {
-  if (!AC || S.muted) return;
-  const t0 = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain();
+const sfxOn = () => AC && S.snd !== 2;
+function toneAt(f, t0, d, type, vol, slide, dest) {
+  const o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t0);
   if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t0 + d);
   g.gain.setValueAtTime(.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + .008);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(.01, d / 3));
   g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
-  o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d + .03);
+  o.connect(g); g.connect(dest || SFX); o.start(t0); o.stop(t0 + d + .03);
 }
+function tone(f, d = .16, type = 'triangle', vol = .12, when = 0, slide = 0) { if (sfxOn()) toneAt(f, AC.currentTime + when, d, type, vol, slide); }
 const PENT = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
-const note = semis => 261.63 * Math.pow(2, semis / 12);
+const note = semis => 261.63 * Math.pow(2, (semis + KS) / 12);
 function sndTap(c, crit) {
   const i = c % 18, k = i < 9 ? i : 17 - i;
   const f = note(PENT[k]);
@@ -341,18 +361,64 @@ function sndTap(c, crit) {
 const sndBuy = () => { tone(note(12), .1, 'sine', .12); tone(note(19), .16, 'sine', .12, .07); tone(note(24), .22, 'triangle', .1, .14); };
 const sndEvolve = () => [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => { tone(note(s), .4, 'triangle', .12, i * .07); tone(note(s + 12), .3, 'sine', .05, i * .07); });
 const sndFrenzy = () => [12, 16, 19, 24, 28].forEach((s, i) => tone(note(s), .25, 'square', .05, i * .05));
-let NB;
+const sndBoss = () => { tone(note(-24), .7, 'sawtooth', .13, 0, .5); tone(note(-17), .6, 'sawtooth', .08, .12, .6); [0, 3, 6].forEach((s, i) => tone(note(-12 + s), .2, 'square', .06, .3 + i * .14)); };
+const sndRain = () => [0, 4, 7, 11, 14, 19, 23].forEach((s, i) => tone(note(12 + s), .5, 'sine', .08, i * .06));
+const sndTick = hi => tone(hi ? note(24) : note(12), hi ? .35 : .12, 'sine', .14);
 function whoosh(dur = .8, f0 = 300, f1 = 4000, vol = .18) {
-  if (!AC || S.muted) return;
-  if (!NB) { NB = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = NB.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  if (!sfxOn()) return;
   const t0 = AC.currentTime, src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
   src.buffer = NB; src.loop = true; f.type = 'bandpass'; f.Q.value = 1.2;
   f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
   g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + dur * .6); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
-  src.connect(f); f.connect(g); g.connect(AC.destination); src.start(t0); src.stop(t0 + dur + .05);
+  src.connect(f); f.connect(g); g.connect(SFX); src.start(t0); src.stop(t0 + dur + .05);
 }
-const sndTick = hi => tone(hi ? note(24) : note(12), hi ? .35 : .12, 'sine', .14);
 const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+/* generative music: pad + bass + arp, drums fade in with combo / frenzy / boss */
+const EIGHTH = 60 / 104 / 2;
+const CHORDS = [[-15, [0, 3, 7]], [-19, [0, 4, 7]], [-12, [0, 4, 7]], [-17, [0, 4, 7]]];
+const ARP = [-3, 0, 2, 4, 7, 9, 12, 14, 16, 19];
+const musicLevel = () => (frenzy > 0 || boss || combo >= 40) ? 2 : combo >= 8 ? 1 : 0;
+function noiseHit(t0, type, freq, dur, vol) {
+  const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  src.buffer = NB; src.loop = true; f.type = type; f.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  src.connect(f); f.connect(g); g.connect(MUS); src.start(t0); src.stop(t0 + dur + .02);
+}
+function kick(t0) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.frequency.setValueAtTime(150, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + .13);
+  g.gain.setValueAtTime(.9, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + .22);
+  o.connect(g); g.connect(MUS); o.start(t0); o.stop(t0 + .25);
+}
+function pad(f, t0, d, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = 'triangle'; o.frequency.value = f; o.detune.value = rnd(-7, 7);
+  g.gain.setValueAtTime(.0001, t0); g.gain.linearRampToValueAtTime(vol, t0 + .6); g.gain.linearRampToValueAtTime(.0001, t0 + d);
+  o.connect(g); g.connect(MUS); o.start(t0); o.stop(t0 + d + .05);
+}
+function playStep(step, t0) {
+  const ch = CHORDS[Math.floor(step / 8) % 4], b = step % 8, lv = musicLevel();
+  if (b === 0) ch[1].forEach(iv => pad(note(ch[0] + 12 + iv), t0, EIGHTH * 8, .06));
+  if (b === 0 || (lv >= 1 && (b === 3 || b === 4))) toneAt(note(ch[0]), t0, EIGHTH * 1.8, 'sine', .22, 0, MUS);
+  if (b % (lv === 0 ? 2 : 1) === 0) {
+    arpI = clamp(arpI + [-2, -1, 1, 2][Math.floor(Math.random() * 4)], 0, ARP.length - 1);
+    toneAt(note(ARP[arpI]), t0, EIGHTH * 1.6, 'triangle', lv ? .08 : .055, 0, MUS);
+  }
+  if (lv >= 1) {
+    if (b % 4 === 0 || (lv === 2 && b % 2 === 0)) kick(t0);
+    if (b % 2 === 1 || lv === 2) noiseHit(t0, 'highpass', 7000, .04, lv === 2 && b % 2 === 0 ? .05 : .09);
+    if (lv === 2 && (b === 2 || b === 6)) noiseHit(t0, 'bandpass', 1800, .13, .22);
+  }
+}
+function startMusic() {
+  mNext = AC.currentTime + .1; clearInterval(mTimer);
+  mTimer = setInterval(() => {
+    if (!AC) return;
+    if (document.hidden || S.snd !== 0) { mNext = AC.currentTime + .1; return; }
+    while (mNext < AC.currentTime + .2) { playStep(mStep++, mNext); mNext += EIGHTH; }
+  }, 40);
+}
 
 /* ---------- canvas ---------- */
 const stage = $('#stage'), cv = $('#cv'), ctx = cv.getContext('2d');
@@ -367,17 +433,16 @@ function resize() {
 new ResizeObserver(resize).observe(stage);
 resize();
 
-/* gem geometry (side-view brilliant cut), built per tier */
+/* gem geometry: a different cut per tier. Facets are {p: points, z: 0 mid / 1 dark / 2 bright} in a roughly -1..1 box */
 const gemCache = {};
-function gemFor(ti) {
-  if (gemCache[ti]) return gemCache[ti];
-  const { m, tw } = TIERS[ti];
+function finish(F) {
+  F.forEach((f, i) => { f.i = i; f.cx = f.p.reduce((s, q) => s + q[0], 0) / f.p.length; f.cy = f.p.reduce((s, q) => s + q[1], 0) / f.p.length; f.k = .5 + .5 * Math.sin(i * 2.17 + 1); });
+  return F;
+}
+function brilliantGem(m, tw) {
   const ty = -.62, gy = -.16, hy = .45, topY = ty - .13;
   const Tp = [], Gp = [], Hp = [], F = [];
-  for (let j = 0; j <= m; j++) {
-    const u = j / m;
-    Tp.push([-tw + 2 * tw * u, ty]); Gp.push([-1 + 2 * u, gy]); Hp.push([(-1 + 2 * u) * .47, hy]);
-  }
+  for (let j = 0; j <= m; j++) { const u = j / m; Tp.push([-tw + 2 * tw * u, ty]); Gp.push([-1 + 2 * u, gy]); Hp.push([(-1 + 2 * u) * .47, hy]); }
   const tip = [0, 1];
   F.push({ p: [[-tw, ty], [tw, ty], [tw * .78, topY], [-tw * .78, topY]], z: 2 });
   for (let j = 0; j < m; j++) {
@@ -385,16 +450,68 @@ function gemFor(ti) {
     if (j % 2 === 0) { F.push({ p: [a, b, c], z: 0 }); F.push({ p: [a, c, d], z: 0 }); }
     else { F.push({ p: [a, b, d], z: 0 }); F.push({ p: [b, c, d], z: 0 }); }
   }
-  for (let j = 0; j < m; j++) {
-    F.push({ p: [Gp[j], Gp[j + 1], Hp[j + 1], Hp[j]], z: 1 });
-    F.push({ p: [Hp[j], Hp[j + 1], tip], z: 1 });
+  for (let j = 0; j < m; j++) { F.push({ p: [Gp[j], Gp[j + 1], Hp[j + 1], Hp[j]], z: 1 }); F.push({ p: [Hp[j], Hp[j + 1], tip], z: 1 }); }
+  return { F: finish(F), sil: [[[-tw * .78, topY], [tw * .78, topY], [tw, ty], [1, gy], tip, [-1, gy], [-tw, ty]]] };
+}
+function ringGem(outline, c, scales, zs) {
+  const n = outline.length, rings = scales.map(s => outline.map(p => [c[0] + (p[0] - c[0]) * s, c[1] + (p[1] - c[1]) * s]));
+  const F = [];
+  for (let r = 0; r < rings.length - 1; r++)
+    for (let j = 0; j < n; j++) F.push({ p: [rings[r][j], rings[r][(j + 1) % n], rings[r + 1][(j + 1) % n], rings[r + 1][j]], z: zs[r * 2 + (j % 2)] });
+  const last = rings[rings.length - 1];
+  for (let j = 0; j < n; j++) F.push({ p: [c, last[j], last[(j + 1) % n]], z: zs[(rings.length - 1) * 2 + (j % 2)] });
+  return { F: finish(F), sil: [outline] };
+}
+function emeraldGem() {
+  const w = .8, h = .98, c = .3;
+  const oct = [[-w + c, -h], [w - c, -h], [w, -h + c], [w, h - c], [w - c, h], [-w + c, h], [-w, h - c], [-w, -h + c]];
+  const rings = [1, .74, .5, .3].map(s => oct.map(p => [p[0] * s, p[1] * s])), zm = [0, 2, 1, 1, 1, 0, 0, 2], F = [];
+  for (let r = 0; r < 3; r++) for (let i = 0; i < 8; i++) F.push({ p: [rings[r][i], rings[r][(i + 1) % 8], rings[r + 1][(i + 1) % 8], rings[r + 1][i]], z: zm[i] });
+  F.push({ p: rings[3], z: 2 });
+  return { F: finish(F), sil: [oct] };
+}
+function crystalGem() {
+  const F = [], sil = [];
+  const prism = (cx, wd, base, top, tip, rot) => {
+    const cs = Math.cos(rot), sn = Math.sin(rot), rt = q => { const dx = q[0] - cx, dy = q[1] - base; return [cx + dx * cs - dy * sn, base + dx * sn + dy * cs]; };
+    const x0 = cx - wd, x1 = cx - wd * .35, x2 = cx + wd * .35, x3 = cx + wd, ap = [cx, top - tip];
+    const mk = (pts, z) => F.push({ p: pts.map(rt), z });
+    mk([[x0, base], [x1, base], [x1, top], [x0, top]], 0); mk([[x1, base], [x2, base], [x2, top], [x1, top]], 2); mk([[x2, base], [x3, base], [x3, top], [x2, top]], 1);
+    mk([[x0, top], [x1, top], ap], 2); mk([[x1, top], [x2, top], ap], 0); mk([[x2, top], [x3, top], ap], 1);
+    sil.push([[x0, base], [x3, base], [x3, top], ap, [x0, top]].map(rt));
+  };
+  prism(-.6, .26, .95, .3, .42, -.32); prism(.58, .24, .95, .35, .4, .38); prism(0, .36, .98, -.15, .6, 0);
+  return { F: finish(F), sil };
+}
+function starGem(n) {
+  const pts = [], F = [];
+  for (let j = 0; j < n * 2; j++) { const a = -Math.PI / 2 + j * Math.PI / n, r = j % 2 ? .48 : 1; pts.push([Math.cos(a) * r, Math.sin(a) * r]); }
+  for (let j = 0; j < n * 2; j++) F.push({ p: [[0, 0], pts[j], pts[(j + 1) % (n * 2)]], z: j % 2 ? 1 : 0 });
+  F.push({ p: Array.from({ length: n }, (_, j) => { const a = -Math.PI / 2 + (j + .5) * 2 * Math.PI / n; return [Math.cos(a) * .3, Math.sin(a) * .3]; }), z: 2 });
+  return { F: finish(F), sil: [pts] };
+}
+function gemFor(ti) {
+  if (gemCache[ti]) return gemCache[ti];
+  const T = TIERS[ti]; let g;
+  if (T.shape === 'brilliant') g = brilliantGem(T.m, T.tw);
+  else if (T.shape === 'emerald') g = emeraldGem();
+  else if (T.shape === 'crystal') g = crystalGem();
+  else if (T.shape === 'star') g = starGem(T.n);
+  else if (T.shape === 'round') g = ringGem(Array.from({ length: T.n }, (_, j) => { const a = -Math.PI / 2 + j * 2 * Math.PI / T.n; return [Math.cos(a) * .95, Math.sin(a) * .95]; }), [0, 0], [1, .64, .32], [1, 0, 0, 2, 2, 0]);
+  else if (T.shape === 'heart') {
+    const o = Array.from({ length: 24 }, (_, j) => { const a = j * TAU / 24, x = 16 * Math.pow(Math.sin(a), 3), y = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)); return [x / 16 * .95, (y - 2.5) / 14.5 * .95]; });
+    g = ringGem(o, [0, -.05], [1, .62, .3], [1, 0, 0, 1, 2, 0]);
+  } else {
+    const o = Array.from({ length: 16 }, (_, j) => { const a = -Math.PI / 2 + j * TAU / 16, c = Math.cos(a); return [.78 * c * Math.abs(c), Math.sin(a) * .98]; });
+    g = ringGem(o, [0, 0], [1, .6, .3], [1, 0, 0, 2, 2, 0]);
   }
-  F.forEach((f, i) => {
-    f.i = i; f.cx = f.p.reduce((s, q) => s + q[0], 0) / f.p.length; f.cy = f.p.reduce((s, q) => s + q[1], 0) / f.p.length;
-    f.k = .5 + .5 * Math.sin(i * 2.17 + 1);
-  });
-  const sil = [[-tw * .78, topY], [tw * .78, topY], [tw, ty], [1, gy], tip, [-1, gy], [-tw, ty]];
-  return (gemCache[ti] = { F, sil });
+  return (gemCache[ti] = g);
+}
+const silPath = sil => { ctx.beginPath(); sil.forEach(pts => { ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); }); };
+const BCRACKS = [];
+function genCracks() {
+  BCRACKS.length = 0;
+  for (let k = 0; k < 7; k++) { let a = k * TAU / 7 + rnd(-.3, .3), x = 0, y = -.05; const pts = [[x, y]]; for (let s = 0; s < 5; s++) { a += rnd(-.5, .5); const l = rnd(.15, .26); x += Math.cos(a) * l; y += Math.sin(a) * l; pts.push([x, y]); } BCRACKS.push(pts); }
 }
 const hsl = (h, s, l, a = 1) => `hsl(${h} ${s}% ${l}% / ${a})`;
 
@@ -419,12 +536,23 @@ function drawGem(t, ti, tilt, sq) {
     ctx.lineWidth = .012; ctx.strokeStyle = 'rgba(255,255,255,.38)'; ctx.stroke();
   }
   // glossy overlay
-  path(g.sil); ctx.save(); ctx.clip();
+  silPath(g.sil); ctx.save(); ctx.clip();
   const gr = ctx.createLinearGradient(-1, -.8, 1, 1);
   gr.addColorStop(0, 'rgba(255,255,255,.32)'); gr.addColorStop(.42, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,30,.34)');
   ctx.fillStyle = gr; ctx.fillRect(-1.2, -1, 2.4, 2.2);
   ctx.restore();
-  path(g.sil); ctx.lineWidth = .028; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.stroke();
+  if (boss) {
+    const prog = 1 - boss.hp / boss.max;
+    silPath(g.sil); ctx.save(); ctx.clip(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    BCRACKS.forEach((pts, k) => {
+      const f = clamp(prog * 1.3 - k * .06, 0, 1) * (pts.length - 1); if (f <= 0) return;
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i <= Math.ceil(f); i++) { const fr = Math.min(1, f - (i - 1)), a = pts[i - 1], b = pts[i]; ctx.lineTo(a[0] + (b[0] - a[0]) * fr, a[1] + (b[1] - a[1]) * fr); }
+      ctx.lineWidth = .06; ctx.strokeStyle = 'rgba(12,0,24,.85)'; ctx.stroke(); ctx.lineWidth = .02; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.stroke();
+    });
+    ctx.restore();
+  }
+  silPath(g.sil); ctx.lineWidth = .028; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.stroke();
   // sparkles
   ctx.globalCompositeOperation = 'lighter';
   [[-.62, -.45, 0], [.52, -.62, 2.1], [.12, .28, 4.2], [-.2, .7, 1.1]].forEach(([x, y, ph]) => {
@@ -542,6 +670,11 @@ function drawBackdrop(t, hue, heat) {
   const gl = ctx.createRadialGradient(0, 0, R * .1, 0, 0, R * 1.9);
   gl.addColorStop(0, hsl(hue, 100, 62, .55)); gl.addColorStop(1, hsl(hue, 100, 55, 0));
   ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, R * 1.9, 0, TAU); ctx.fill();
+  if (boss) {
+    const pa = .28 + .2 * Math.sin(t * 9), bg = ctx.createRadialGradient(0, 0, R * .2, 0, 0, R * 2.4);
+    bg.addColorStop(0, `rgba(255,40,70,${pa})`); bg.addColorStop(1, 'rgba(255,0,40,0)');
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(0, 0, R * 2.4, 0, TAU); ctx.fill();
+  }
   if (heat > .01) {
     const hg = ctx.createRadialGradient(0, 0, R * .2, 0, 0, R * 2.3);
     hg.addColorStop(0, `rgba(255,170,40,${.5 * heat})`); hg.addColorStop(1, 'rgba(255,90,0,0)');
@@ -612,12 +745,12 @@ const el = {
   bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
   fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
   frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
-  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'),
+  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), hpFill: $('#hpFill'), bossT: $('#bossT'),
 };
 let sq = 1, sqv = 0, tilt = 0, tiltv = 0, shake = 0, flashA = 0, bump = 0, heat = 0, t = 0, toastT = 0;
 
 function setTierUI() {
-  const T = TIERS[tier];
+  const T = TIERS[tier]; KS = [0, 0, 2, 3, 5, 7, 8, 10][tier] || 0;
   el.app.style.setProperty('--h', T.cosmic ? 292 : T.h);
   el.tierName.textContent = T.name; el.tierNum.textContent = `${tier + 1}/${TIERS.length}`;
   document.querySelector('meta[name=theme-color]').setAttribute('content', `hsl(${T.h} 60% 6%)`);
@@ -647,6 +780,7 @@ function doTap(x, y, auto) {
   let g = tapPower() * comboMult() * (frenzy > 0 ? FRENZY_MULT : 1) * (crit ? 5 : 1);
   g = Math.max(1, Math.round(g));
   addGems(g); S.taps++;
+  if (boss) { boss.hp -= crit ? 3 : 1; shake = Math.max(shake, 5); if (boss.hp <= 0) endBoss(true); }
   el.hint.style.display = 'none';
   // juice
   sqv -= crit ? 5.4 : 3.3;
@@ -675,6 +809,7 @@ stage.addEventListener('pointerdown', e => {
   e.preventDefault(); audio();
   if (chal && chal.phase !== 'run') return;
   const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  for (let i = RAIN.length - 1; i >= 0; i--) if (Math.hypot(x - RAIN[i].x, y - RAIN[i].y) < RAIN[i].r * 1.9 + 10) { collectRain(i); return; }
   if (gold) { const gyy = gold.y + Math.sin(gold.t * 2.4) * 22; if (Math.hypot(x - gold.x, y - gyy) < 62) { collectGold(); return; } }
   doTap(x, y, false);
 });
@@ -753,10 +888,13 @@ function checkAch() {
 /* ---------- HUD, toast, tools ---------- */
 function toast(msg, ms = 2400) { el.toast.textContent = msg; el.toast.classList.add('on'); toastT = ms / 1000; }
 function applyMute() {
-  $('#bSound').classList.toggle('on', !S.muted);
-  $('#sndWave').style.display = S.muted ? 'none' : '';
+  const b = $('#bSound'); b.classList.toggle('on', S.snd === 0); b.classList.toggle('half', S.snd === 1);
+  $('#sndWave').style.display = S.snd === 2 ? 'none' : '';
 }
-$('#bSound').addEventListener('click', () => { S.muted = !S.muted; applyMute(); audio(); save(); });
+$('#bSound').addEventListener('click', () => {
+  S.snd = ((S.snd || 0) + 1) % 3; applyMute(); audio(); save();
+  toast(['Music and sound on', 'Sound effects only', 'Sound off'][S.snd], 1600);
+});
 $('#bDemo').addEventListener('click', () => {
   demo = !demo; $('#bDemo').classList.toggle('on', demo); audio();
   toast(demo ? 'Auto-play on. Hit record and watch it go.' : 'Auto-play off');
@@ -771,7 +909,7 @@ $('#bReset').addEventListener('click', () => {
   if (chal) return;
   if (performance.now() - resetArm < 3000) {
     try { localStorage.removeItem(KEY); } catch (e) {}
-    S = Object.assign(newState(), { muted: S.muted });
+    S = Object.assign(newState(), { snd: S.snd });
     tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); toast('Progress reset'); resetArm = 0;
   } else { resetArm = performance.now(); toast('Tap reset again to wipe all progress'); }
 });
@@ -787,12 +925,85 @@ el.ascend.addEventListener('click', () => {
   else { ascArm = performance.now(); toast(`Ascend resets gems and upgrades. Tap again for +${g} ★`, 3000); }
 });
 function doAscend(g) {
-  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, muted: S.muted, fr: S.fr };
+  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak };
   S = Object.assign(newState(), keep);
-  tier = 0; frenzy = 0; combo = 0; dispGems = 0; gold = null; goldTimer = 10; P.length = 0;
+  tier = 0; frenzy = 0; combo = 0; dispGems = 0; gold = null; goldTimer = 10; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta(); checkAch();
   flashA = 1; shake = 24; confetti(GX, GY, 120); ring(GX, GY, R * .3, R * 3.4, 1.2, 45, 10); sndEvolve(); whoosh(1.2, 150, 6000, .25); vib([30, 40, 90]);
   showBanner('ASCENDED', `+${g} ★ SHARDS`); save();
+}
+
+/* ---------- events: boss gem + gem rain ---------- */
+const RAIN = [];
+function clearEvents() { boss = null; rain = null; RAIN.length = 0; bossT = rnd(30, 45); rainT = rnd(45, 65); el.app.classList.remove('boss-on'); }
+function startBoss() {
+  const n = 30 + tier * 6;
+  boss = { hp: n, max: n, t: 13 }; genCracks();
+  showBanner('WARNING', 'BOSS GEM'); shake = 18; flashA = .35; sndBoss(); whoosh(.7, 100, 1800, .2); vib([60, 40, 60]);
+  el.app.classList.add('boss-on'); hint('Tap fast to break it!');
+}
+function hint(m) { toast(m, 2000); }
+function endBoss(win) {
+  const b = boss; boss = null; el.app.classList.remove('boss-on');
+  bossT = rnd(40, 55); rainT = Math.max(rainT, 18);
+  if (!win) { toast('The boss gem got away', 2200); return; }
+  S.bosses = (S.bosses || 0) + 1;
+  const pay = Math.floor(perSec() * 18 + tapPower() * 100);
+  addGems(pay);
+  burst(GX, GY, 70, true); confetti(GX, GY, 130); ring(GX, GY, R * .3, R * 3.2, 1, 352, 12);
+  floatText(GX, GY - R * .2, '+' + fmt(pay), { sz: 56, col: '#ffd84a', vy: -120, life: 1.8, max: 1.8 });
+  flashA = 1; shake = 26; showBanner('SHATTERED', 'BOSS DOWN'); sndEvolve(); whoosh(1, 200, 6000, .24); vib([40, 40, 100]);
+}
+function startRain() {
+  rain = { t: 9, acc: 0, got: 0, gain: 0 };
+  showBanner('INCOMING', 'GEM RAIN'); sndRain(); whoosh(.8, 500, 7000, .14);
+}
+function collectRain(i) {
+  const g = RAIN[i]; RAIN.splice(i, 1);
+  const val = Math.max(3 * tapPower(), perSec() * .5);
+  addGems(val); S.rains = (S.rains || 0) + 1;
+  if (rain) { rain.gain += val; tone(note(PENT[(rain.got++) % 10] + 12), .22, 'sine', .12); }
+  floatText(g.x, g.y - 10, '+' + fmt(val), { sz: 26, col: hsl(g.hue, 100, 82), vy: -140 });
+  for (let k = 0; k < 6; k++) add({ k: 'spark', x: g.x, y: g.y, vx: rnd(-200, 200), vy: rnd(-260, 40), g: 500, drag: 2, life: rnd(.3, .6), max: .6, sz: rnd(2, 5), h: g.hue });
+  vib(5);
+}
+function updateEvents(dt) {
+  if (!chal && tier >= 1 && !boss && !rain) {
+    bossT -= dt; rainT -= dt;
+    if (bossT <= 0) startBoss(); else if (rainT <= 0) startRain();
+  }
+  if (boss) {
+    boss.t -= dt;
+    if (boss.t <= 0) endBoss(false);
+    else {
+      shake = Math.max(shake, 1.5 + 4 * (1 - boss.hp / boss.max));
+      el.hpFill.style.transform = `scaleX(${clamp(boss.hp / boss.max, 0, 1)})`; el.bossT.textContent = Math.ceil(boss.t);
+    }
+  }
+  el.bossPill.classList.toggle('on', !!boss);
+  if (rain) {
+    rain.t -= dt;
+    if (rain.t > 0) { rain.acc += dt; while (rain.acc > .13) { rain.acc -= .13; RAIN.push({ x: rnd(26, W - 26), y: -30, vy: rnd(230, 380), r: rnd(15, 23), hue: rnd(0, 360), rot: rnd(0, TAU), vr: rnd(-5, 5) }); } }
+    else if (!RAIN.length) { toast(`Gem rain caught: +${fmt(rain.gain)}`, 2600); rain = null; rainT = rnd(55, 80); bossT = Math.max(bossT, 16); }
+  }
+  for (let i = RAIN.length - 1; i >= 0; i--) { const g = RAIN[i]; g.y += g.vy * dt; g.rot += g.vr * dt; if (g.y > H + 40) RAIN.splice(i, 1); }
+  if (demo && RAIN.length && Math.random() < dt * 7) { const c = RAIN.filter(g => g.y > 40); if (c.length) collectRain(RAIN.indexOf(c[Math.floor(Math.random() * c.length)])); }
+}
+function drawRain() {
+  for (const g of RAIN) {
+    ctx.save(); ctx.translate(g.x, g.y);
+    ctx.globalCompositeOperation = 'lighter';
+    const gl = ctx.createRadialGradient(0, 0, 0, 0, 0, g.r * 2.4); gl.addColorStop(0, hsl(g.hue, 100, 65, .55)); gl.addColorStop(1, hsl(g.hue, 100, 60, 0));
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, g.r * 2.4, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.scale(Math.abs(Math.cos(g.rot)) * .7 + .3, 1); ctx.scale(g.r, g.r);
+    ctx.beginPath(); ctx.moveTo(0, -1); ctx.lineTo(.8, -.2); ctx.lineTo(0, 1.05); ctx.lineTo(-.8, -.2); ctx.closePath();
+    const fg = ctx.createLinearGradient(-1, -1, 1, 1); fg.addColorStop(0, hsl(g.hue, 100, 88)); fg.addColorStop(.5, hsl(g.hue, 95, 62)); fg.addColorStop(1, hsl(g.hue, 90, 40));
+    ctx.fillStyle = fg; ctx.fill(); ctx.lineWidth = .1; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-.8, -.2); ctx.lineTo(.8, -.2); ctx.moveTo(0, -1); ctx.lineTo(-.3, -.2); ctx.lineTo(0, 1.05); ctx.moveTo(0, -1); ctx.lineTo(.3, -.2);
+    ctx.lineWidth = .06; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.stroke();
+    ctx.restore();
+  }
 }
 
 /* ---------- 60s speedrun challenge ---------- */
@@ -803,8 +1014,8 @@ const overlay = $('#overlay');
 function startChallenge() {
   const backup = chal ? chal.backup : S;
   chal = { phase: 'count', cd: 4, t: CHAL_TIME, backup, lastNum: -1 };
-  S = newState(); S.muted = backup.muted;
-  tier = 0; combo = 0; comboPeak = 0; frenzy = 0; dispGems = 0; gold = null; goldTimer = 9; P.length = 0;
+  S = newState(); S.snd = backup.snd;
+  tier = 0; combo = 0; comboPeak = 0; frenzy = 0; dispGems = 0; gold = null; goldTimer = 9; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta();
   el.app.classList.add('chal'); el.timerN.textContent = CHAL_TIME; el.timer.classList.remove('low'); el.timer.classList.add('on');
   overlay.className = 'count'; overlay.innerHTML = '<b id="cnt"></b>'; overlay.style.display = 'grid';
@@ -850,7 +1061,7 @@ function exitChallenge() {
   S = chal.backup; chal = null;
   el.app.classList.remove('chal'); el.timer.classList.remove('on'); overlay.style.display = 'none'; overlay.innerHTML = '';
   tier = 0; while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
-  combo = 0; frenzy = 0; dispGems = S.gems; gold = null; goldTimer = 10; P.length = 0;
+  combo = 0; frenzy = 0; dispGems = S.gems; gold = null; goldTimer = 10; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta();
 }
 $('#bChal').addEventListener('click', () => { audio(); if (chal) { exitChallenge(); return; } startChallenge(); });
@@ -884,6 +1095,7 @@ function update(dt) {
     if (frenzy <= 0) { frenzy = 0; toast('Frenzy over. Nice run!'); }
   } else heat = Math.max(0, heat - dt * 2);
 
+  updateEvents(dt);
   // combo fire + shooting stars
   if (combo >= 25 && !RM) {
     const rate = combo >= 60 ? 70 : 35;
@@ -971,6 +1183,7 @@ function draw() {
   drawGem(t, tier, tilt, sq);
   drawOrbiters(t, hue, true);
   drawParticles(t);
+  drawRain();
   drawGold(t);
   ctx.restore();
 }
@@ -991,13 +1204,21 @@ function frame(ts) {
     const gain = Math.floor(rate * away * .5); addGems(gain); dispGems = S.gems - gain;
     setTimeout(() => toast(`Welcome back! Your miners found ${fmt(gain)} gems`, 3500), 600);
   }
+  const today = new Date().toDateString();
+  if (S.day !== today) {
+    const yest = new Date(Date.now() - 864e5).toDateString();
+    S.streak = S.day === yest ? (S.streak || 0) + 1 : 1; S.day = today;
+    const gift = Math.floor(Math.max(100, baseRate() * 600) * Math.min(S.streak, 7));
+    addGems(gift); dispGems = S.gems - gift;
+    setTimeout(() => { toast(`Daily gift, day ${S.streak}: +${fmt(gift)} gems`, 3200); confetti(GX, GY, 40); sndBuy(); }, away > 60 && rate > 0 ? 4300 : 900);
+  }
   if (S.taps > 0) el.hint.style.display = 'none';
   refreshShop(true); refreshMeta();
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   addEventListener('pagehide', save);
   requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
   // test/recording hooks
-  window.__gem = { evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+  window.__gem = { boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
 })();
 })();
 </script>
