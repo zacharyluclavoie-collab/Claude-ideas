@@ -14,6 +14,22 @@ Open `index.html` in any modern browser. There is no build step.
 
 All of this lives in one self-contained `EXTRAS` block near the end of the game script. It hooks the game's `gain` and `track` functions and doesn't change the existing gameplay code.
 
+## Frog Book and new content
+
+One **Book** button opens a tabbed Frog Book (also the `T` key):
+
+- **Daily:** three daily challenges plus a weekly one, a "finish all three" bonus, a free swap per challenge, and a reset timer. Group challenges (bugs, sweets, sea creatures and so on) only use foods from your current and next chapter, so you never get an impossible one. Rewards are coins, and the weekly one also gives an Ancestor point.
+- **Frogdex:** every food you eat is added to a collection book (80 entries across all worlds). Each entry gives +0.5% food forever, with coin rewards at 10%, 25%, 50%, 75% and 100%.
+- **Trophies:** now 56, including ones for the new features.
+- **Family:** a rebirth upgrade tree with three branches (Feast, Hunt, Legacy) and nine permanent upgrades. You earn one Ancestor point for every rebirth and every world finished, plus bonuses from challenges and the Frogdex. Each upgrade unlocks the next in its row, and points can be refunded.
+
+Also new:
+
+- **Storm Skies**, a fifth world with four chapters (Cloud Meadow, Storm Front, Rainbow Bridge, Skyport Orbit), four bosses, its own backgrounds, weather and news. Its trick is **Thunder Bite**: every 7th bite zaps four extra foods for double. It unlocks after you finish Neon Factory.
+- **Boss attack patterns:** single throw, volley, barrage from above and swirl. Later chapters mix them, and a boss below 35% health attacks faster.
+- **Snack Catch**, a 15-second bonus round where you tap falling snacks. Stars are worth 5, clocks add time, and streaks double points. It's a new Lucky Spin segment and also playable from the Daily tab every 15 minutes.
+- **Trophy skins:** Gilded Frog, Storm Frog, Collector Frog and Ancient Frog, each unlocked by a trophy and worn from the Shop.
+
 ## CrazyGames compliance
 
 Checked against the CrazyGames developer requirements (technical, gameplay, advertisement, account integration, SDK v3 docs).
