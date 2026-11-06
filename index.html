@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#07040f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Gem Rush</title>
 <meta name="description" content="Tap the gem. Watch it evolve. How far can you go?">
@@ -137,7 +140,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .tools button{width:34px;height:34px}
 .chip small#shards{color:var(--gold);font-weight:700}
 .shop-h .rowr{display:flex;gap:6px;align-items:center}
-.shop-h .ttl{display:flex;gap:10px;align-items:center}
+.shop-h .ttl{display:flex;gap:10px;align-items:center;white-space:nowrap}
+@media (max-width:350px){.shop-h{letter-spacing:.06em;font-size:12px}.shop-h .ttl{gap:6px}.amt{padding:5px 8px}}
 .shop-h .ttl span{letter-spacing:.04em;text-transform:none;color:var(--ink-faint);font-weight:500}
 .amt{padding:5px 10px;border-radius:99px;background:var(--glass);border:1px solid var(--glass-line);font-weight:700;font-size:12px;letter-spacing:.06em;color:#fff;transition:transform .12s}
 .amt:active{transform:scale(.9)}
@@ -197,7 +201,27 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cell b{font-size:11px;font-weight:600}
 .cell span{font-size:10px;color:var(--ink-faint)}
 .scard{display:block;width:100%;max-height:64vh;object-fit:contain;border-radius:16px}
-@media (max-height:700px){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
+@media (max-height:640px) and (orientation:portrait){
+  .hud{padding-top:8px}
+  #bal{font-size:40px}.bal svg{width:28px;height:28px}.bal{margin-top:2px}
+  .sub{font-size:13px}
+  .prog{height:20px;margin-top:6px}
+  #shop{height:33%;padding-top:8px}
+  .shop-h{padding-bottom:5px}
+  .card{padding:6px 8px 6px 7px;gap:10px}.ico{width:40px;height:40px;font-size:20px}.meta b{font-size:15px}.meta small{font-size:12px}.buy{padding:6px 10px;font-size:14px}
+}
+@media (orientation:landscape) and (max-height:520px){
+  #app{width:100vw;max-width:none;height:100%;max-height:none;border-radius:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,46%);grid-template-rows:auto minmax(0,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  .hud{grid-column:2;grid-row:1;padding:8px 12px 0}
+  #stage{grid-column:1;grid-row:1 / 3}
+  #shop{grid-column:2;grid-row:2;height:auto;min-height:0;border-radius:22px 0 0 0;padding-top:8px}
+  #bal{font-size:38px}.bal svg{width:28px;height:28px}.bal{margin-top:0}
+  .sub{font-size:13px}.prog{height:18px;margin-top:6px}
+  .shop-h{padding-bottom:4px}
+  .card{padding:5px 8px;gap:10px}.ico{width:38px;height:38px;font-size:19px}.meta b{font-size:14px}.meta small{font-size:11px}.buy{padding:5px 9px;font-size:13px}
+  #hint{bottom:5%}
+}
+@media (max-height:700px) and (min-width:0) and (orientation:portrait){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
 @media (prefers-reduced-motion:reduce){.blob,.prog i::after,#hint{animation:none}}
 </style>
 </head>
@@ -828,6 +852,13 @@ stage.addEventListener('pointerdown', e => {
   doTap(x, y, false);
 });
 
+addEventListener('keydown', e => {
+  if (e.code !== 'Space' || e.metaKey || e.ctrlKey) return;
+  e.preventDefault(); audio();
+  if (chal && chal.phase !== 'run') return;
+  doTap(GX + rnd(-R * .4, R * .4), GY + rnd(-R * .3, R * .3), false);
+});
+
 /* ---------- shop ---------- */
 const list = $('#list'), cards = {};
 UPS.forEach(u => {
@@ -1319,7 +1350,7 @@ function frame(ts) {
   addEventListener('pagehide', save);
   requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
   // test/recording hooks
-  window.__gem = { coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+  window.__gem = { icon: (size, ti) => { const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), T = TIERS[ti], hue = T.cosmic ? 300 : T.h; const bg = x.createLinearGradient(0, 0, size, size); bg.addColorStop(0, '#1d1048'); bg.addColorStop(1, '#05030b'); x.fillStyle = bg; x.fillRect(0, 0, size, size); const gl = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * .55); gl.addColorStop(0, hsl(hue, 100, 55, .65)); gl.addColorStop(1, hsl(hue, 100, 45, 0)); x.fillStyle = gl; x.fillRect(0, 0, size, size); withCanvas(x, size, size, size / 2, size * .5, size * .29, () => { drawBackdrop(1, hue, 0); drawGem(1.1, ti, 0, 1); }); return c.toDataURL('image/png'); }, coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
 })();
 })();
 </script>

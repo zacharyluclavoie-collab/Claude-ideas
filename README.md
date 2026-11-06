@@ -45,6 +45,19 @@ Video ideas:
 - "POV: you catch the golden gem" cut into Frenzy
 - Stitch with "beat my tier" and the share button text
 
+## Screens
+
+Works in portrait on phones from 320px wide up, in landscape (gem on the left, stats and shop on the right), and on desktop (Space bar taps). Includes a web app manifest and icons, so Add to Home Screen opens it full screen with its own icon.
+
 ## Hosting
 
-Any static host works. For GitHub Pages: Settings, Pages, deploy from the branch root, then open `https://<user>.github.io/<repo>/`.
+Any static host works (Netlify Drop, Cloudflare Pages, Vercel). Upload `index.html`, `manifest.webmanifest` and the three `icon-*.png` files.
+
+GitHub Pages with the included workflow:
+
+1. Merge this branch into the default branch (Pages only deploys from there).
+2. Settings, Pages, Source = GitHub Actions.
+3. Actions tab, "Deploy Gem Rush to GitHub Pages", Run workflow.
+4. Open `https://<user>.github.io/<repo>/`.
+
+Private repos need a plan that allows Pages. The workflow has not been run yet.
