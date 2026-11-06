@@ -7,7 +7,9 @@ Open `index.html` in any browser. No build step, no dependencies.
 ## What's in it
 
 - Eight procedurally drawn gem cuts, one per tier: crystal cluster, brilliant, emerald cut, round, heart, marquise, diamond, star. Moving light sweep, squash-and-tilt on every tap, a 360 spin on crits and big moments, orbiting sparks, combo fire
-- Boss Gem: the gem cracks, you have 13 seconds of fast tapping to shatter it for a big payout
+- **Rare gems.** Boss Gems now roll a rarity: Common 62%, Uncommon 22%, Rare 10%, Epic 4%, Legendary 1.5%, Mythic 0.45%, Secret 0.1%. Higher rarity means more HP, a bit more time and a much bigger payout (x1 up to x400). Each rarity has its own color. Your collection screen counts how many of each you destroyed, and Secret stays "???" until you find one.
+- **Four upgrades to break them faster** (they unlock after your first boss or Emerald): Crack Hammer (extra damage per tap), Drill Bit (damage on its own every second), Time Warp (more time), Treasure Radar (rarer gems, spawning sooner).
+- Boss Gem: the gem cracks, you have 13 seconds or more of fast tapping to shatter it for a big payout
 - Gem Rain: 9 seconds of falling gems to catch
 - Generative music (pad, bass, arp) that adds drums as your combo climbs, plus a three-way sound button (music and sound, sound only, off)
 - Daily gift with a streak bonus
