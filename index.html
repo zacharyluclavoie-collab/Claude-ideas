@@ -12,6 +12,14 @@
 <meta property="og:title" content="Frog Eats Everything">
 <meta property="og:description" content="Tap to feed a hungry frog. How big can yours get?">
 
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script>
+/* CrazyGames SDK v3: init must finish before the game reads saves or requests ads */
+(function(){var done;window.__cgReady=new Promise(function(r){done=r});
+  try{if(window.CrazyGames&&window.CrazyGames.SDK){var t=setTimeout(done,5000);
+    window.CrazyGames.SDK.init().then(function(){window.__cgInit=true;try{window.CrazyGames.SDK.game.loadingStart()}catch(e){}}).catch(function(){}).then(function(){clearTimeout(t);done()})}
+  else done()}catch(e){done()}})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=UnifrakturMaguntia&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -451,6 +459,18 @@ kbd{display:inline-block;min-width:20px;text-align:center;font:900 11px Nunito,s
 .rrow.g1 .rk{color:#e0a400}.rrow.g2 .rk{color:#8a96a8}.rrow.g3 .rk{color:#c0703a}
 button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 @media (prefers-reduced-motion: reduce){.frenzy.on,.gulp{animation:none}}
+@media (max-height:620px){
+.hud{padding-top:5px!important}.hud .count{font-size:32px!important}.hud .sub{font-size:12px!important;margin-top:1px!important}
+.hud .chips{top:50px!important}
+.goal{margin-top:3px!important;padding:3px 7px 3px 4px!important}.goal canvas{width:22px!important;height:22px!important}
+.bar{height:9px!important;margin-top:2px!important}
+.dock{bottom:6px!important;transform:translateX(-50%) scale(.78)!important;transform-origin:50% 100%}
+.gulpwrap,.autobtn{bottom:72px!important}.keyhint{bottom:76px!important}.unlockban{top:112px!important}.frenzy{bottom:84px!important}
+.sidebtns{bottom:84px!important;gap:16px!important;transform:scale(.82);transform-origin:right bottom}
+.iconbtns{top:6px!important}}
+.adwarn{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);z-index:30;display:flex;align-items:center;gap:10px;background:var(--sheet);color:var(--ink);border:3px solid var(--line);border-radius:18px;box-shadow:0 5px 0 var(--line);padding:8px 16px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s}
+.adwarn.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.adwarn small{font-weight:900;font-size:14px}.adwarn b{font:400 34px "Bagel Fat One",sans-serif;color:var(--pink-d);min-width:24px;text-align:center}
 /* ===== extras: trophies, welcome back, backup ===== */
 .atoast{position:absolute;left:50%;top:0;z-index:40;width:min(92%,340px);transform:translate(-50%,-140%);display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#fff8d6,#ffe69a);color:var(--line);border:3px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line);padding:8px 14px 8px 8px;pointer-events:none;transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
 .atoast.on{transform:translate(-50%,calc(env(safe-area-inset-top,0px) + 14px))}
@@ -486,6 +506,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .bkbox textarea{width:100%;resize:none;border:2.5px solid var(--line);border-radius:10px;background:var(--sheet);color:var(--ink);font:700 11px monospace;padding:6px;user-select:text;-webkit-user-select:text}
 .bkbox small{display:block;margin-top:4px;color:var(--ink-soft);min-height:14px}
 @media (prefers-reduced-motion:reduce){.atoast{transition:none}}
+#awGo,#awAd{width:min(240px,100%);display:inline-flex;justify-content:center;align-items:center;gap:6px}
 </style>
 </head>
 <body>
@@ -512,7 +533,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
       <button class="sbtn chunky" id="missBtn" aria-label="Missions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2" fill="#fff6c8"/><path d="M9 4h6v3H9z" fill="#ffc53a"/><path d="M8.5 11.5l1.5 1.5 3-3M8.5 16.5h7"/></svg><b class="badge" id="missBadge"></b><small>Missions</small></button>
       <button class="sbtn chunky" id="spinBtn" aria-label="Lucky spin"><svg viewBox="0 0 24 24" stroke="#1d2416" stroke-width="1.6"><circle cx="12" cy="12" r="9.5" fill="#fff"/><path d="M12 12V2.5A9.5 9.5 0 0 1 21.5 12z" fill="#ff5d8f"/><path d="M12 12h9.5A9.5 9.5 0 0 1 12 21.5z" fill="#ffc53a"/><path d="M12 12v9.5A9.5 9.5 0 0 1 2.5 12z" fill="#3dbbff"/><path d="M12 12H2.5A9.5 9.5 0 0 1 12 2.5z" fill="#7cc242"/><circle cx="12" cy="12" r="2.4" fill="#fff"/></svg><b class="badge" id="spinBadge"></b><small>Spin</small></button>
     </div>
-    <button class="offer chunky" id="offer"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg><span><b id="offerAmt">+0</b><small>food · watch ad</small></span></button>
+    <div class="adwarn" id="adWarn"><small>Ad starting in</small><b>3</b></div>
     <div class="unlockban" id="unlockBan"></div>
     <div class="dock" id="dock"></div>
     <div class="ticker" id="ticker"><div class="tlabel"><i></i><span id="tLab">FROG NEWS</span></div><div class="tscroll"><div class="ttext" id="tText"></div></div></div>
@@ -530,8 +551,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
         <button class="tg" id="setSfx"><span>Sound effects</span><span class="sw"></span></button>
         <button class="tg" id="setMus"><span>Music</span><span class="sw"></span></button>
         <button class="tg" id="setLow"><span>Reduced effects<small>Fewer particles, no screen shake</small></span><span class="sw"></span></button>
-        <button class="pill chunky blue" id="setShare">Share the game</button>
-        <div class="keys" id="keyHelp"><b>Keyboard</b><span><kbd>Space</kbd> hold to eat</span><span><kbd>G</kbd> Mega gulp</span><span><kbd>U</kbd> upgrades</span><span><kbd>S</kbd> shop</span><span><kbd>K</kbd> missions</span><span><kbd>P</kbd> spin</span><span><kbd>M</kbd> map</span><span><kbd>A</kbd> auto on/off</span><span><kbd>Esc</kbd> close</span></div>
+                <div class="keys" id="keyHelp"><b>Keyboard</b><span><kbd>Space</kbd> hold to eat</span><span><kbd>G</kbd> Mega gulp</span><span><kbd>U</kbd> upgrades</span><span><kbd>S</kbd> shop</span><span><kbd>K</kbd> missions</span><span><kbd>P</kbd> spin</span><span><kbd>M</kbd> map</span><span><kbd>A</kbd> auto on/off</span><span><kbd>Esc</kbd> close</span></div>
         <button class="pill chunky" id="setRebirth" style="display:none">Rebirth now</button>
         <button class="pill chunky danger" id="setReset">Reset all progress</button>
         <div style="text-align:center;font:400 15px 'Bagel Fat One',sans-serif;opacity:.7">Frog Eats Everything</div>
@@ -552,7 +572,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
     <div class="modal" id="worldModal"><div class="mcard wide"><h3>Choose Your Next World</h3><p class="mnote" style="margin-top:-4px">Every world has its own foods, bosses, look and a brand-new trick.</p><div id="worldList"></div></div></div>
     <div class="modal" id="statModal"><div class="mcard"><button class="mx chunky" data-close="statModal" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h3>Your Frog</h3><div class="stats" id="statList"></div><div class="row"><button class="pill chunky" id="statClose">Close</button></div></div></div>
     <div class="modal" id="missModal"><div class="mcard"><button class="mx chunky" data-close="missModal" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h3>Missions</h3><div id="missList"></div><div class="row"><button class="pill chunky" id="missClose">Close</button></div></div></div>
-    <div class="modal" id="spinModal"><div class="mcard"><button class="mx chunky" data-close="spinModal" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h3>Lucky Spin</h3><div class="wheelbox"><canvas id="wheel" width="580" height="580"></canvas><div class="ptr"></div></div><div class="row"><button class="pill chunky" id="spinGo">Spin!</button><button class="pill chunky blue" id="spinAd">Spin with ad</button></div><div class="mnote" id="spinNote"></div><div class="row" style="margin-top:10px"><button class="pill chunky" id="spinClose" style="background:#fff;font-size:16px;padding:7px 18px">Close</button></div></div></div>
+    <div class="modal" id="spinModal"><div class="mcard"><button class="mx chunky" data-close="spinModal" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h3>Lucky Spin</h3><div class="wheelbox"><canvas id="wheel" width="580" height="580"></canvas><div class="ptr"></div></div><div class="row"><button class="pill chunky" id="spinGo">Spin!</button><button class="pill chunky" id="spinAd">Spin with ad</button></div><div class="mnote" id="spinNote"></div><div class="row" style="margin-top:10px"><button class="pill chunky" id="spinClose" style="background:#fff;font-size:16px;padding:7px 18px">Close</button></div></div></div>
     <button class="autobtn chunky" id="autobtn"><canvas id="autoIc" width="48" height="48"></canvas><span id="autoTx">Auto on</span></button>
     <button class="shopbtn chunky" id="shopbtn"><i class="cn big"></i>Shop<b class="badge" id="shopBadge"></b></button>
     <button class="upbtn chunky" id="upbtn"><canvas id="upIc" width="60" height="60"></canvas>Upgrades<b class="badge" id="upBadge"></b></button>
@@ -778,7 +798,7 @@ const hueOf=hex=>{if(!hex||hex[0]!=="#"||hex.length!==7)return 0;const r=parseIn
 let lastBiteT=0;
 
 
-(function(){
+window.__startGame=function(){
 let NL=310,LS=0.4,EARTH_L=149;
 let NEED=/*NEED*/[344,606.1,693,1698,3158,5968,7128,7673,9036,9126,9218,9310,9405,9499,2.757e+04,3.72e+04,5.115e+04,5.345e+04,5.962e+04,1.511e+05,1.53e+05,1.545e+05,1.905e+05,1.997e+05,2.017e+05,2.08e+05,2.12e+05,2.141e+05,2.163e+05,2.185e+05,2.206e+05,2.229e+05,2.251e+05,2.274e+05,2.296e+05,2.774e+05,2.846e+05,4.083e+05,6.782e+05,1.39e+06,1.776e+06,1.981e+06,2.715e+06,3.259e+06,3.292e+06,4.46e+06,4.505e+06,4.55e+06,6.204e+06,8.245e+06,9.884e+06,1.011e+07,1.034e+07,1.044e+07,1.055e+07,1.065e+07,1.076e+07,1.627e+07,1.698e+07,2.182e+07,2.204e+07,2.795e+07,3.247e+07,3.329e+07,4.449e+07,6.556e+07,7.376e+07,1.426e+08,1.662e+08,2.576e+08,2.602e+08,2.628e+08,2.654e+08,2.681e+08,2.708e+08,2.781e+08,4.344e+08,4.39e+08,4.434e+08,7.695e+08,8.118e+08,8.201e+08,9.031e+08,9.829e+08,1.036e+09,1.245e+09,1.383e+09,1.397e+09,1.411e+09,1.507e+09,1.7e+09,2.533e+09,3.15e+09,4.068e+09,5.808e+09,1.657e+10,2.146e+10,2.167e+10,2.189e+10,2.257e+10,2.935e+10,2.965e+10,2.994e+10,3.024e+10,3.054e+10,3.085e+10,3.116e+10,3.147e+10,3.686e+10,4.331e+10,4.374e+10,4.418e+10,4.462e+10,4.665e+10,4.925e+10,5.195e+10,5.483e+10,5.792e+10,1.127e+11,1.504e+11,2.679e+11,2.943e+11,3.891e+11,4.609e+11,5.954e+11,6.643e+11,7.312e+11,8.832e+11,1.045e+12,1.43e+12,1.693e+12,1.874e+12,2.072e+12,2.285e+12,2.522e+12,2.782e+12,4.955e+12,5.915e+12,7.051e+12,7.782e+12,8.587e+12,1.025e+13,1.082e+13,1.142e+13,1.882e+13,2.248e+13,2.404e+13,2.651e+13,3.018e+13,3.187e+13,3.532e+13,3.912e+13,4.333e+13,4.8e+13,5.317e+13,5.888e+13,6.522e+13,7.225e+13,8.002e+13,8.864e+13,9.819e+13,1.088e+14,1.205e+14,1.334e+14,1.479e+14,1.638e+14,1.814e+14,2.01e+14,2.226e+14,2.466e+14,2.73e+14,3.025e+14,3.35e+14,3.713e+14,4.112e+14,4.553e+14,5.046e+14,5.59e+14,6.19e+14,6.858e+14,7.595e+14,8.414e+14,9.317e+14,1.032e+15,1.144e+15,1.267e+15,1.403e+15,1.554e+15,1.722e+15,1.907e+15,2.112e+15,2.34e+15,2.592e+15,2.871e+15,3.18e+15,3.524e+15,3.903e+15,4.322e+15,4.789e+15,5.303e+15,5.875e+15,6.506e+15,7.209e+15,7.984e+15,8.844e+15,9.796e+15,1.085e+16,1.202e+16,1.332e+16,1.475e+16,1.626e+16,1.793e+16,1.976e+16,2.179e+16,2.402e+16,2.649e+16,2.92e+16,3.219e+16,3.549e+16,3.913e+16,4.314e+16,4.755e+16,5.245e+16,5.779e+16,6.373e+16,7.024e+16,7.744e+16,8.539e+16,9.416e+16,1.038e+17,1.145e+17,1.262e+17,1.391e+17,1.533e+17,1.69e+17,1.864e+17,2.055e+17,2.265e+17,2.497e+17,2.753e+17,3.035e+17,3.346e+17,3.69e+17,4.068e+17,4.484e+17,4.943e+17,5.45e+17,6.01e+17,6.625e+17,7.303e+17,8.052e+17,8.878e+17,9.787e+17,1.079e+18,1.19e+18,1.311e+18,1.446e+18,1.594e+18,1.757e+18,1.937e+18,2.136e+18,2.355e+18,2.596e+18,2.862e+18,3.156e+18,3.478e+18,3.836e+18,4.23e+18,4.662e+18,5.14e+18,5.668e+18,6.245e+18,6.885e+18,7.593e+18,8.369e+18,9.23e+18,1.017e+19,1.122e+19,1.237e+19,1.363e+19,1.503e+19,1.657e+19,1.827e+19,2.014e+19,2.22e+19,2.448e+19,2.699e+19,2.976e+19,3.28e+19,3.616e+19,3.987e+19,4.395e+19,4.846e+19,5.342e+19,5.89e+19,6.494e+19,7.16e+19,7.893e+19,8.702e+19,9.593e+19,1.058e+20,1.166e+20,1.286e+20,1.417e+20,1.563e+20,1.723e+20,1.899e+20,2.095e+20,2.308e+20,2.544e+20];
 const NEED0=NEED.slice();
@@ -828,7 +848,13 @@ const UPS=[
   {id:"star",ic:"sun",bg:"#fff0c4",nm:"Star power",max:5,s:150,d:30,late:1}
 ];
 let S={coins:0,hats:[],hat:null,perks:{},skins:[],skinSel:null,tongs:[],tongSel:null,eaten:0,L:0,prog:0,lv:{},muted:false,meter:0,reb:0,autoOn:true,autoBuy:false,autoGulp:false,ended:false,runT:0,last:Date.now()};
-try{const r=localStorage.getItem("hungryfrog4");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const store=(()=>{
+  const sd=()=>{try{return window.__cgInit&&window.CrazyGames&&window.CrazyGames.SDK&&window.CrazyGames.SDK.data||null}catch(e){return null}};
+  return{
+    get(k){const d=sd();if(d){try{const v=d.getItem(k);if(v!=null)return v}catch(e){}}try{return localStorage.getItem(k)}catch(e){return null}},
+    set(k,v){const d=sd();if(d){try{d.setItem(k,v);return}catch(e){}}try{localStorage.setItem(k,v)}catch(e){}},
+    del(k){const d=sd();if(d){try{d.removeItem(k)}catch(e){}}try{localStorage.removeItem(k)}catch(e){}}}})();
+try{const r=store.get("hungryfrog4");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 UPS.forEach(u=>{if(S.lv[u.id]==null)S.lv[u.id]=0});
 
 const $=id=>document.getElementById(id);
@@ -872,7 +898,7 @@ let bossHit=0,lvlFx=0,bossAcc=0,endT=-1,holding=null,holdAcc=0,autoAcc=0,buyAcc=
 const spaceK=()=>Math.min(1,Math.max(0,(Math.log10(frogH())-4.6)/1.6));
 const baseFrac=()=>S.world>0?0:S.earthGone?1:Math.min(1,Math.max(0,(Math.log10(frogH())-6.2)/1.0));
 const baseY=()=>{const b0=S.world>0?H-118:H*0.7;return b0+(H*0.6-b0)*baseFrac()};
-const hudBottom=()=>235;
+const hudBottom=()=>H<620?118:235;
 const camH=()=>frogH()/1.12;
 const targetZoom=()=>Math.max(60,(baseY()-hudBottom()))*(S.world>0?0.29:0.36)/camH();
 function resize(){const r=stage.getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(1.5,window.devicePixelRatio||1);cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);vignette=null}
@@ -1281,10 +1307,10 @@ function drawScenery(by,t){
 
 /* sound */
 let ac=null;
-let toneN=0,toneT=0;let userGest=false,cgMute=false;
-function tone(f0,f1,dur,type,vol){if(type==="square"||type==="sawtooth"){type="triangle";vol*=1.3}if(S.muted||adPause||cgMute||!userGest)return;{const n=performance.now();if(n-toneT>1000){toneT=n;toneN=0}if(++toneN>28)return}try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();o.type=type||"sawtooth";fl.type="lowpass";fl.frequency.value=1000;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.22,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(fl);fl.connect(g);g.connect((ac.mst||ac.destination));o.start(t);o.stop(t+dur+0.02)}catch(e){}}
+let toneN=0,toneT=0;let userGest=false,cgMute=false,adMute=false;
+function tone(f0,f1,dur,type,vol){if(type==="square"||type==="sawtooth"){type="triangle";vol*=1.3}if(S.muted||adMute||cgMute||!userGest)return;{const n=performance.now();if(n-toneT>1000){toneT=n;toneN=0}if(++toneN>28)return}try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();o.type=type||"sawtooth";fl.type="lowpass";fl.frequency.value=1000;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.22,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(fl);fl.connect(g);g.connect((ac.mst||ac.destination));o.start(t);o.stop(t+dur+0.02)}catch(e){}}
 let nbuf=null;
-function crunch(v){if(S.muted||adPause||cgMute||!userGest)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(!nbuf){nbuf=ac.createBuffer(1,ac.sampleRate*0.2,ac.sampleRate);const d=nbuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3)}const src=ac.createBufferSource(),bp=ac.createBiquadFilter(),g=ac.createGain();src.buffer=nbuf;bp.type="bandpass";bp.frequency.value=900+Math.random()*900;bp.Q.value=0.8;g.gain.value=v;src.connect(bp);bp.connect(g);g.connect((ac.mst||ac.destination));src.start()}catch(e){}}
+function crunch(v){if(S.muted||adMute||cgMute||!userGest)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(!nbuf){nbuf=ac.createBuffer(1,ac.sampleRate*0.2,ac.sampleRate);const d=nbuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3)}const src=ac.createBufferSource(),bp=ac.createBiquadFilter(),g=ac.createGain();src.buffer=nbuf;bp.type="bandpass";bp.frequency.value=900+Math.random()*900;bp.Q.value=0.8;g.gain.value=v;src.connect(bp);bp.connect(g);g.connect((ac.mst||ac.destination));src.start()}catch(e){}}
 const croak=p=>{p=p*(0.9+Math.random()*0.2);tone(p,p*0.45,0.13)};
 const gulpSound=()=>{tone(220,40,1.2,"sawtooth",0.3);tone(90,30,1.4,"square",0.12)};
 
@@ -1382,7 +1408,7 @@ let lvlStart=0,lastLvlFx=0,slowT=0,dispEaten=0;
 function levelUp(){
   const quick=performance.now()-lastLvlFx<700;lastLvlFx=performance.now();
   lvlFx=1;track("level");if(isBoss(S.L-1)){track("boss");pushNews(BOSS[chapOf(S.L-1)][1]+" has been eaten!",true)}tone(180,900,0.35,"triangle",0.12);
-  if(isBoss(S.L-1)){slowT=0.9;zoom*=1.12;const b=BOSS[chapOf(S.L-1)];texts.push({x:W/2,y:H*0.3,t:0,txt:b[1]+" eaten!",big:true,call:true});S.meter=1;crunch(0.6);flash=Math.max(flash,0.6);shake=22;confetti(60,W/2,H*0.3);if(navigator.vibrate)navigator.vibrate([80,40,160])}
+  if(isBoss(S.L-1)){try{if(CG.ok)CG.sdk.game.happytime()}catch(e){}slowT=0.9;zoom*=1.12;const b=BOSS[chapOf(S.L-1)];texts.push({x:W/2,y:H*0.3,t:0,txt:b[1]+" eaten!",big:true,call:true});S.meter=1;crunch(0.6);flash=Math.max(flash,0.6);shake=22;confetti(60,W/2,H*0.3);if(navigator.vibrate)navigator.vibrate([80,40,160])}
   if(isBoss(S.L)){const b=BOSS[chapOf(S.L)];setTimeout(()=>{texts.push({x:W/2,y:H*0.42,t:0,txt:"Boss: "+b[1]+"!",big:true,call:true});tone(300,120,0.5,"sawtooth",0.18)},900)}
   const c=chapOf(S.L);
   if(CH[c].from===S.L){
@@ -1410,7 +1436,7 @@ function finishEnding(){
 }
 function showEnd(){
   S.worldsDone=S.worldsDone||{};S.worldsDone[S.world]=1;
-  cgCall("gameplayStop");try{if(CG.ok)CG.sdk.game.happytime()}catch(e){}
+  try{if(CG.ok)CG.sdk.game.happytime()}catch(e){}
   if(!S.endPaid){S.endPaid=true;S.coins+=20}
   const nx=SKINS[Math.min(SKINS.length-1,S.reb+1)];
   $("endTx").textContent=S.world>0?WORLDS[S.world].end:"And so the frog ate literally everything: the planets, the galaxies, the internet, dreams, even time. It got very quiet… and then, somehow, she got hungry again.";
@@ -1422,7 +1448,7 @@ function showEnd(){
 }
 function rebirth(w){
   progBank=0;S.endless=false;
-  cgCall("gameplayStart");midgameAd();S.endPaid=false;S.reb++;setWorld(w==null?S.world:w);chain=0;chainCol=-1;heat=0;overheat=0;S.L=0;S.prog=0;S.eaten=0;S.meter=0;S.ended=false;S.earthGone=false;S.runT=0;UPS.forEach(u=>S.lv[u.id]=0);if(S.perks.headstart){S.lv.auto=3;S.lv.sticky=2}
+  midgameAd();S.endPaid=false;S.reb++;setWorld(w==null?S.world:w);chain=0;chainCol=-1;heat=0;overheat=0;S.L=0;S.prog=0;S.eaten=0;S.meter=0;S.ended=false;S.earthGone=false;S.runT=0;UPS.forEach(u=>S.lv[u.id]=0);if(S.perks.headstart){S.lv.auto=3;S.lv.sticky=2}
   endT=-1;actives=[];objs=[];tongues=[];combo=0;goldUntil=0;zoom=targetZoom();goalDrawn=-1;
   $("endCard").classList.remove("show");save();
   for(let i=0;i<20;i++)spawnObj();
@@ -1661,20 +1687,42 @@ const ICON_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const ICON_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6"/><path d="M22 9l-5 6"/></svg>';
 let muteShown=null,hudT=0,goalDrawn=-1,shopOpen=false,lastMh="";
 /* ---------- CrazyGames SDK + ads ---------- */
-const CG={sdk:null,ok:false,lastMid:Date.now()};let adPause=false;
-(function(){try{const sc=document.createElement("script");sc.src="https://sdk.crazygames.com/crazygames-sdk-v3.js";
-  sc.onload=async()=>{try{await window.CrazyGames.SDK.init();try{const G=window.CrazyGames.SDK.game;cgMute=!!(G.settings&&G.settings.muteAudio);G.addSettingsChangeListener(st=>{cgMute=!!(st&&st.muteAudio)})}catch(e){}CG.sdk=window.CrazyGames.SDK;CG.ok=CG.sdk.environment==="crazygames"||CG.sdk.environment==="local";try{CG.sdk.game.gameplayStart()}catch(e){}
-    try{if(CG.sdk.data){CG.data=CG.sdk.data;const raw=CG.data.getItem("hungryfrog4");if(raw){const c=JSON.parse(raw);if((c.last||0)>(S.last||0)+3000&&!sessionStorage.getItem("cgsync")){sessionStorage.setItem("cgsync","1");localStorage.setItem("hungryfrog4",raw);location.reload()}}else CG.data.setItem("hungryfrog4",JSON.stringify(S))}}catch(e){}}catch(e){}};
-  document.head.appendChild(sc)}catch(e){}})();
+const CG={sdk:null,ok:false,lastMid:Date.now(),adsOff:false,adblock:false};let adPause=false,adWarnOn=false;
+(function(){try{const w=window.CrazyGames;if(w&&w.SDK&&window.__cgInit){CG.sdk=w.SDK;CG.ok=CG.sdk.environment==="crazygames"||CG.sdk.environment==="local";
+  try{const G=CG.sdk.game;cgMute=!!(G.settings&&G.settings.muteAudio);G.addSettingsChangeListener(st=>{cgMute=!!(st&&st.muteAudio)})}catch(e){}
+  try{CG.sdk.ad.hasAdblock().then(r=>{CG.adblock=!!r;renderShop()}).catch(()=>{})}catch(e){}
+  try{if(CG.sdk.user&&CG.sdk.user.addAuthListener)CG.sdk.user.addAuthListener(()=>{resetting=true;location.reload()})}catch(e){}
+}}catch(e){}})();
 function cgCall(fn){try{if(CG.ok)CG.sdk.game[fn]()}catch(e){}}
+/* gameplayStart/Stop follow what the player is actually doing: any menu, popup, cutscene or ad is a break */
+let gpOn=false;
+setInterval(()=>{if(!CG.ok||S.tut==null)return;const play=!uiOpen()&&!adPause&&!adWarnOn&&!S.ended&&endT<0&&!resetting;
+  if(play&&!gpOn){gpOn=true;cgCall("gameplayStart")}else if(!play&&gpOn){gpOn=false;cgCall("gameplayStop")}},250);
+const rewardedOK=()=>!(CG.adsOff||CG.adblock);
+function adFailed(err){const c=err&&err.code;
+  const msg=c==="adblock"?"Ad blocker is on":c==="adsDisabled"?"No rewards right now":"No ad right now. Try later!";
+  texts.push({x:W/2,y:H*0.45,t:0,txt:msg,big:true});renderShop();if(typeof renderSpin==="function")renderSpin()}
 function showAd(type,reward){
   if(adPause)return;
-  const cover=$("adCover");
-  const done=ok=>{adPause=false;cover.classList.remove("on");if(reward&&(ok||type==="rewarded"))reward();renderHud(true);renderShop()};
-  if(CG.ok){adPause=true;cover.classList.add("on");$("adNote").textContent="";try{CG.sdk.ad.requestAd(type,{adStarted:()=>{adPause=true},adFinished:()=>done(true),adError:()=>done(false)})}catch(e){done(false)}}
-  else if(type==="rewarded"){adPause=true;cover.classList.add("on");$("adNote").textContent="Test mode: real ads play on CrazyGames";setTimeout(()=>done(true),1200)}
+  const cover=$("adCover");let fin=false,started=false;
+  const end=(ok,err)=>{if(fin)return;fin=true;clearTimeout(wd);adPause=false;
+    if(err&&err.code==="adsDisabled")CG.adsOff=true;if(err&&err.code==="adblock")CG.adblock=true;
+    if(adMute){adMute=false;try{if(ac&&userGest&&ac.state==="suspended")ac.resume()}catch(e){}}
+    cover.classList.remove("on");
+    if(ok){if(reward)reward()}else if(type==="rewarded")adFailed(err);
+    renderHud(true);renderShop()};
+  const wd=setTimeout(()=>{if(!started)end(false,{code:"other"})},20000);
+  if(CG.ok){adPause=true;cover.classList.add("on");$("adNote").textContent="";
+    try{CG.sdk.ad.requestAd(type,{adStarted:()=>{started=true;adMute=true;try{if(ac)ac.suspend()}catch(e){}},adFinished:()=>end(true),adError:e=>end(false,e)})}catch(e){end(false,e)}}
+  else if(type==="rewarded"){adPause=true;started=true;adMute=true;cover.classList.add("on");$("adNote").textContent="Test mode: real ads play on CrazyGames";setTimeout(()=>end(true),1200)}
 }
-function midgameAd(){if(Date.now()-CG.lastMid<180000)return;CG.lastMid=Date.now();showAd("midgame")}
+/* midgame ads only at natural pauses, never while tapping, always with a visible 3 second warning */
+function midgameAd(){
+  if(!CG.ok||CG.adsOff||CG.adblock||adWarnOn||adPause||Date.now()-CG.lastMid<180000)return;
+  CG.lastMid=Date.now();adWarnOn=true;const el=$("adWarn"),num=el.querySelector("b");let n=3,waited=0;num.textContent=n;el.classList.add("on");
+  const iv=setInterval(()=>{if(--n>0){num.textContent=n;return}
+    if(holding&&waited++<8){n=1;return}
+    clearInterval(iv);el.classList.remove("on");adWarnOn=false;showAd("midgame")},1000)}
 const SHOP=[
   {id:"admoney",kind:"ad",nm:"Money Boost",ds:"",dyn:()=>"Watch an ad: triple your food (+"+fmt(moneyBoost())+")",ic:"choco",bg:"#e8ffd6",cd:180,go:()=>giveMoney()},
   {id:"adcoins",kind:"ad",nm:"Free Coins",ds:"Watch an ad for +6 coins",ic:"coin",bg:"#fff6c8",cd:120,go:()=>addCoins(6)},
@@ -1745,11 +1793,13 @@ function renderShop(){$("storeCoins").textContent=S.coins;SHOP.forEach(it=>{cons
   b.classList.toggle("owned",own&&!worn);b.classList.toggle("worn",worn);
   if(it.kind==="iap"){b.querySelector(".cpr").textContent=it.usd;return}
   if(it.dyn)b.querySelector(".cds").textContent=it.dyn();
-  if(it.kind==="ad"){const cd=Math.ceil(((adCd[it.id]||0)-Date.now())/1000);b.classList.toggle("cool",cd>0);b.disabled=cd>0;b.querySelector(".cpr").innerHTML=cd>0?"Ready in "+cd+"s":PLAY+" Watch ad";return}
+  if(it.kind==="ad"){b.style.display=CG.adsOff?"none":"";if(CG.adsOff)return;if(CG.adblock){b.disabled=true;b.querySelector(".cpr").textContent="Blocked by ad blocker";return}const cd=Math.ceil(((adCd[it.id]||0)-Date.now())/1000);b.classList.toggle("cool",cd>0);b.disabled=cd>0;b.querySelector(".cpr").innerHTML=cd>0?"Ready in "+cd+"s":PLAY+" Watch ad";return}
   b.disabled=!own&&S.coins<it.price;
   b.querySelector(".cpr").innerHTML=worn?"Wearing":own?"Wear":'<i class="cn"></i>'+it.price})}
 let storeOpen=false;
-function setStore(o){storeOpen=o;$("store").classList.toggle("open",o);if(o){renderShop();cgCall("gameplayStop")}else cgCall("gameplayStart")}
+function adSect(){const hs=[...shopEl.querySelectorAll(".ssect")].find(e=>e.textContent.indexOf("Free stuff")===0);if(hs){hs.style.display=CG.adsOff?"none":"";hs.nextElementSibling.style.display=CG.adsOff?"none":""}}
+const _rs=renderShop;renderShop=function(){_rs();adSect()};
+function setStore(o){storeOpen=o;$("store").classList.toggle("open",o);if(o)renderShop()}
 $("shopbtn").addEventListener("click",()=>setStore(true));$("closeStore").addEventListener("click",()=>setStore(false));
 $("coinChip").addEventListener("click",()=>setStore(true));
 setInterval(()=>{if(storeOpen)renderShop()},1000);
@@ -1849,7 +1899,7 @@ function drawWheel(){const c=$("wheel").getContext("2d"),r=280,cx=290,n=WHEEL.le
   c.beginPath();c.arc(0,0,r,0,TAU);c.lineWidth=10;c.stroke();for(let i=0;i<n;i++){const a=i/n*TAU-Math.PI/2-Math.PI/n;c.beginPath();c.arc(Math.cos(a)*(r-10),Math.sin(a)*(r-10),9,0,TAU);c.fillStyle="#fff";c.fill();c.lineWidth=3;c.stroke()}
   c.restore();c.beginPath();c.arc(cx,cx,44,0,TAU);c.fillStyle="#fff";c.fill();c.lineWidth=6;c.strokeStyle="#1d2416";c.stroke();SP.draw(c,"miniFrog",cx,cx+2,64,0,0)}
 const spinReady=()=>Date.now()>=(S.spinAt||0);
-function renderSpin(){const rdy=spinReady();$("spinGo").disabled=!rdy||spinning;$("spinAd").disabled=spinning;$("spinAd").style.display=rdy?"none":"";$("spinGo").textContent=rdy?"Spin free!":"Free in "+clock(((S.spinAt||0)-Date.now())/1000)}
+function renderSpin(){const rdy=spinReady();$("spinGo").disabled=!rdy||spinning;$("spinAd").disabled=spinning;$("spinAd").style.display=(rdy||!rewardedOK())?"none":"";$("spinGo").textContent=rdy?"Spin free!":"Free in "+clock(((S.spinAt||0)-Date.now())/1000)}
 function doSpin(){if(spinning)return;spinning=true;renderSpin();const n=WHEEL.length,k=Math.random()*n|0,start=wheelA,target=start+TAU*6+((-k*TAU/n)-(start%TAU)+TAU*2)%TAU,t0=performance.now(),dur=4200;let lastSeg=-1;
   (function an(now){const e=Math.min(1,(now-t0)/dur),ee=1-Math.pow(1-e,4);wheelA=start+(target-start)*ee;drawWheel();const seg=Math.floor((wheelA/(TAU/n)));if(seg!==lastSeg){lastSeg=seg;tone(1200,900,0.03,"square",0.05)}
     if(e<1)requestAnimationFrame(an);else{spinning=false;const w=WHEEL[k],r=w.go();if(typeof r==="number"){flyCoins(r,$("wheel"));$("spinNote").textContent="You won "+r+" coins!"}else $("spinNote").textContent=r;tone(600,1200,0.3,"triangle",0.2);dsparks($("wheel"),20);renderSpin()}})(t0)}
@@ -1954,8 +2004,7 @@ $("setBtn").addEventListener("click",()=>{renderSet();$("keyHelp").style.display
 $("setSfx").addEventListener("click",()=>{S.muted=!S.muted;renderSet();renderHud(true)});
 $("setMus").addEventListener("click",()=>{S.music=!S.music;renderSet()});
 $("setLow").addEventListener("click",()=>{S.lowfx=!S.lowfx;renderSet()});
-$("setShare").addEventListener("click",doShare);
-let resetArm=0;$("setReset").addEventListener("click",()=>{if(Date.now()-resetArm<3000){try{localStorage.removeItem("hungryfrog4")}catch(e){}try{if(CG.data)CG.data.removeItem("hungryfrog4")}catch(e){}resetting=true;location.reload()}else{resetArm=Date.now();$("setReset").textContent="Tap again to erase everything";setTimeout(()=>$("setReset").textContent="Reset all progress",3000)}});
+let resetArm=0;$("setReset").addEventListener("click",()=>{if(Date.now()-resetArm<3000){store.del("hungryfrog4");resetting=true;location.reload()}else{resetArm=Date.now();$("setReset").textContent="Tap again to erase everything";setTimeout(()=>$("setReset").textContent="Reset all progress",3000)}});
 let resetting=false;
 
 /* ---------- music ---------- */
@@ -1966,7 +2015,7 @@ const SONGS=[
  [120,"sawtooth",[0,12,7,12,3,12,7,12,0,12,8,12,5,12,7,12],[-24,-24,-28,-26]]];
 let musT=0,musStep=0;
 function note(f,t,d,type,v){const o=ac.createOscillator(),g=ac.createGain(),fl=ac.createBiquadFilter();fl.type="lowpass";fl.frequency.value=type==="sawtooth"?1400:2400;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(fl);fl.connect(g);g.connect((ac.mst||ac.destination));o.start(t);o.stop(t+d+0.05)}
-setInterval(()=>{if(!ac||S.muted||cgMute||!S.music||adPause||document.hidden||ac.state!=="running"){if(ac)musT=ac.currentTime;return}
+setInterval(()=>{if(!ac||S.muted||cgMute||!S.music||adMute||document.hidden||ac.state!=="running"){if(ac)musT=ac.currentTime;return}
   const song=SONGS[S.world]||SONGS[0],sd=60/song[0]/2;if(musT<ac.currentTime)musT=ac.currentTime+0.05;
   while(musT<ac.currentTime+0.25){const i=musStep%song[2].length,n=song[2][i];if(n!=null)note(440*Math.pow(2,n/12),musT,sd*0.85,song[1],song[1]==="square"||song[1]==="sawtooth"?0.018:0.035);
     if(i%4===0)note(440*Math.pow(2,song[3][(i/4|0)%song[3].length]/12),musT,sd*3.6,"sine",0.05);musT+=sd;musStep++}},90);
@@ -1984,11 +2033,12 @@ addEventListener("keydown",e=>{
   if(e.code==="Enter"&&$("toast").classList.contains("show")){$("toastOk").click();return}
   if(e.code==="Space"&&paperOpen){$("pClose").click();return}
   if(uiOpen())return;
-  switch(e.code){
+  const kk=/^[a-z]$/i.test(e.key||"")?e.key.toLowerCase():(e.code.slice(0,3)==="Key"?e.code.slice(3).toLowerCase():"");
+  switch(e.code==="Space"||e.code==="Enter"?e.code:"K_"+kk){
     case"Space":case"Enter":{const x=mouse.x!=null?mouse.x:W/2,y=mouse.y!=null?mouse.y:H*0.42;holding={x,y,key:1};holdAcc=0;doTap(x,y);break}
-    case"KeyG":S.meter>=1&&startGulp();break;case"KeyU":setShop(true);break;case"KeyS":setStore(true);break;
-    case"KeyK":$("missBtn").click();break;case"KeyP":$("spinBtn").click();break;case"KeyM":document.querySelector(".goal").click();break;
-    case"KeyA":S.autoOn=!S.autoOn;renderHud(true);break}});
+    case"K_g":S.meter>=1&&startGulp();break;case"K_u":setShop(true);break;case"K_s":setStore(true);break;
+    case"K_k":$("missBtn").click();break;case"K_p":$("spinBtn").click();break;case"K_m":document.querySelector(".goal").click();break;
+    case"K_a":S.autoOn=!S.autoOn;renderHud(true);break}});
 addEventListener("keyup",e=>{if((e.code==="Space"||e.code==="Enter")&&holding&&holding.key)holding=null});
 addEventListener("blur",()=>{holding=null});
 if(matchMedia("(pointer:fine)").matches&&!(S.hintN>=3)){S.hintN=(S.hintN||0)+1;setTimeout(()=>{$("keyHint").classList.add("on");setTimeout(()=>$("keyHint").classList.remove("on"),25000)},1500)}
@@ -2111,16 +2161,12 @@ let rbSparks=[],rbConf=[],rbRings=[];
 /* ---------- Money Boost: watch an ad, triple your food ---------- */
 const moneyBoost=()=>Math.floor(Math.max(need(S.L)*0.25,S.eaten*2));
 function giveMoney(){const v=moneyBoost();S.eaten+=v;texts.push({x:W/2,y:H*0.42,t:0,txt:"+"+fmt(v)+" food!",big:true,call:true});flash=Math.max(flash,0.35);confetti(50,W/2,H*0.42);tone(500,1200,0.4,"triangle",0.22);pushNews("Frog gets a huge food delivery!",true);renderHud(true)}
-let offerT=150,offerOn=0;
-setInterval(()=>{const o=$("offer");if(offerOn>0){offerOn--;$("offerAmt").textContent="+"+fmt(moneyBoost());if(offerOn<=0||uiOpen()&&offerOn<2)o.classList.remove("on");return}
-  if(S.tut<9||!(S.unl&&S.unl.shop)||S.ended||endT>=0||uiOpen())return;if(--offerT<=0){offerT=240;offerOn=25;$("offerAmt").textContent="+"+fmt(moneyBoost());o.classList.add("on");tone(800,1000,0.1,"triangle",0.12)}},1000);
-$("offer").addEventListener("click",()=>{$("offer").classList.remove("on");offerOn=0;showAd("rewarded",giveMoney)});
 
 /* ---------- endless mode: keep growing after a world ---------- */
 $("keepBtn").addEventListener("click",()=>{$("endCard").classList.remove("show");$("endRays").classList.remove("on");
   S.endless=true;S.ended=false;endT=-1;S.L=Math.max(S.L,NL-1)+1;S.prog=0;progBank=0;objs=[];for(let i=0;i<16;i++)spawnObj();
   texts.push({x:W/2,y:H*0.42,t:0,txt:"Endless mode! Keep growing!",big:true,call:true});confetti(60,W/2,H*0.4);tone(400,1200,0.4,"triangle",0.2);
-  pushNews("Frog refuses to stop eating. Universe nervous.",true);cgCall("gameplayStart");save();renderHud(true)});
+  pushNews("Frog refuses to stop eating. Universe nervous.",true);save();renderHud(true)});
 $("setRebirth").addEventListener("click",()=>{$("setModal").classList.remove("show");rebirthCine(openWorlds)});
 setInterval(()=>{const b=$("setRebirth");if(b)b.style.display=S.endless?"":"none"},1000);
 
@@ -2481,9 +2527,9 @@ function tickInner(now){
 
 $("toastOk").addEventListener("click",()=>$("toast").classList.remove("show"));
 if(S.ended)setTimeout(showEnd,300);
-else if(S.L===0&&S.eaten<1&&!S.reb&&!S.introSeen){setTimeout(introCine,200)}
-function save(){if(typeof resetting!=="undefined"&&resetting)return;S.last=Date.now();const j=JSON.stringify(S);try{localStorage.setItem("hungryfrog4",j)}catch(e){}try{if(CG.data)CG.data.setItem("hungryfrog4",j)}catch(e){}}
-setInterval(save,4000);addEventListener("visibilitychange",save);addEventListener("pagehide",save);
+else if(S.L===0&&S.eaten<1&&!S.reb&&!S.introSeen){S.introSeen=1;goldTimer=Math.min(goldTimer,7);bigTimer=Math.min(bigTimer,11)}
+function save(){if(typeof resetting!=="undefined"&&resetting)return;S.last=Date.now();store.set("hungryfrog4",JSON.stringify(S))}
+setInterval(save,10000);addEventListener("visibilitychange",save);addEventListener("pagehide",save);
 $("mute").addEventListener("click",()=>{S.muted=!S.muted;renderHud(true)});
 async function doShare(){
   const text=S.ended?"My frog ate literally everything in "+clock(S.runT)+"! Can you beat it?":"My frog is "+sizeText()+" and on level "+(S.L+1)+" of "+NL+". How big can yours get?";
@@ -2570,7 +2616,7 @@ css("div","atoast",'<canvas width="96" height="96"></canvas><div class="atx"><sm
 const tb=css("button","sbtn chunky",'<svg viewBox="0 0 24 24" fill="none" stroke="#1d2416" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="#ffc53a"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8M9 18h6"/></svg><b class="badge" id="trBadge"></b><small>Trophies</small>',document.querySelector(".sidebtns"),"trophyBtn");
 tb.setAttribute("aria-label","Trophies");
 const tm=css("div","modal",'<div class="mcard trcard"><button class="mx chunky" data-close="trophyModal" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h3>Trophies</h3><div class="trsum" id="trSum"></div><div class="trstats" id="trStats"></div><div class="trgrid" id="trGrid"></div></div>',stage,"trophyModal");
-const am=css("div","modal",'<div class="mcard"><h3>Welcome back!</h3><p class="mnote" id="awTx"></p><div class="awamt"><i class="cn big"></i><b id="awAmt">0</b></div><div class="row"><button class="pill chunky" id="awGo">Collect</button></div><div class="row"><button class="pill chunky blue" id="awAd" style="font-size:16px;margin-top:8px"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg> Collect x2 (watch ad)</button></div></div>',stage,"awayModal");
+const am=css("div","modal",'<div class="mcard"><h3>Welcome back!</h3><p class="mnote" id="awTx"></p><div class="awamt"><i class="cn big"></i><b id="awAmt">0</b></div><div class="row"><button class="pill chunky" id="awGo">Collect</button></div><div class="row" style="margin-top:8px"><button class="pill chunky" id="awAd"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg> Collect x2</button></div><p class="mnote" id="awNote"></p></div>',stage,"awayModal");
 
 /* ---- trophy engine ---- */
 const aToast=$("aToast"),aCv=aToast.querySelector("canvas");
@@ -2604,7 +2650,7 @@ function renderTrophies(){
   S.achSeen=n;renderTrBadge()}
 function openTrophies(){renderTrophies();tm.classList.add("show");save()}
 tb.addEventListener("click",openTrophies);
-addEventListener("keydown",e=>{if(e.code==="KeyT"&&!e.repeat&&!uiOpen()&&S.tut>=9)openTrophies()});
+addEventListener("keydown",e=>{const k=/^[a-z]$/i.test(e.key||"")?e.key.toLowerCase():(e.code.slice(0,3)==="Key"?e.code.slice(3).toLowerCase():"");if(k==="t"&&!e.ctrlKey&&!e.metaKey&&!e.repeat&&!uiOpen()&&S.tut>=9)openTrophies()});
 setInterval(()=>{if(S.tut>=9&&!document.hidden)checkTrophies();tb.style.display=(S.tut>=9&&(S.L>=3||S.reb||A.some(a=>S.ach[a.id])))?"":"none"},1500);
 tb.style.display="none";renderTrBadge();
 
@@ -2619,7 +2665,10 @@ function awayCalc(sec){
   awayPending=v;ST.away=Math.max(ST.away,sec);
   $("awTx").innerHTML="Your frog snacked while you were gone for <b>"+dur(sec)+"</b>"+(sec>cap?" (max "+dur(cap)+")":"")+".";
   $("awAmt").textContent="+"+fmt(v)+" food";
+  $("awAd").style.display=CG.adsOff?"none":"";$("awAd").disabled=!!CG.adblock;
+  $("awNote").textContent=CG.adblock?"The x2 bonus is off while an ad blocker is on.":(CG.adsOff?"":"x2 plays a short ad.");
   am.classList.add("show")}
+function tryAway(sec,n){if(S.tut<9||sec<90)return;if(uiOpen()||adPause){if((n||0)<60)setTimeout(()=>tryAway(sec,(n||0)+1),1000);return}awayCalc(sec)}
 function awayGive(m){
   if(!awayPending)return;const v=awayPending*m;awayPending=0;
   S.eaten+=v;S.prog=Math.min(need(S.L)*0.95,S.prog+v);
@@ -2630,11 +2679,11 @@ $("awAd").addEventListener("click",()=>{const v=awayPending;showAd("rewarded",()
 am.addEventListener("click",e=>{if(e.target===am)awayGive(1)});
 addEventListener("keydown",e=>{if(e.code==="Escape"&&am.classList.contains("show"))awayGive(1)},true);
 const loadedAway=(Date.now()-(S.last||Date.now()))/1000;
-setTimeout(()=>awayCalc(loadedAway),1800);
+setTimeout(()=>tryAway(loadedAway),2500);
 let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden)hiddenAt=Date.now();
-  else if(hiddenAt){const sec=(Date.now()-hiddenAt)/1000;hiddenAt=0;if(!uiOpen())awayCalc(sec)}});
+  else if(hiddenAt){const sec=(Date.now()-hiddenAt)/1000;hiddenAt=0;tryAway(sec)}});
 
 /* ---- Feeding Frenzy: random timed event ---- */
 let frenzyEnd=0,frenzyNext=Date.now()+60000+Math.random()*30000;
@@ -2650,9 +2699,22 @@ setInterval(()=>{
   if(now<frenzyEnd){if(objs.filter(o=>!o.grab).length<42&&gulpT<=0)spawnObj();return}
   if(now>=frenzyNext&&S.tut>=9&&S.L>=4&&!S.ended&&endT<0&&!uiOpen()&&!adPause&&!document.hidden)startFrenzy()},280);
 
+/* ---- CrazyGames: resume audio after iOS interrupts it, report progress, attach feedback context ---- */
+document.addEventListener("touchend",()=>{try{if(ac&&!adMute&&(ac.state==="suspended"||ac.state==="interrupted"))ac.resume()}catch(e){}},{passive:true});
+let lastPct=-1,lastCtx="";
+function cgReport(){if(!CG.ok||S.tut<9)return;try{
+  const wn=Math.max(1,WORLDS.length),run=S.ended?0:Math.min(.99,(S.L+S.prog/need(S.L))/Math.max(1,NL-1));
+  let pct=Math.floor(Math.min(1,(nWorlds()+run)/wn)*100);if(nWorlds()<wn)pct=Math.min(99,pct);
+  if(pct>(S.cgPct||0))S.cgPct=pct;
+  if((S.cgPct||0)!==lastPct){lastPct=S.cgPct||0;CG.sdk.game.reportGameCompletedPercentage(lastPct)}
+  const c=JSON.stringify([S.L+1,S.world||0,S.reb||0]);
+  if(c!==lastCtx){lastCtx=c;CG.sdk.game.setGameContext({level:S.L+1,world:(WORLDS[S.world||0]||{}).name||"",rebirths:S.reb||0})}
+}catch(e){}}
+setInterval(cgReport,5000);setTimeout(cgReport,3000);
+
 /* ---- settings additions: haptics + backup ---- */
 const hapT=css("button","tg",'<span>Vibration<small>Haptic feedback on phones</small></span><span class="sw"></span>',null,"setHap");
-$("setReset").parentNode.insertBefore(hapT,$("setShare"));
+$("setReset").parentNode.insertBefore(hapT,$("setReset"));
 const bk=css("div","bkbox",'<b>Backup your save</b><div class="bkrow"><button class="pill chunky blue" id="bkExp">Copy code</button><button class="pill chunky blue" id="bkImp">Load code</button></div><textarea id="bkTx" rows="2" spellcheck="false" placeholder="Paste a save code here, then tap Load code"></textarea><small id="bkMsg"></small>',null);
 $("setReset").parentNode.insertBefore(bk,$("setReset"));
 const _v=navigator.vibrate&&navigator.vibrate.bind(navigator);
@@ -2671,7 +2733,7 @@ $("bkImp").addEventListener("click",()=>{
     if(raw.indexOf("FROG1:")!==0)throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(raw.slice(6)))));
     if(!o||typeof o!=="object"||typeof o.L!=="number"||!o.lv)throw 0;
     if(Date.now()-impArm>4000){impArm=Date.now();bkMsg("Tap Load code again to replace your current progress.");return}
-    resetting=true;localStorage.setItem("hungryfrog4",JSON.stringify(o));try{if(CG.data)CG.data.setItem("hungryfrog4",JSON.stringify(o))}catch(e){}location.reload()
+    resetting=true;store.set("hungryfrog4",JSON.stringify(o));location.reload()
   }catch(e){bkMsg("That code didn't work. Check you copied all of it.")}});
 const kh=$("keyHelp");if(kh)kh.insertAdjacentHTML("beforeend","<span><kbd>T</kbd> trophies</span>");
 }catch(err){console.error("extras failed",err)}
@@ -2679,7 +2741,8 @@ const kh=$("keyHelp");if(kh)kh.insertAdjacentHTML("beforeend","<span><kbd>T</kbd
 setWorld(S.world||0);zoom=targetZoom();
 for(let i=0;i<22;i++)spawnObj();
 renderHud(true);requestAnimationFrame(tick);
-})();
+};
+window.__cgReady.then(function(){window.__startGame();try{if(window.__cgInit)window.CrazyGames.SDK.game.loadingStop()}catch(e){}});
 </script>
 </body>
 </html>
