@@ -284,6 +284,21 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 .rr b{display:block;font-size:10px;color:var(--c)}.rr span{font-size:16px;font-weight:700}
 .rtitle{font-size:11px;letter-spacing:.2em;color:var(--ink-dim);margin:0 0 6px;font-weight:600}
 .rcard{max-height:94%;overflow-y:auto}
+/* ---- RGB lighting ---- */
+@property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+:root{--rainbow:#ff3d6a,#ffb100,#7cff6b,#4fe0ff,#a46bff,#ff4fa0,#ff3d6a}
+@keyframes rgbflow{to{background-position:300% 0}}
+@keyframes rgbflow2{to{background-position:0 0,300% 0}}
+@keyframes angspin{to{--ang:360deg}}
+.chip small#shd{color:#7ff3ff;font-weight:700}
+.rgb .prog i{background:linear-gradient(90deg,var(--rainbow));background-size:300% 100%;animation:rgbflow 4s linear infinite;box-shadow:0 0 18px rgba(255,255,255,.3)}
+.rgb .prog.near i{animation:rgbflow 4s linear infinite,nearp .45s ease-in-out infinite alternate}
+.rgb #shopBtn{isolation:isolate}
+.rgb #shopBtn::before{content:"";position:absolute;inset:-3px;border-radius:inherit;z-index:-1;background:conic-gradient(from var(--ang),var(--rainbow));animation:angspin 3s linear infinite}
+.rgb .chip{border:1px solid transparent;background:linear-gradient(rgba(14,9,32,.9),rgba(14,9,32,.9)) padding-box,linear-gradient(90deg,var(--rainbow)) border-box;background-size:100% 100%,300% 100%;animation:rgbflow2 5s linear infinite}
+.rgb .card.can{border-color:transparent;background:linear-gradient(rgba(22,13,48,.96),rgba(22,13,48,.96)) padding-box,linear-gradient(90deg,var(--rainbow)) border-box;background-size:100% 100%,300% 100%;animation:rgbflow2 5s linear infinite,canpulse 2.2s ease-in-out infinite}
+.rgb .tools button.on{border-color:transparent;background:linear-gradient(rgba(30,20,60,.9),rgba(30,20,60,.9)) padding-box,linear-gradient(90deg,var(--rainbow)) border-box}
+@media (prefers-reduced-motion:reduce){.rgb .prog i,.rgb #shopBtn::before,.rgb .chip,.rgb .card.can{animation:none}}
 </style>
 </head>
 <body>
@@ -305,7 +320,7 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 
   <header class="hud">
     <div class="row">
-      <div class="chip"><i></i><b id="tierName">Quartz</b><small id="tierNum">1/8</small><small id="shards" hidden></small></div>
+      <div class="chip"><i></i><b id="tierName">Quartz</b><small id="tierNum">1/8</small><small id="shards" hidden></small><small id="shd" hidden></small></div>
       <div class="tools">
         <button id="bSound" aria-label="Sound" class="on"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
         <button id="bDemo" aria-label="Auto play for recording"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg></button>
@@ -425,11 +440,11 @@ const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
 
 /* ---------- state ---------- */
 const KEY = 'gemrush.v1';
-const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {}, rare: {} });
+const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {}, rare: {}, shd: 0, rgb: true });
 let S = newState();
 try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
 UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
-let boss = null, rain = null, bossT = 32, rainT = 55, KS = 0, chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
+let boss = null, rain = null, bossT = 22, rainT = 55, KS = 0, chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
 const save = () => { if (chal) return; try { S.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
 /* ---------- math helpers ---------- */
@@ -447,7 +462,7 @@ const mileCount = id => MILES.filter(m => lvl(id) >= m).length;
 const upMult = id => NOMILE.has(id) ? 1 : Math.pow(2, mileCount(id));
 const nextMile = id => NOMILE.has(id) ? 0 : (MILES.find(m => lvl(id) < m) || 0);
 const achCount = () => Object.keys(S.ach || {}).length;
-const globalMult = () => chal ? 1 : 1 + .05 * (S.shards || 0) + .02 * achCount();
+const globalMult = () => chal ? 1 : 1 + .05 * (S.shards || 0) + .02 * achCount() + .0004 * (S.shd || 0);
 const tapPower = () => (1 + lvl('pick')) * upMult('pick') * globalMult();
 const critChance = () => .03 + .025 * lvl('luck');
 const baseRate = () => UPS.reduce((s, u) => s + (u.rate ? u.rate * lvl(u.id) * upMult(u.id) : 0), 0) * globalMult();
@@ -689,6 +704,11 @@ function drawGem(t, ti, tilt, sq) {
     });
     ctx.restore();
   }
+  if (S.rgb !== false && Q > 0 && ctx.createConicGradient) {
+    const cg = ctx.createConicGradient(t * 1.3, 0, -.05);
+    ['#ff3d6a', '#ffb100', '#7cff6b', '#4fe0ff', '#a46bff', '#ff4fa0', '#ff3d6a'].forEach((c, i) => cg.addColorStop(i / 6, c));
+    silPath(g.sil); ctx.lineWidth = .06; ctx.strokeStyle = cg; ctx.stroke();
+  }
   silPath(g.sil); ctx.lineWidth = .028; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.stroke();
   // sparkles
   ctx.globalCompositeOperation = 'lighter';
@@ -708,7 +728,7 @@ function star(x, y, r, a) {
 /* ---------- particles ---------- */
 const P = [];
 function add(p) { if (P.length < maxP) P.push(p); }
-const tierHue = () => TIERS[tier].cosmic ? (performance.now() / 20) % 360 : TIERS[tier].h;
+const tierHue = () => S.rgb !== false ? (performance.now() / 14) % 360 : TIERS[tier].cosmic ? (performance.now() / 20) % 360 : TIERS[tier].h;
 
 function burst(x, y, n, crit) {
   const h = tierHue();
@@ -812,6 +832,11 @@ function drawBackdrop(t, hue, heat) {
   }
   const hq = TIERS[tier].cosmic ? Math.round(hue / 8) * 8 % 360 : hue;
   ctx.drawImage(glowSprite('g' + hq, [[0, hsl(hq, 100, 62, .55)], [1, hsl(hq, 100, 55, 0)]]), -R * 1.9, -R * 1.9, R * 3.8, R * 3.8);
+  if (S.rgb !== false && Q > 0 && ctx.createConicGradient) {
+    const cg = ctx.createConicGradient(-t * .9, 0, 0);
+    ['#ff3d6a', '#ffb100', '#7cff6b', '#4fe0ff', '#a46bff', '#ff4fa0', '#ff3d6a'].forEach((c, i) => cg.addColorStop(i / 6, c));
+    ctx.globalAlpha = .4; ctx.lineWidth = R * .07; ctx.strokeStyle = cg; ctx.beginPath(); ctx.arc(0, 0, R * 1.2, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+  }
   if (boss) {
     const c = rarCol(boss.r, t), hh = Math.round(c[0] / 10) * 10;
     ctx.globalAlpha = .3 + .22 * Math.sin(t * 9);
@@ -879,10 +904,11 @@ const el = {
   bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
   prog: $('.prog'), chip: $('.chip'), shopBtn: $('#shopBtn'), badge: $('#shopBadge'), fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
   frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
-  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), bossLbl: $('#bossLbl'), hpFill: $('#hpFill'), bossT: $('#bossT'),
+  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), shd: $('#shd'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), bossLbl: $('#bossLbl'), hpFill: $('#hpFill'), bossT: $('#bossT'),
 };
 let spinA = 0, spinV = 0, spinTarget = 0, sq = 1, sqv = 0, tilt = 0, tiltv = 0, shake = 0, flashA = 0, bump = 0, heat = 0, t = 0, toastT = 0;
 
+function applyRgb() { el.app.classList.toggle('rgb', S.rgb !== false); }
 function setTierUI() {
   const T = TIERS[tier]; KS = [0, 0, 2, 3, 5, 7, 8, 10][tier] || 0;
   el.app.style.setProperty('--h', T.cosmic ? 292 : T.h);
@@ -1036,6 +1062,7 @@ function refreshMeta() {
   el.ascend.style.display = g > 0 ? 'block' : 'none';
   if (g > 0) el.ascend.textContent = `ASCEND  +${g} ★  ·  +${g * 5}% gems forever`;
   const sh = S.shards || 0; el.shards.hidden = !sh || !!chal; el.shards.textContent = '★ ' + sh;
+  const sd = S.shd || 0; el.shd.hidden = !sd || !!chal; el.shd.textContent = '◆ ' + fmt(sd);
   el.achN.textContent = `🏆 ${achCount()}/${ACH.length}`;
 }
 let achT = 0;
@@ -1102,7 +1129,7 @@ el.ascend.addEventListener('click', () => {
   else { ascArm = performance.now(); toast(`Ascend resets gems and upgrades. Tap again for +${g} ★`, 3000); }
 });
 function doAscend(g) {
-  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak, maxTier: S.maxTier, tips: S.tips, rare: S.rare };
+  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak, maxTier: S.maxTier, tips: S.tips, rare: S.rare, shd: S.shd, rgb: S.rgb };
   S = Object.assign(newState(), keep);
   tier = 0; frenzy = 0; combo = 0; dispGems = 0; gold = null; goldTimer = 10; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta(); checkAch();
@@ -1124,13 +1151,15 @@ function startBoss(fr) {
 function hint(m) { toast(m, 2000); }
 function endBoss(win) {
   const b = boss; boss = null; el.app.classList.remove('boss-on');
-  bossT = rnd(40, 55) * Math.pow(.97, lvl('radar')); rainT = Math.max(rainT, 18);
+  bossT = rnd(34, 46) * Math.pow(.97, lvl('radar')); rainT = Math.max(rainT, 18);
   if (!win) { toast('The boss gem got away', 2200); return; }
   S.bosses = (S.bosses || 0) + 1; if (!S.rare) S.rare = {}; S.rare[b.r] = (S.rare[b.r] || 0) + 1;
+  const shdGain = 90 * (b.r + 1); S.shd = (S.shd || 0) + shdGain;
   const Rr = RAR[b.r], c = rarCol(b.r, t), pay = Math.floor((perSec() * 9 + tapPower() * 50) * Rr.pay);
   addGems(pay);
   burst(GX, GY, 70, true); confetti(GX, GY, 130 + b.r * 30); ring(GX, GY, R * .3, R * 3.2, 1, c[0], 12);
   floatText(GX, GY - R * .2, '+' + fmt(pay), { sz: 56, col: hsl(c[0], 100, 78), vy: -120, life: 1.8, max: 1.8 });
+  floatText(GX, GY + R * .45, '+' + shdGain + ' shards', { sz: 40, col: '#7ff3ff', vy: -70, life: 1.7, max: 1.7 });
   if (b.r >= 4) { ring(GX, GY, R * .3, R * 4.2, 1.4, c[0] + 40, 8); confetti(GX, GY, 120); }
   if (b.r === 6) { confetti(GX, GY, 260); toast('SECRET GEM FOUND. Almost nobody sees this.', 4200); }
   spin(); flashA = 1; shake = 26; showBanner(b.r === 0 ? 'SHATTERED' : Rr.name.toUpperCase(), b.r === 0 ? 'BOSS DOWN' : 'DESTROYED'); sndEvolve(); whoosh(1, 200, 6000, .24); vib([40, 40, 100]);
@@ -1214,7 +1243,8 @@ function showCollection() {
   sheet.innerHTML = `<div class="rcard"><small>GEM COLLECTION</small><h2 style="font-size:34px;margin:6px 0 14px">${mt + 1} of ${TIERS.length}</h2><div class="coll"></div>
     <div class="rtitle">RARE GEMS DESTROYED</div>
     <div class="rares">${RAR.map((Rr, i) => { const n = rare(i), c = Rr.rainbow ? '#c58bff' : hsl(Rr.h, Math.max(Rr.s, 40), Math.max(Rr.l, 62)); return `<div class="rr" style="--c:${c}"><b>${i === 6 && !n ? '???' : Rr.name}</b><span>${n}</span></div>`; }).join('')}</div>
-    <div class="rbtn"><button class="go" id="cShare">Make my share card</button><button id="cClose">Close</button></div></div>`;
+    <div class="rtitle">RARE SHARDS: ${S.shd || 0} ◆ = +${((S.shd || 0) * .04).toFixed(1)}% gems</div>
+    <div class="rbtn"><button class="go" id="cShare">Make my share card</button><button id="cRgb">RGB lights: ${S.rgb === false ? 'Off' : 'On'}</button><button id="cClose">Close</button></div></div>`;
   const grid = sheet.querySelector('.coll');
   TIERS.forEach((T, i) => {
     const cell = document.createElement('div'); cell.className = 'cell' + (i === tier ? ' cur' : '');
@@ -1223,6 +1253,7 @@ function showCollection() {
     grid.appendChild(cell);
   });
   $('#cClose').onclick = closeSheet;
+  $('#cRgb').onclick = () => { S.rgb = S.rgb === false; applyRgb(); $('#cRgb').textContent = 'RGB lights: ' + (S.rgb === false ? 'Off' : 'On'); save(); };
   $('#cShare').onclick = () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: `I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?` });
 }
 function makeShareCard(info) {
@@ -1463,7 +1494,7 @@ function frame(ts) {
 (function boot() {
   while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
   S.maxTier = Math.max(S.maxTier || 0, tier); if (!S.tips) S.tips = {}; sq = .45; sqv = 0;
-  setTierUI(); applyMute();
+  setTierUI(); applyMute(); applyRgb();
   // offline progress
   const away = Math.min((Date.now() - (S.t || Date.now())) / 1000, 8 * 3600);
   const rate = baseRate();
