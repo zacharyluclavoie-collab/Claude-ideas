@@ -2664,12 +2664,13 @@ const bkMsg=t=>{$("bkMsg").textContent=t};
 $("bkExp").addEventListener("click",async()=>{
   save();const code="FROG1:"+btoa(unescape(encodeURIComponent(JSON.stringify(S))));$("bkTx").value=code;
   try{await navigator.clipboard.writeText(code);bkMsg("Code copied! Keep it somewhere safe.")}catch(e){$("bkTx").select();bkMsg("Select the code above and copy it.")}});
+let impArm=0;
 $("bkImp").addEventListener("click",()=>{
   const raw=$("bkTx").value.trim();if(!raw){bkMsg("Paste a save code first.");return}
   try{
     if(raw.indexOf("FROG1:")!==0)throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(raw.slice(6)))));
     if(!o||typeof o!=="object"||typeof o.L!=="number"||!o.lv)throw 0;
-    if(!confirm("Replace your current progress with this save?"))return;
+    if(Date.now()-impArm>4000){impArm=Date.now();bkMsg("Tap Load code again to replace your current progress.");return}
     resetting=true;localStorage.setItem("hungryfrog4",JSON.stringify(o));try{if(CG.data)CG.data.setItem("hungryfrog4",JSON.stringify(o))}catch(e){}location.reload()
   }catch(e){bkMsg("That code didn't work. Check you copied all of it.")}});
 const kh=$("keyHelp");if(kh)kh.insertAdjacentHTML("beforeend","<span><kbd>T</kbd> trophies</span>");
