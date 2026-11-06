@@ -129,9 +129,52 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .buy svg{width:15px;height:15px}
 .card.max .buy{background:none;border:0;color:var(--gold)}
 
-#toast{position:absolute;left:50%;top:76px;transform:translate(-50%,-20px);opacity:0;padding:9px 16px;border-radius:14px;background:rgba(15,9,34,.85);border:1px solid var(--glass-line);font-size:14px;font-weight:500;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.4,1);pointer-events:none;text-align:center;z-index:5;max-width:90%}
+#toast{position:absolute;left:50%;bottom:calc(max(200px,min(37%,330px)) + 74px);transform:translate(-50%,20px);opacity:0;padding:9px 16px;border-radius:14px;background:rgba(15,9,34,.85);border:1px solid var(--glass-line);font-size:14px;font-weight:500;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.4,1);pointer-events:none;text-align:center;z-index:5;max-width:90%}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+.clean #toast{bottom:96px}
 
+
+.tools button{width:34px;height:34px}
+.chip small#shards{color:var(--gold);font-weight:700}
+.shop-h .rowr{display:flex;gap:6px;align-items:center}
+.shop-h .ttl{display:flex;gap:10px;align-items:center}
+.shop-h .ttl span{letter-spacing:.04em;text-transform:none;color:var(--ink-faint);font-weight:500}
+.amt{padding:5px 10px;border-radius:99px;background:var(--glass);border:1px solid var(--glass-line);font-weight:700;font-size:12px;letter-spacing:.06em;color:#fff;transition:transform .12s}
+.amt:active{transform:scale(.9)}
+#bAmt{background:hsl(var(--h) 90% 60% / .28);border-color:hsl(var(--h) 90% 70% / .6);min-width:48px}
+#ascend{display:none;flex:none;margin:0 2px 8px;padding:11px;border-radius:16px;font-weight:700;font-size:14px;letter-spacing:.04em;color:#fff;
+  background:linear-gradient(90deg,#ff9d00,#ff4fa0,#7a5cff);box-shadow:0 0 28px -4px #ff7ac8;animation:throb .8s ease-in-out infinite alternate}
+.mile{font-style:normal;font-size:11px;font-weight:700;padding:2px 6px;border-radius:99px;background:linear-gradient(90deg,#ffb100,#ffe45e);color:#2a1500}
+.nm{color:var(--gold);opacity:.85}
+#timer{display:flex;align-items:center;gap:10px;padding:6px 18px;border-radius:99px;background:rgba(10,6,24,.6);border:1px solid hsl(var(--h) 100% 75% / .5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#timer small{font-size:11px;letter-spacing:.16em;color:var(--ink-dim);font-weight:600}
+#timer b{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+#timer.low b{color:#ff5d73;animation:throb .35s ease-in-out infinite alternate}
+.chal #frenzy{top:62px}
+#overlay{position:absolute;inset:0;z-index:20;display:none;place-items:center;padding:20px}
+#overlay.count{pointer-events:none;background:radial-gradient(circle,rgba(5,3,11,.55),rgba(5,3,11,.1))}
+#overlay.result{background:rgba(5,3,11,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#cnt{font-size:min(38vw,170px);font-weight:700;line-height:1;background:linear-gradient(180deg,#fff,hsl(var(--h) 100% 72%));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 8px 40px hsl(var(--h) 100% 60%));animation:cnt .9s cubic-bezier(.2,1.4,.3,1)}
+@keyframes cnt{0%{transform:scale(2.2);opacity:0}25%{transform:scale(1);opacity:1}85%{opacity:1}100%{transform:scale(.7);opacity:0}}
+.rcard{width:100%;max-width:340px;padding:24px 20px 20px;border-radius:28px;text-align:center;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.05));border:1px solid var(--glass-line);box-shadow:0 30px 80px -20px hsl(var(--h) 90% 50% / .6);animation:rpop .6s cubic-bezier(.2,1.4,.3,1)}
+@keyframes rpop{from{transform:scale(.7) translateY(30px);opacity:0}}
+.rcard small{font-size:12px;letter-spacing:.35em;color:var(--ink-dim);font-weight:600}
+.rcard h2{font-size:54px;line-height:1.05;margin:6px 0 14px;background:linear-gradient(180deg,#fff,hsl(var(--h) 100% 72%));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 24px hsl(var(--h) 100% 60% / .8))}
+.rstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.rstats div{padding:10px 4px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid var(--glass-line)}
+.rstats b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.rstats span{font-size:11px;color:var(--ink-dim);letter-spacing:.08em;text-transform:uppercase}
+.rbest{font-weight:600;color:var(--gold);margin-bottom:14px;font-size:15px}
+.rbtn{display:flex;flex-direction:column;gap:8px}
+.rbtn button{padding:13px;border-radius:16px;font-weight:700;font-size:16px;background:var(--glass);border:1px solid var(--glass-line);transition:transform .12s}
+.rbtn button:active{transform:scale(.96)}
+.rbtn button.go{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#12062a;border-color:transparent;box-shadow:0 8px 24px -8px var(--accent)}
+.clean #shop{display:none}
+.clean .hud{padding-top:16px}
+.clean #bal{font-size:clamp(52px,16vw,76px)}
+.clean .tools button:not(#bClean){opacity:.0;pointer-events:none}
+.clean #bClean{opacity:.5}
+.clean #hint{bottom:12%}
 @media (max-height:700px){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
 @media (prefers-reduced-motion:reduce){.blob,.prog i::after,#hint{animation:none}}
 </style>
@@ -155,12 +198,12 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
   <header class="hud">
     <div class="row">
-      <div class="chip"><i></i><b id="tierName">Quartz</b><small id="tierNum">1/8</small></div>
+      <div class="chip"><i></i><b id="tierName">Quartz</b><small id="tierNum">1/8</small><small id="shards" hidden></small></div>
       <div class="tools">
         <button id="bSound" aria-label="Sound" class="on"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
         <button id="bDemo" aria-label="Auto play for recording"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg></button>
-        <button id="bShare" aria-label="Share"><svg viewBox="0 0 24 24"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
-        <button id="bReset" aria-label="Reset progress"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4v4.5H8"/></svg></button>
+        <button id="bClean" aria-label="Clean recording view"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button id="bChal" aria-label="60 second speedrun"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5"/></svg></button>
       </div>
     </div>
     <div class="bal" id="balWrap"><svg><use href="#gem"/></svg><span id="bal">0</span></div>
@@ -173,15 +216,18 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <div class="pill" id="comboPill"><div id="combo"><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
     <div class="pill" id="frenzy"><span id="frenzyTxt">FRENZY x7</span><div id="frenzyBar"><i id="frenzyFill"></i></div></div>
     <div id="hint">TAP THE GEM</div>
+    <div class="pill" id="timer"><small>TIME</small><b id="timerN">60</b></div>
     <div id="flash"></div>
     <div id="banner"><small>EVOLVED</small><b id="bannerT">EMERALD</b></div>
   </main>
 
   <section id="shop">
-    <div class="shop-h"><span>Upgrades</span><span id="owned"></span></div>
+    <div class="shop-h"><div class="ttl">Upgrades <span id="achN"></span></div><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bShare">Share</button><button class="amt" id="bReset">Reset</button></div></div>
+    <button id="ascend" type="button"></button>
     <div id="list"></div>
   </section>
 
+  <div id="overlay"></div>
   <div id="toast"></div>
 </div>
 
@@ -199,33 +245,50 @@ const FONT = '700 {S}px Fredoka, ui-rounded, system-ui, sans-serif';
 /* ---------- data ---------- */
 const TIERS = [
   { name: 'Quartz',   h: 205, s: 45, at: 0,      m: 3, tw: .50 },
-  { name: 'Citrine',  h: 42,  s: 95, at: 300,    m: 4, tw: .52 },
-  { name: 'Emerald',  h: 152, s: 80, at: 6e3,    m: 4, tw: .48 },
-  { name: 'Sapphire', h: 220, s: 90, at: 1.2e5,  m: 5, tw: .55 },
-  { name: 'Ruby',     h: 352, s: 88, at: 3e6,    m: 5, tw: .50 },
-  { name: 'Amethyst', h: 278, s: 75, at: 8e7,    m: 6, tw: .52 },
-  { name: 'Diamond',  h: 190, s: 70, at: 2.5e9,  m: 6, tw: .56 },
-  { name: 'Cosmic',   h: 300, s: 90, at: 8e10,   m: 8, tw: .50, cosmic: true },
+  { name: 'Citrine',  h: 42,  s: 95, at: 200,    m: 4, tw: .52 },
+  { name: 'Emerald',  h: 152, s: 80, at: 2.5e3,    m: 4, tw: .48 },
+  { name: 'Sapphire', h: 220, s: 90, at: 3e4,  m: 5, tw: .55 },
+  { name: 'Ruby',     h: 352, s: 88, at: 4e5,    m: 5, tw: .50 },
+  { name: 'Amethyst', h: 278, s: 75, at: 5e6,    m: 6, tw: .52 },
+  { name: 'Diamond',  h: 190, s: 70, at: 8e7,  m: 6, tw: .56 },
+  { name: 'Cosmic',   h: 300, s: 90, at: 1.2e9,   m: 8, tw: .50, cosmic: true },
 ];
 const UPS = [
-  { id: 'pick',  name: 'Sharp Pick',    ico: '⛏️', base: 15,     g: 1.34, desc: () => `+${fmt(tapStep())} per tap` },
+  { id: 'pick',  name: 'Sharp Pick',    ico: '⛏️', base: 15,     g: 1.34, desc: () => `+${fmt(upMult('pick') * globalMult())} per tap, per level` },
   { id: 'luck',  name: 'Lucky Cut',     ico: '🍀', base: 120,    g: 1.75, max: 18, desc: () => `Crit chance ${Math.round(critChance() * 100)}%  ·  crits hit x5` },
-  { id: 'gob',   name: 'Goblin Miner',  ico: '👺', base: 50,     g: 1.15, rate: 1,      desc: u => `+${fmt(u.rate)} gem / sec each` },
-  { id: 'dwarf', name: 'Dwarf Crew',    ico: '⚒️', base: 600,    g: 1.15, rate: 8,      desc: u => `+${fmt(u.rate)} gems / sec each` },
-  { id: 'drill', name: 'Gem Drill',     ico: '🤖', base: 7500,   g: 1.15, rate: 60,     desc: u => `+${fmt(u.rate)} gems / sec each` },
-  { id: 'reac',  name: 'Crystal Reactor', ico: '⚡', base: 9e4,  g: 1.15, rate: 420,    desc: u => `+${fmt(u.rate)} gems / sec each` },
-  { id: 'forge', name: 'Star Forge',    ico: '🌟', base: 1.2e6,  g: 1.15, rate: 3200,   desc: u => `+${fmt(u.rate)} gems / sec each` },
-  { id: 'hole',  name: 'Black Hole',    ico: '🕳️', base: 2e7,    g: 1.15, rate: 26000,  desc: u => `+${fmt(u.rate)} gems / sec each` },
+  { id: 'gob',   name: 'Goblin Miner',  ico: '👺', base: 50,     g: 1.15, rate: 1,      desc: autoDesc },
+  { id: 'dwarf', name: 'Dwarf Crew',    ico: '⚒️', base: 600,    g: 1.15, rate: 10,      desc: autoDesc },
+  { id: 'drill', name: 'Gem Drill',     ico: '🤖', base: 7500,   g: 1.15, rate: 110,     desc: autoDesc },
+  { id: 'reac',  name: 'Crystal Reactor', ico: '⚡', base: 9e4,  g: 1.15, rate: 1300,    desc: autoDesc },
+  { id: 'forge', name: 'Star Forge',    ico: '🌟', base: 1.2e6,  g: 1.15, rate: 16000,   desc: autoDesc },
+  { id: 'hole',  name: 'Black Hole',    ico: '🕳️', base: 2e7,    g: 1.15, rate: 200000,  desc: autoDesc },
+];
+function autoDesc(u) { return `+${fmt(u.rate * upMult(u.id) * globalMult())} gems / sec each`; }
+const MILES = [10, 25, 50, 100, 150, 200];
+const ASC_AT = 3e9;
+const ACH = [
+  ['t100', 'Warming up', '100 taps', () => S.taps >= 100],
+  ['t1k', 'Finger of steel', '1,000 taps', () => S.taps >= 1000],
+  ['c25', 'On a roll', 'Combo 25', () => comboPeak >= 25],
+  ['c100', 'Untouchable', 'Combo 100', () => comboPeak >= 100],
+  ['fr', 'Golden touch', 'Catch a golden gem', () => (S.fr || 0) >= 1],
+  ['k1', 'Millionaire', '1M gems', () => S.total >= 1e6],
+  ['b1', 'Billionaire', '1B gems', () => S.total >= 1e9],
+  ['t3', 'Blue blood', 'Reach Sapphire', () => tier >= 3],
+  ['t5', 'Violet hour', 'Reach Amethyst', () => tier >= 5],
+  ['t7', 'Out of this world', 'Reach Cosmic', () => tier >= 7],
+  ['as', 'Reborn', 'Ascend once', () => (S.shards || 0) > 0],
 ];
 const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
 
 /* ---------- state ---------- */
 const KEY = 'gemrush.v1';
-let S = { gems: 0, total: 0, up: {}, taps: 0, t: Date.now(), muted: false };
+const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), muted: false, shards: 0, ach: {}, fr: 0 });
+let S = newState();
 try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
 UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
-let tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
-const save = () => { try { S.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+let chal = null, amt = 1, tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
+const save = () => { if (chal) return; try { S.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
 /* ---------- math helpers ---------- */
 const SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
@@ -238,13 +301,18 @@ function fmt(n) {
   return (v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : v.toFixed(0)) + SUF[i];
 }
 const lvl = id => S.up[id] || 0;
-const tapStep = () => 1 + Math.floor(lvl('pick') / 10);
-const tapPower = () => 1 + lvl('pick') * tapStep();
+const mileCount = id => MILES.filter(m => lvl(id) >= m).length;
+const upMult = id => id === 'luck' ? 1 : Math.pow(2, mileCount(id));
+const nextMile = id => id === 'luck' ? 0 : (MILES.find(m => lvl(id) < m) || 0);
+const achCount = () => Object.keys(S.ach || {}).length;
+const globalMult = () => chal ? 1 : 1 + .05 * (S.shards || 0) + .02 * achCount();
+const tapPower = () => (1 + lvl('pick')) * upMult('pick') * globalMult();
 const critChance = () => .03 + .025 * lvl('luck');
-const baseRate = () => UPS.reduce((s, u) => s + (u.rate ? u.rate * lvl(u.id) : 0), 0);
+const baseRate = () => UPS.reduce((s, u) => s + (u.rate ? u.rate * lvl(u.id) * upMult(u.id) : 0), 0) * globalMult();
 const perSec = () => baseRate() * (frenzy > 0 ? FRENZY_MULT : 1);
 const costOf = u => Math.floor(u.base * Math.pow(u.g, lvl(u.id)));
 const comboMult = () => 1 + Math.min(combo, 100) * .02;
+const ascGain = () => chal ? 0 : (S.total >= ASC_AT ? Math.floor(5 * Math.sqrt(S.total / ASC_AT)) : 0);
 
 /* ---------- audio ---------- */
 let AC;
@@ -273,6 +341,17 @@ function sndTap(c, crit) {
 const sndBuy = () => { tone(note(12), .1, 'sine', .12); tone(note(19), .16, 'sine', .12, .07); tone(note(24), .22, 'triangle', .1, .14); };
 const sndEvolve = () => [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => { tone(note(s), .4, 'triangle', .12, i * .07); tone(note(s + 12), .3, 'sine', .05, i * .07); });
 const sndFrenzy = () => [12, 16, 19, 24, 28].forEach((s, i) => tone(note(s), .25, 'square', .05, i * .05));
+let NB;
+function whoosh(dur = .8, f0 = 300, f1 = 4000, vol = .18) {
+  if (!AC || S.muted) return;
+  if (!NB) { NB = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = NB.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const t0 = AC.currentTime, src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  src.buffer = NB; src.loop = true; f.type = 'bandpass'; f.Q.value = 1.2;
+  f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + dur * .6); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  src.connect(f); f.connect(g); g.connect(AC.destination); src.start(t0); src.stop(t0 + dur + .05);
+}
+const sndTick = hi => tone(hi ? note(24) : note(12), hi ? .35 : .12, 'sine', .14);
 const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 
 /* ---------- canvas ---------- */
@@ -421,6 +500,10 @@ function drawParticles(t) {
       const a = clamp(p.life / p.max, 0, 1);
       ctx.fillStyle = hsl(p.h, 100, 72, a);
       ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * (.4 + a), 0, TAU); ctx.fill();
+    } else if (p.k === 'streak') {
+      const a = clamp(p.life / p.max, 0, 1), tx = p.x - p.vx * .09, ty = p.y - p.vy * .09;
+      const lg = ctx.createLinearGradient(p.x, p.y, tx, ty); lg.addColorStop(0, `rgba(255,255,255,${a})`); lg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = lg; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(tx, ty); ctx.stroke();
     } else if (p.k === 'ring') {
       const u = 1 - p.life / p.max, e = 1 - Math.pow(1 - u, 3);
       ctx.lineWidth = p.w * (1 - u) + .5; ctx.strokeStyle = hsl(p.h, 100, 75, (1 - u) * .9);
@@ -529,7 +612,7 @@ const el = {
   bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
   fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
   frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
-  banner: $('#banner'), bannerT: $('#bannerT'), toast: $('#toast'), app: $('#app'), owned: $('#owned'),
+  banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'),
 };
 let sq = 1, sqv = 0, tilt = 0, tiltv = 0, shake = 0, flashA = 0, bump = 0, heat = 0, t = 0, toastT = 0;
 
@@ -539,14 +622,18 @@ function setTierUI() {
   el.tierName.textContent = T.name; el.tierNum.textContent = `${tier + 1}/${TIERS.length}`;
   document.querySelector('meta[name=theme-color]').setAttribute('content', `hsl(${T.h} 60% 6%)`);
 }
+function showBanner(small, big) {
+  el.bannerS.textContent = small; el.bannerT.textContent = big;
+  el.banner.classList.remove('show'); void el.banner.offsetWidth; el.banner.classList.add('show');
+}
+const evoLog = [];
 function evolve(silent) {
   tier++; setTierUI();
   if (silent) return;
   const T = TIERS[tier];
   flashA = 1; shake = 22; bump = 1.4;
-  el.bannerT.textContent = T.name.toUpperCase();
-  el.banner.classList.remove('show'); void el.banner.offsetWidth; el.banner.classList.add('show');
-  confetti(GX, GY, 90);
+  showBanner('EVOLVED', T.name.toUpperCase()); evoLog.push([tier, +t.toFixed(1)]);
+  confetti(GX, GY, 90); whoosh(1, 200, 5000, .22);
   ring(GX, GY, R * .3, R * 2.6, .9, T.h, 10); ring(GX, GY, R * .3, R * 3.4, 1.2, T.h + 40, 6);
   sndEvolve(); vib([30, 40, 80]);
 }
@@ -578,7 +665,7 @@ function doTap(x, y, auto) {
 function collectGold() {
   const gx = gold.x, gy = gold.y;
   gold = null; goldTimer = rnd(30, 50);
-  frenzy = FRENZY_TIME;
+  frenzy = FRENZY_TIME; S.fr = (S.fr || 0) + 1; whoosh(.7, 400, 6000, .16);
   confetti(gx, gy, 70); ring(gx, gy, 10, 160, .7, 45, 8);
   flashA = .5; shake = 14; sndFrenzy(); vib([20, 30, 20]);
   toast('FRENZY! Everything x7 for 15s');
@@ -586,6 +673,7 @@ function collectGold() {
 
 stage.addEventListener('pointerdown', e => {
   e.preventDefault(); audio();
+  if (chal && chal.phase !== 'run') return;
   const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   if (gold) { const gyy = gold.y + Math.sin(gold.t * 2.4) * 22; if (Math.hypot(x - gold.x, y - gyy) < 62) { collectGold(); return; } }
   doTap(x, y, false);
@@ -595,39 +683,71 @@ stage.addEventListener('pointerdown', e => {
 const list = $('#list'), cards = {};
 UPS.forEach(u => {
   const b = document.createElement('button'); b.className = 'card'; b.type = 'button';
-  b.innerHTML = `<span class="ico">${u.ico}</span><span class="meta"><b>${u.name}<em>Lv 0</em></b><small></small></span><span class="buy"><svg><use href="#gem"/></svg><span></span></span>`;
+  b.innerHTML = `<span class="ico">${u.ico}</span><span class="meta"><b>${u.name}<em>Lv 0</em><i class="mile" hidden>x1</i></b><small></small></span><span class="buy"><svg><use href="#gem"/></svg><span></span></span>`;
   list.appendChild(b);
-  cards[u.id] = { b, lv: b.querySelector('em'), desc: b.querySelector('small'), cost: b.querySelector('.buy span'), buy: b.querySelector('.buy'), last: '' };
+  cards[u.id] = { b, mile: b.querySelector('.mile'), lv: b.querySelector('em'), desc: b.querySelector('small'), cost: b.querySelector('.buy span'), buy: b.querySelector('.buy'), last: '' };
   b.addEventListener('pointerdown', e => { e.stopPropagation(); audio(); });
   b.addEventListener('click', () => buy(u));
 });
-function buy(u, quiet) {
-  const c = costOf(u);
-  if (u.max && lvl(u.id) >= u.max) return false;
-  if (S.gems < c) { cards[u.id].b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 }); vib(10); return false; }
-  S.gems -= c; S.up[u.id]++;
+function plan(u) {
+  const l0 = lvl(u.id), cap = u.max ? u.max - l0 : Infinity;
+  if (cap <= 0) return { n: 0, cost: 0 };
+  const want = amt === 'max' ? Infinity : Math.min(amt, cap);
+  let n = 0, cost = 0;
+  while (n < want && n < cap && n < 1000) {
+    const c = Math.floor(u.base * Math.pow(u.g, l0 + n));
+    if (amt === 'max' && cost + c > S.gems) break;
+    cost += c; n++;
+  }
+  if (n === 0) { n = 1; cost = costOf(u); }
+  return { n, cost };
+}
+function buy(u, quiet, one) {
+  const p = one ? { n: 1, cost: costOf(u) } : plan(u);
+  if (p.n === 0) return false;
+  if (S.gems < p.cost) { cards[u.id].b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 }); vib(10); return false; }
+  const before = mileCount(u.id);
+  S.gems -= p.cost; S.up[u.id] += p.n;
   const cd = cards[u.id].b; cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
   if (!quiet) { sndBuy(); vib(12); }
   ring(GX, GY, R * .4, R * 1.4, .5, tierHue(), 5); bump = 1;
+  if (mileCount(u.id) > before) {
+    toast(`${u.name} milestone! x${upMult(u.id)} output`, 2200); confetti(GX, GY, 30); ring(GX, GY, R * .4, R * 2, .7, 45, 8);
+    if (!quiet) { tone(note(24), .3, 'triangle', .1); tone(note(31), .4, 'sine', .1, .08); }
+  }
   refreshShop(true);
   return true;
 }
 function refreshShop(force) {
-  let owned = 0;
   UPS.forEach(u => {
-    const c = costOf(u), cd = cards[u.id], l = lvl(u.id), maxed = u.max && l >= u.max;
-    owned += l;
-    const sig = l + '|' + (S.gems >= c ? 1 : 0) + '|' + tier;
+    const cd = cards[u.id], l = lvl(u.id), maxed = u.max && l >= u.max, p = plan(u);
+    const can = !maxed && S.gems >= p.cost;
+    const sig = [l, can ? 1 : 0, tier, amt, p.cost, S.shards || 0, achCount()].join('|');
     if (!force && sig === cd.last) return;
     cd.last = sig;
     cd.lv.textContent = maxed ? 'MAX' : 'Lv ' + l;
-    cd.desc.textContent = u.desc(u);
-    cd.cost.textContent = maxed ? 'Maxed' : fmt(c);
+    const nm = nextMile(u.id);
+    cd.desc.innerHTML = u.desc(u) + (nm && !maxed ? ` <span class="nm">· x2 @ ${nm}</span>` : '');
+    const mm = upMult(u.id); cd.mile.hidden = mm <= 1; cd.mile.textContent = 'x' + mm;
+    cd.cost.textContent = maxed ? 'Maxed' : (p.n > 1 ? 'x' + p.n + '  ' : '') + fmt(p.cost);
     cd.buy.querySelector('svg').style.display = maxed ? 'none' : '';
-    cd.b.classList.toggle('can', !maxed && S.gems >= c);
+    cd.b.classList.toggle('can', can);
     cd.b.classList.toggle('max', !!maxed);
   });
-  el.owned.textContent = owned + ' owned';
+}
+function refreshMeta() {
+  const g = ascGain();
+  el.ascend.style.display = g > 0 ? 'block' : 'none';
+  if (g > 0) el.ascend.textContent = `ASCEND  +${g} ★  ·  +${g * 5}% gems forever`;
+  const sh = S.shards || 0; el.shards.hidden = !sh || !!chal; el.shards.textContent = '★ ' + sh;
+  el.achN.textContent = `🏆 ${achCount()}/${ACH.length}`;
+}
+let achT = 0;
+function checkAch() {
+  if (chal) return;
+  const got = [];
+  ACH.forEach(a => { if (!S.ach[a[0]] && a[3]()) { S.ach[a[0]] = 1; got.push(a[1]); } });
+  if (got.length) { toast(`🏆 ${got.join(' · ')}  (+2% gems each)`, 3200); tone(note(19), .2, 'triangle', .1); tone(note(26), .3, 'sine', .1, .1); refreshMeta(); }
 }
 
 /* ---------- HUD, toast, tools ---------- */
@@ -641,29 +761,110 @@ $('#bDemo').addEventListener('click', () => {
   demo = !demo; $('#bDemo').classList.toggle('on', demo); audio();
   toast(demo ? 'Auto-play on. Hit record and watch it go.' : 'Auto-play off');
 });
-$('#bShare').addEventListener('click', async () => {
-  const text = `I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?`;
+async function shareText(text) {
   try { if (navigator.share) { await navigator.share({ title: 'Gem Rush', text, url: location.href }); return; } } catch (e) { return; }
   try { await navigator.clipboard.writeText(text + ' ' + location.href); toast('Copied. Paste it anywhere.'); } catch (e) { toast(text, 4000); }
-});
+}
+$('#bShare').addEventListener('click', () => shareText(`I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?`));
 let resetArm = 0;
 $('#bReset').addEventListener('click', () => {
+  if (chal) return;
   if (performance.now() - resetArm < 3000) {
     try { localStorage.removeItem(KEY); } catch (e) {}
-    S = { gems: 0, total: 0, up: {}, taps: 0, t: Date.now(), muted: S.muted }; UPS.forEach(u => S.up[u.id] = 0);
-    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); toast('Progress reset'); resetArm = 0;
+    S = Object.assign(newState(), { muted: S.muted });
+    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); toast('Progress reset'); resetArm = 0;
   } else { resetArm = performance.now(); toast('Tap reset again to wipe all progress'); }
 });
-[...document.querySelectorAll('.tools button')].forEach(b => b.addEventListener('pointerdown', e => e.stopPropagation()));
+$('#bAmt').addEventListener('click', () => { amt = amt === 1 ? 10 : amt === 10 ? 'max' : 1; $('#bAmt').textContent = amt === 'max' ? 'MAX' : 'x' + amt; refreshShop(true); });
+$('#bClean').addEventListener('click', () => {
+  const on = el.app.classList.toggle('clean'); $('#bClean').classList.toggle('on', on);
+  if (on) toast('Clean view. Turn on auto-play, then record.', 2600);
+});
+let ascArm = 0;
+el.ascend.addEventListener('click', () => {
+  const g = ascGain(); if (!g) return;
+  if (performance.now() - ascArm < 3000) { ascArm = 0; doAscend(g); }
+  else { ascArm = performance.now(); toast(`Ascend resets gems and upgrades. Tap again for +${g} ★`, 3000); }
+});
+function doAscend(g) {
+  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, muted: S.muted, fr: S.fr };
+  S = Object.assign(newState(), keep);
+  tier = 0; frenzy = 0; combo = 0; dispGems = 0; gold = null; goldTimer = 10; P.length = 0;
+  setTierUI(); refreshShop(true); refreshMeta(); checkAch();
+  flashA = 1; shake = 24; confetti(GX, GY, 120); ring(GX, GY, R * .3, R * 3.4, 1.2, 45, 10); sndEvolve(); whoosh(1.2, 150, 6000, .25); vib([30, 40, 90]);
+  showBanner('ASCENDED', `+${g} ★ SHARDS`); save();
+}
+
+/* ---------- 60s speedrun challenge ---------- */
+const CHAL_TIME = 60;
+let chalBest = {};
+try { chalBest = JSON.parse(localStorage.getItem('gemrush.best') || '{}') || {}; } catch (e) {}
+const overlay = $('#overlay');
+function startChallenge() {
+  const backup = chal ? chal.backup : S;
+  chal = { phase: 'count', cd: 4, t: CHAL_TIME, backup, lastNum: -1 };
+  S = newState(); S.muted = backup.muted;
+  tier = 0; combo = 0; comboPeak = 0; frenzy = 0; dispGems = 0; gold = null; goldTimer = 9; P.length = 0;
+  setTierUI(); refreshShop(true); refreshMeta();
+  el.app.classList.add('chal'); el.timerN.textContent = CHAL_TIME; el.timer.classList.remove('low'); el.timer.classList.add('on');
+  overlay.className = 'count'; overlay.innerHTML = '<b id="cnt"></b>'; overlay.style.display = 'grid';
+  el.hint.style.display = 'none';
+}
+function chalTick(dt) {
+  if (chal.phase === 'count' || (chal.phase === 'run' && chal.cd > -.5)) {
+    chal.cd -= dt;
+    const n = Math.max(0, Math.ceil(chal.cd) - 1);
+    if (n !== chal.lastNum) {
+      chal.lastNum = n; const c = $('#cnt');
+      if (c) { c.textContent = n > 0 ? n : 'GO!'; c.style.animation = 'none'; void c.offsetWidth; c.style.animation = ''; }
+      sndTick(n === 0); vib(n === 0 ? 40 : 15);
+    }
+    if (chal.phase === 'count' && chal.cd <= 1) chal.phase = 'run';
+    if (chal.cd <= -.5) overlay.style.display = 'none';
+  }
+  if (chal.phase === 'run') {
+    chal.t -= dt;
+    const sec = Math.max(0, Math.ceil(chal.t));
+    if (el.timerN.textContent !== String(sec)) { el.timerN.textContent = sec; if (sec <= 10 && sec > 0) tone(note(sec % 2 ? 19 : 16), .08, 'square', .05); }
+    el.timer.classList.toggle('low', sec <= 10);
+    if (chal.t <= 0) endChallenge();
+  }
+}
+function endChallenge() {
+  chal.phase = 'done'; el.timer.classList.remove('on');
+  const total = Math.floor(S.total), name = TIERS[tier].name;
+  const nb = total > (chalBest.total || 0);
+  if (nb) { chalBest = { total, tier: name }; try { localStorage.setItem('gemrush.best', JSON.stringify(chalBest)); } catch (e) {} }
+  chal.shareText = `I reached ${name} with ${fmt(total)} gems in 60 seconds on Gem Rush. Beat that.`;
+  flashA = .8; shake = 16; confetti(GX, GY, 80); sndEvolve(); whoosh(.9, 200, 5000, .2); vib([30, 40, 80]);
+  overlay.className = 'result'; overlay.style.display = 'grid';
+  overlay.innerHTML = `<div class="rcard"><small>TIME'S UP</small><h2>${name}</h2>
+    <div class="rstats"><div><b>${fmt(total)}</b><span>Gems</span></div><div><b>${S.taps}</b><span>Taps</span></div><div><b>${comboPeak}</b><span>Combo</span></div></div>
+    <div class="rbest">${nb ? 'NEW PERSONAL BEST' : 'Best: ' + fmt(chalBest.total || 0) + ' (' + (chalBest.tier || '-') + ')'}</div>
+    <div class="rbtn"><button class="go" id="rAgain">Run it back</button><button id="rShare">Share result</button><button id="rExit">Back to game</button></div></div>`;
+  $('#rAgain').onclick = startChallenge;
+  $('#rShare').onclick = () => shareText(chal.shareText);
+  $('#rExit').onclick = exitChallenge;
+}
+function exitChallenge() {
+  S = chal.backup; chal = null;
+  el.app.classList.remove('chal'); el.timer.classList.remove('on'); overlay.style.display = 'none'; overlay.innerHTML = '';
+  tier = 0; while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
+  combo = 0; frenzy = 0; dispGems = S.gems; gold = null; goldTimer = 10; P.length = 0;
+  setTierUI(); refreshShop(true); refreshMeta();
+}
+$('#bChal').addEventListener('click', () => { audio(); if (chal) { exitChallenge(); return; } startChallenge(); });
 
 /* ---------- loop ---------- */
 let accAuto = 0, accShop = 0, accSave = 0, demoT = 0, demoBuyT = 2, last = performance.now(), balStr = '', psStr = '';
 function update(dt) {
   t += dt;
   // production
+  const frozen = chal && chal.phase !== 'run';
   const ps = perSec();
-  if (ps > 0) addGems(ps * dt);
+  if (ps > 0 && !frozen) addGems(ps * dt);
   while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) evolve(false);
+  if (chal) chalTick(dt);
 
   // spring squash + tilt
   sqv += ((1 - sq) * 280 - sqv * 14) * dt; sq += sqv * dt; sq = clamp(sq, .6, 1.25);
@@ -683,6 +884,12 @@ function update(dt) {
     if (frenzy <= 0) { frenzy = 0; toast('Frenzy over. Nice run!'); }
   } else heat = Math.max(0, heat - dt * 2);
 
+  // combo fire + shooting stars
+  if (combo >= 25 && !RM) {
+    const rate = combo >= 60 ? 70 : 35;
+    if (Math.random() < dt * rate) add({ k: 'spark', x: GX + rnd(-R * .9, R * .9), y: GY + R * rnd(.2, .9), vx: rnd(-25, 25), vy: rnd(-230, -110), g: -80, drag: .8, life: rnd(.4, .8), max: .8, sz: rnd(3, 6), h: tierHue() + rnd(-20, 40) });
+  }
+  if (Math.random() < dt * .22) { const dir = Math.random() < .5 ? 1 : -1; add({ k: 'streak', x: dir > 0 ? rnd(0, W * .5) : rnd(W * .5, W), y: rnd(0, H * .3), vx: dir * rnd(500, 800), vy: rnd(200, 380), g: 0, drag: 0, life: .55, max: .55 }); }
   // auto-mining visuals
   accAuto += dt;
   if (baseRate() > 0 && accAuto > .55) {
@@ -700,7 +907,7 @@ function update(dt) {
   if (gold) { gold.t += dt; gold.x += gold.vx * dt; if (gold.x < -70 || gold.x > W + 70) { gold = null; goldTimer = rnd(20, 35); } }
 
   // demo bot
-  if (demo) {
+  if (demo && !frozen && !(chal && chal.phase === 'done')) {
     demoT -= dt;
     if (demoT <= 0) {
       demoT = rnd(.085, .14);
@@ -709,9 +916,17 @@ function update(dt) {
     }
     demoBuyT -= dt;
     if (demoBuyT <= 0) {
-      demoBuyT = rnd(1.2, 2);
-      const opts = UPS.filter(u => (!u.max || lvl(u.id) < u.max) && S.gems >= costOf(u));
-      if (opts.length) buy(opts[opts.length - 1], false);
+      demoBuyT = rnd(.7, 1.1);
+      for (let k = 0; k < 8; k++) {
+        let best = null, bv = 0;
+        UPS.forEach(u => {
+          if (u.max && lvl(u.id) >= u.max) return;
+          const c = costOf(u); if (S.gems < c) return;
+          const v = (u.rate ? u.rate * upMult(u.id) : u.id === 'pick' ? 10 * upMult('pick') * comboMult() : tapPower() * .9) / c;
+          if (v > bv) { bv = v; best = u; }
+        });
+        if (!best || !buy(best, k > 0, true)) break;
+      }
     }
     if (gold && gold.t > .8) collectGold();
   }
@@ -740,7 +955,8 @@ function update(dt) {
   if (frenzy > 0) el.frenzyFill.style.transform = `scaleX(${frenzy / FRENZY_TIME})`;
   el.flash.style.opacity = flashA.toFixed(3);
 
-  accShop += dt; if (accShop > .12) { accShop = 0; refreshShop(false); }
+  accShop += dt; if (accShop > .12) { accShop = 0; refreshShop(false); refreshMeta(); }
+  achT += dt; if (achT > .6) { achT = 0; checkAch(); }
   accSave += dt; if (accSave > 5) { accSave = 0; save(); }
 }
 
@@ -776,12 +992,12 @@ function frame(ts) {
     setTimeout(() => toast(`Welcome back! Your miners found ${fmt(gain)} gems`, 3500), 600);
   }
   if (S.taps > 0) el.hint.style.display = 'none';
-  refreshShop(true);
+  refreshShop(true); refreshMeta();
   document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
   addEventListener('pagehide', save);
   requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
   // test/recording hooks
-  window.__gem = { S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+  window.__gem = { evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
 })();
 })();
 </script>
