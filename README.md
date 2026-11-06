@@ -7,11 +7,10 @@ Open `index.html` in any browser. No build step, no dependencies.
 ## What's in it
 
 - Eight procedurally drawn gem cuts, one per tier: crystal cluster, brilliant, emerald cut, round, heart, marquise, diamond, star. Moving light sweep, squash-and-tilt on every tap, a 360 spin on crits and big moments, orbiting sparks, combo fire
-- **Rare gems.** Boss Gems now roll a rarity: Common 62%, Uncommon 22%, Rare 10%, Epic 4%, Legendary 1.5%, Mythic 0.45%, Secret 0.1%. Higher rarity means more HP, a bit more time and a much bigger payout (x1 up to x400). Each rarity has its own color. Your collection screen counts how many of each you destroyed, and Secret stays "???" until you find one.
-- **Rare shards.** Every gem you destroy gives 90 shards, times its rarity step (Common 90, Uncommon 180 ... Secret 630). Each shard adds 0.04% to all gems, forever, and the count shows next to your tier.
+- **Mystery Gem.** Every so often a gem shows up with a health bar pinned to the top of the screen (health left, time left). Break it down by tapping, then a **spin wheel** decides its rarity: Common 62%, Uncommon 22%, Rare 10%, Epic 4%, Legendary 1.5%, Mythic 0.45%, Secret 0.1% (the slices are sized by a squashed version of the odds so the rare ones stay visible). The rarity sets your payout (x1 up to x400). Your collection screen counts how many of each you got, and Secret stays "???" until you land it.
+- **Rare shards.** Every wheel result gives 90 shards, times its rarity step (Common 90, Uncommon 180 ... Secret 630). Each shard adds 0.04% to all gems, forever, and the count shows next to your tier.
 - **RGB lighting.** Rainbow rim and halo around the gem, rainbow taps and sparks, animated rainbow on the Upgrades button, progress bar, tier chip and affordable upgrades. Turn it off in the Gems screen (RGB lights).
-- **Four upgrades to break them faster** (they unlock after your first boss or Emerald): Crack Hammer (extra damage per tap), Drill Bit (damage on its own every second), Time Warp (more time), Treasure Radar (rarer gems, spawning sooner).
-- Boss Gem: the gem cracks, you have 13 seconds or more of fast tapping to shatter it for a big payout
+- **Four upgrades to break gems faster** (they unlock after your first boss or Emerald): Crack Hammer (extra damage per tap), Drill Bit (damage on its own every second), Time Warp (more time), Treasure Radar (rarer gems, spawning sooner).
 - Gem Rain: 9 seconds of falling gems to catch
 - Generative music (pad, bass, arp) that adds drums as your combo climbs, plus a three-way sound button (music and sound, sound only, off)
 - Daily gift with a streak bonus
