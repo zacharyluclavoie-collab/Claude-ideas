@@ -6,7 +6,7 @@ Open `index.html` in any browser. No build step, no dependencies.
 
 ## What's in it
 
-- Eight procedurally drawn gem cuts, one per tier: crystal cluster, brilliant, emerald cut, round, heart, marquise, diamond, star. Moving light sweep, squash-and-tilt on every tap, orbiting sparks, combo fire
+- Eight procedurally drawn gem cuts, one per tier: crystal cluster, brilliant, emerald cut, round, heart, marquise, diamond, star. Moving light sweep, squash-and-tilt on every tap, a 360 spin on crits and big moments, orbiting sparks, combo fire
 - Boss Gem: the gem cracks, you have 13 seconds of fast tapping to shatter it for a big payout
 - Gem Rain: 9 seconds of falling gems to catch
 - Generative music (pad, bass, arp) that adds drums as your combo climbs, plus a three-way sound button (music and sound, sound only, off)
@@ -19,9 +19,13 @@ Open `index.html` in any browser. No build step, no dependencies.
 - 13 trophies, each worth +2% gems
 - Synth sound that climbs with your combo, haptics, offline earnings, autosave
 
+## Performance
+
+No blur filters, glow and rays come from cached sprites, gem edges are batched. If the frame rate drops below about 28 fps the game lowers its own quality (lower canvas resolution, fewer particles, no rays or dust). Tested under a 4x CPU slowdown: 14 fps before the auto drop, 56 fps after.
+
 ## Pacing (bot play)
 
-First evolve about 4s, Ruby about 35s, Amethyst about 100s, Cosmic about 6 min for a perfect bot (expect 8 to 10 min by hand).
+First evolve about 4s, Ruby about 35s, Amethyst about 100s, Cosmic about 4 to 6 min for a perfect bot (expect 8 to 10 min by hand).
 
 ## Recording for TikTok
 
