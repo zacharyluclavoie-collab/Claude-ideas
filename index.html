@@ -272,6 +272,12 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 #hint{bottom:calc(98px + env(safe-area-inset-bottom,0px))}
 @media (max-height:640px) and (orientation:portrait){#shop{height:58%}#shopBtn{padding:10px 18px;font-size:15px}}
 @media (orientation:landscape) and (max-height:520px){
+  #app #wheelWrap{flex-direction:row;gap:34px}
+  #app .wh-title{position:absolute;top:8px;left:0;right:0;text-align:center}
+  #app .wh-box{width:min(78vh,300px)}
+  #app .wh-res{min-height:0;max-width:300px}
+  #app .wh-gem{width:84px;height:84px}
+  #app .wh-res b{font-size:36px}#app .wh-res span{font-size:18px}
   #app{width:100vw;max-width:none;height:100%;max-height:none;border-radius:0;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
   #shop{left:auto;top:0;width:min(46%,400px);height:auto;border-radius:22px 0 0 22px;transform:translateX(104%)}
   .shop-open #shop{transform:none}
@@ -1144,13 +1150,13 @@ async function shareText(text) {
   try { await navigator.clipboard.writeText(text + ' ' + location.href); toast('Copied. Paste it anywhere.'); } catch (e) { toast(text, 4000); }
 }
 $('#bColl').addEventListener('click', () => { audio(); showCollection(); });
-let resetArm = 0;
+let resetArm = -1e9;
 $('#bReset').addEventListener('click', () => {
   if (chal) return;
   if (performance.now() - resetArm < 3000) {
     try { localStorage.removeItem(KEY); } catch (e) {}
     S = Object.assign(newState(), { snd: S.snd });
-    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); toast('Progress reset'); resetArm = 0;
+    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); toast('Progress reset'); resetArm = -1e9;
   } else { resetArm = performance.now(); toast('Tap reset again to wipe all progress'); }
 });
 $('#bAmt').addEventListener('click', () => { amt = amt === 1 ? 10 : amt === 10 ? 'max' : 1; $('#bAmt').textContent = amt === 'max' ? 'MAX' : 'x' + amt; $('#bAmt').animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 240, easing: 'cubic-bezier(.3,1.6,.5,1)' }); refreshShop(true); });
@@ -1164,10 +1170,10 @@ function setShop(on) {
 }
 $('#shopBtn').addEventListener('click', () => { audio(); setShop(true); });
 $('#closeShop').addEventListener('click', () => setShop(false));
-let ascArm = 0;
+let ascArm = -1e9;
 el.ascend.addEventListener('click', () => {
   const g = ascGain(); if (!g) return;
-  if (performance.now() - ascArm < 3000) { ascArm = 0; doAscend(g); }
+  if (performance.now() - ascArm < 3000) { ascArm = -1e9; doAscend(g); }
   else { ascArm = performance.now(); toast(`Ascend resets gems and upgrades. Tap again for +${g} ★`, 3000); }
 });
 function doAscend(g) {
