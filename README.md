@@ -30,6 +30,16 @@ Also new:
 - **Snack Catch**, a 15-second bonus round where you tap falling snacks. Stars are worth 5, clocks add time, and streaks double points. It's a new Lucky Spin segment and also playable from the Daily tab every 15 minutes.
 - **Trophy skins:** Gilded Frog, Storm Frog, Collector Frog and Ancient Frog, each unlocked by a trophy and worn from the Shop.
 
+## Art upgrade
+
+- **New hero frog.** Redrawn at high resolution with whole-silhouette shading, rim light, glossy eyes, blush and freckles, in three poses (idle, mouth open, chewing). It keeps the old size and mouth position, so the tongue still comes out of the mouth, and the colour skins still work.
+- **All 76 existing sprites** were cleaned and re-rendered at 3x to 4x resolution (compression noise flattened, outlines kept crisp, smooth silhouettes), so they stay sharp on big screens instead of going soft and fuzzy.
+- **18 flat code-drawn sprites** (blimp, tornado, rainbow, bolt, crown, calendar, coffee, cursor, fish bowl, night moon, play button, pulsar, Wi-Fi, wormhole, heart and three upgrade icons) were redrawn in the same glossy sticker style.
+- Sprites are drawn through **mipmaps** with high-quality smoothing, so they don't shimmer when scaled down.
+- Want fully painted art? `art/CHATGPT_ART_PROMPT.md` has a style bible and a request for every sprite, and `tools/import_sprites.py` imports the results into the game. See `art/README.md`.
+
+Backgrounds are still drawn in code and were not redone.
+
 ## CrazyGames compliance
 
 Checked against the CrazyGames developer requirements (technical, gameplay, advertisement, account integration, SDK v3 docs).
