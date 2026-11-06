@@ -189,6 +189,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .lane #frenzy.on,.lane #timer.on{display:flex}
 .lane #toast{max-width:92%;margin:0}
 @keyframes pillin{from{opacity:0;transform:translateY(-12px) scale(.9)}}
+#sheet{position:absolute;inset:0;z-index:30;display:none;place-items:center;padding:20px;background:rgba(5,3,11,.97)}
+.coll{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.cell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 8px;border-radius:14px;background:rgba(0,0,0,.28);border:1px solid var(--glass-line)}
+.cell.cur{border-color:var(--accent);box-shadow:0 0 18px -4px var(--accent)}
+.cell canvas{width:100%;aspect-ratio:1;display:block}
+.cell b{font-size:11px;font-weight:600}
+.cell span{font-size:10px;color:var(--ink-faint)}
+.scard{display:block;width:100%;max-height:64vh;object-fit:contain;border-radius:16px}
 @media (max-height:700px){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
 @media (prefers-reduced-motion:reduce){.blob,.prog i::after,#hint{animation:none}}
 </style>
@@ -240,12 +248,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   </main>
 
   <section id="shop">
-    <div class="shop-h"><div class="ttl">Upgrades <span id="achN"></span></div><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bShare">Share</button><button class="amt" id="bReset">Reset</button></div></div>
+    <div class="shop-h"><div class="ttl">Upgrades <span id="achN"></span></div><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl">Gems</button><button class="amt" id="bReset">Reset</button></div></div>
     <button id="ascend" type="button"></button>
     <div id="list"></div>
   </section>
 
   <div id="overlay"></div>
+  <div id="sheet"></div>
   </div>
 
 <script>
@@ -302,7 +311,7 @@ const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
 
 /* ---------- state ---------- */
 const KEY = 'gemrush.v1';
-const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0 });
+const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {} });
 let S = newState();
 try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
 UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
@@ -429,7 +438,7 @@ function startMusic() {
 }
 
 /* ---------- canvas ---------- */
-const stage = $('#stage'), cv = $('#cv'), ctx = cv.getContext('2d');
+const stage = $('#stage'), cv = $('#cv'); let ctx = cv.getContext('2d');
 let Q = 2, DPRCAP = 2, maxP = 420, W = 0, H = 0, DPR = 1, GX = 0, GY = 0, R = 100;
 function resize() {
   DPR = Math.min(DPRCAP, window.devicePixelRatio || 1);
@@ -765,8 +774,9 @@ function showBanner(small, big) {
 }
 const evoLog = [];
 function evolve(silent) {
-  tier++; setTierUI();
+  tier++; setTierUI(); S.maxTier = Math.max(S.maxTier || 0, tier);
   if (silent) return;
+  sq = .6; sqv = 0;
   const T = TIERS[tier];
   flashA = 1; shake = 22; bump = 1.4;
   spin(); showBanner('EVOLVED', T.name.toUpperCase()); evoLog.push([tier, +t.toFixed(1)]);
@@ -884,6 +894,9 @@ function refreshMeta() {
 let achT = 0;
 function checkAch() {
   if (chal) return;
+  if (!S.tips) S.tips = {};
+  if (!S.tips.buy && S.gems >= 15 && lvl('pick') === 0 && S.taps > 5) { S.tips.buy = 1; toast('Tap an upgrade to earn faster', 3200); }
+  else if (!S.tips.chal && tier >= 2) { S.tips.chal = 1; toast('Try the 60s Speedrun (stopwatch button)', 4200); }
   const got = [];
   ACH.forEach(a => { if (!S.ach[a[0]] && a[3]()) { S.ach[a[0]] = 1; got.push(a[1]); } });
   if (got.length) { toast(`🏆 ${got.join(' · ')}  (+2% gems each)`, 3200); tone(note(19), .2, 'triangle', .1); tone(note(26), .3, 'sine', .1, .1); refreshMeta(); }
@@ -907,7 +920,7 @@ async function shareText(text) {
   try { if (navigator.share) { await navigator.share({ title: 'Gem Rush', text, url: location.href }); return; } } catch (e) { return; }
   try { await navigator.clipboard.writeText(text + ' ' + location.href); toast('Copied. Paste it anywhere.'); } catch (e) { toast(text, 4000); }
 }
-$('#bShare').addEventListener('click', () => shareText(`I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?`));
+$('#bColl').addEventListener('click', () => { audio(); showCollection(); });
 let resetArm = 0;
 $('#bReset').addEventListener('click', () => {
   if (chal) return;
@@ -929,7 +942,7 @@ el.ascend.addEventListener('click', () => {
   else { ascArm = performance.now(); toast(`Ascend resets gems and upgrades. Tap again for +${g} ★`, 3000); }
 });
 function doAscend(g) {
-  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak };
+  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak, maxTier: S.maxTier, tips: S.tips };
   S = Object.assign(newState(), keep);
   tier = 0; frenzy = 0; combo = 0; dispGems = 0; gold = null; goldTimer = 10; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta(); checkAch();
@@ -1010,6 +1023,73 @@ function drawRain() {
   }
 }
 
+/* ---------- collection + share card ---------- */
+const sheet = $('#sheet');
+let sheetURL = '';
+function closeSheet() { sheet.style.display = 'none'; sheet.innerHTML = ''; if (sheetURL) { URL.revokeObjectURL(sheetURL); sheetURL = ''; } }
+sheet.addEventListener('pointerdown', e => { if (e.target === sheet) closeSheet(); });
+function withCanvas(c2, w, h, gx, gy, r, fn) {
+  const sv = [ctx, W, H, GX, GY, R, boss, spinA];
+  ctx = c2; W = w; H = h; GX = gx; GY = gy; R = r; boss = null; spinA = 0;
+  try { fn(); } finally { [ctx, W, H, GX, GY, R, boss, spinA] = sv; }
+}
+function thumb(ti, size, locked) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
+  withCanvas(x, size, size, size / 2, size * .5, size * .38, () => drawGem(1.2, ti, 0, 1));
+  if (locked) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(8,5,20,.9)'; x.fillRect(0, 0, size, size); }
+  return c;
+}
+function showCollection() {
+  if (chal) return;
+  closeSheet();
+  const mt = S.maxTier || 0;
+  sheet.className = 'result'; sheet.style.display = 'grid';
+  sheet.innerHTML = `<div class="rcard"><small>GEM COLLECTION</small><h2 style="font-size:34px;margin:6px 0 14px">${mt + 1} of ${TIERS.length}</h2><div class="coll"></div>
+    <div class="rbtn"><button class="go" id="cShare">Make my share card</button><button id="cClose">Close</button></div></div>`;
+  const grid = sheet.querySelector('.coll');
+  TIERS.forEach((T, i) => {
+    const cell = document.createElement('div'); cell.className = 'cell' + (i === tier ? ' cur' : '');
+    cell.appendChild(thumb(i, 128, i > mt));
+    cell.insertAdjacentHTML('beforeend', `<b>${i <= mt ? T.name : '???'}</b><span>${fmt(T.at)}</span>`);
+    grid.appendChild(cell);
+  });
+  $('#cClose').onclick = closeSheet;
+  $('#cShare').onclick = () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: `I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?` });
+}
+function makeShareCard(info) {
+  const w = 1080, h = 1920, c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'), T = TIERS[info.ti], hue = T.cosmic ? 300 : T.h;
+  const bg = x.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#0e0824'); bg.addColorStop(1, '#04020a'); x.fillStyle = bg; x.fillRect(0, 0, w, h);
+  const tint = x.createRadialGradient(w / 2, h * .4, 40, w / 2, h * .4, w * .95); tint.addColorStop(0, hsl(hue, 90, 45, .6)); tint.addColorStop(1, hsl(hue, 90, 30, 0)); x.fillStyle = tint; x.fillRect(0, 0, w, h);
+  withCanvas(x, w, h, w / 2, h * .4, 330, () => { drawBackdrop(1.4, hue, 0); drawGem(1.4, info.ti, 0, 1); });
+  const F = n => `700 ${n}px Fredoka, ui-rounded, system-ui, sans-serif`;
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  x.font = F(48); x.fillStyle = 'rgba(255,255,255,.7)'; try { x.letterSpacing = '14px'; } catch (e) {} x.fillText('GEM RUSH', w / 2 + 7, 200); try { x.letterSpacing = '0px'; } catch (e) {}
+  const ty = h * .69, tg = x.createLinearGradient(0, ty - 190, 0, ty); tg.addColorStop(0, '#fff'); tg.addColorStop(1, hsl(hue, 100, 72));
+  x.font = F(info.title.length > 7 ? 180 : 220); x.shadowColor = hsl(hue, 100, 60, .9); x.shadowBlur = 60; x.fillStyle = tg; x.fillText(info.title, w / 2, ty); x.shadowBlur = 0;
+  x.font = F(112); x.fillStyle = '#fff'; x.fillText(info.l1, w / 2, h * .775);
+  x.font = F(58); x.fillStyle = 'rgba(255,255,255,.62)'; x.fillText(info.l2, w / 2, h * .82);
+  const bx = w / 2 - 360, by = h * .875, bw = 720, bh = 140, r = 70, bt = x.createLinearGradient(bx, 0, bx + bw, 0); bt.addColorStop(0, hsl(hue + 38, 95, 62)); bt.addColorStop(1, hsl(hue, 95, 68));
+  x.fillStyle = bt; x.beginPath(); x.moveTo(bx + r, by); x.arcTo(bx + bw, by, bx + bw, by + bh, r); x.arcTo(bx + bw, by + bh, bx, by + bh, r); x.arcTo(bx, by + bh, bx, by, r); x.arcTo(bx, by, bx + bw, by, r); x.closePath(); x.fill();
+  x.font = F(70); x.fillStyle = '#12062a'; x.fillText('Can you beat it?', w / 2, by + 94);
+  return c;
+}
+async function showShareCard(info) {
+  const blob = await new Promise(res => makeShareCard(info).toBlob(res, 'image/png'));
+  if (!blob) { shareText(info.text); return; }
+  closeSheet(); sheetURL = URL.createObjectURL(blob);
+  sheet.className = 'result'; sheet.style.display = 'grid';
+  sheet.innerHTML = `<div class="rcard" style="padding:14px"><img class="scard" src="${sheetURL}" alt="Your Gem Rush share card"><div class="rbtn" style="margin-top:12px"><button class="go" id="sShare">Share</button><button id="sClose">Close</button></div></div>`;
+  $('#sClose').onclick = closeSheet;
+  $('#sShare').onclick = async () => {
+    try {
+      const f = new File([blob], 'gem-rush.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], text: info.text }); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    toast('Press and hold the card to save it', 3200); shareText(info.text);
+  };
+}
+
 /* ---------- 60s speedrun challenge ---------- */
 const CHAL_TIME = 60;
 let chalBest = {};
@@ -1058,7 +1138,8 @@ function endChallenge() {
     <div class="rbest">${nb ? 'NEW PERSONAL BEST' : 'Best: ' + fmt(chalBest.total || 0) + ' (' + (chalBest.tier || '-') + ')'}</div>
     <div class="rbtn"><button class="go" id="rAgain">Run it back</button><button id="rShare">Share result</button><button id="rExit">Back to game</button></div></div>`;
   $('#rAgain').onclick = startChallenge;
-  $('#rShare').onclick = () => shareText(chal.shareText);
+  chal.card = { ti: tier, title: name.toUpperCase(), l1: fmt(total) + ' gems', l2: 'in 60 seconds', text: chal.shareText };
+  $('#rShare').onclick = () => showShareCard(chal.card);
   $('#rExit').onclick = exitChallenge;
 }
 function exitChallenge() {
@@ -1206,6 +1287,7 @@ function frame(ts) {
 /* ---------- boot ---------- */
 (function boot() {
   while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
+  S.maxTier = Math.max(S.maxTier || 0, tier); if (!S.tips) S.tips = {};
   setTierUI(); applyMute();
   // offline progress
   const away = Math.min((Date.now() - (S.t || Date.now())) / 1000, 8 * 3600);
@@ -1224,11 +1306,20 @@ function frame(ts) {
   }
   if (S.taps > 0) el.hint.style.display = 'none';
   refreshShop(true); refreshMeta();
-  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); save(); return; }
+    if (AC && AC.state === 'suspended') AC.resume();
+    if (hiddenAt) {
+      const gone = Math.min((Date.now() - hiddenAt) / 1000, 8 * 3600); hiddenAt = 0;
+      if (!chal && gone > 20 && baseRate() > 0) { const g = Math.floor(baseRate() * gone * .5); addGems(g); toast(`While you were away: +${fmt(g)} gems`, 3200); }
+    }
+  });
+  ['touchend', 'click'].forEach(ev => addEventListener(ev, audio, { passive: true }));
   addEventListener('pagehide', save);
   requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
   // test/recording hooks
-  window.__gem = { nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+  window.__gem = { coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
 })();
 })();
 </script>

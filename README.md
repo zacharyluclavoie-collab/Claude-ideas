@@ -11,6 +11,9 @@ Open `index.html` in any browser. No build step, no dependencies.
 - Gem Rain: 9 seconds of falling gems to catch
 - Generative music (pad, bass, arp) that adds drums as your combo climbs, plus a three-way sound button (music and sound, sound only, off)
 - Daily gift with a streak bonus
+- Gem collection screen (locked gems show as silhouettes)
+- **Share card**: a 1080x1920 image of your gem, tier and gem count with "Can you beat it?" on it. On a phone the Share button opens the share sheet with the image attached, so it goes straight to TikTok, Instagram or Messages. The speedrun result screen makes one too.
+- Gems keep coming while the app is in the background, and short tips appear the first time you can buy an upgrade and when you reach Emerald
 - Combo meter (up to x3), crits, and milestone callouts (NICE, SWEET, INSANE, UNREAL, GODLIKE)
 - Golden gem flies across the screen. Tap it for Frenzy: everything x7 for 15 seconds
 - 8 upgrades with milestone bonuses (output doubles at levels 10, 25, 50, 100, 150, 200) and buy x1 / x10 / MAX
@@ -28,6 +31,8 @@ No blur filters, glow and rays come from cached sprites, gem edges are batched. 
 First evolve about 4s, Ruby about 35s, Amethyst about 100s, Cosmic about 4 to 6 min for a perfect bot (expect 8 to 10 min by hand).
 
 ## Recording for TikTok
+
+When you post, drop the share card in as the last frame of the video or as a photo post.
 
 1. Host it (see below) and open it on your phone. Add it to your home screen for a full-screen view.
 2. **Clean view** (eye button) hides the shop so the gem and counter fill the screen.
