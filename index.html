@@ -174,7 +174,6 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .rbtn button.go{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#12062a;border-color:transparent;box-shadow:0 8px 24px -8px var(--accent)}
 .clean #shop{display:none}
 .clean .hud{padding-top:16px}
-.clean #bal{font-size:clamp(52px,16vw,76px)}
 .clean .tools button:not(#bClean){opacity:.0;pointer-events:none}
 .clean #bClean{opacity:.5}
 .clean #hint{bottom:12%}
@@ -239,28 +238,47 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 #hring{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;border:3px solid var(--accent);pointer-events:none;opacity:0;animation:hr 1.7s ease-out infinite}
 @keyframes hr{0%{transform:scale(.45);opacity:.95}100%{transform:scale(1.5);opacity:0}}
 @media (prefers-reduced-motion:reduce){.card.can,#hring,.prog.near i{animation:none}}
-@media (max-height:640px) and (orientation:portrait){
-  .hud{padding-top:8px}
-  #bal{font-size:40px}.bal svg{width:28px;height:28px}.bal{margin-top:2px}
-  .sub{font-size:13px}
-  .prog{height:20px;margin-top:6px}
-  #shop{height:33%;padding-top:8px}
-  .shop-h{padding-bottom:5px}
-  .card{padding:6px 8px 6px 7px;gap:10px}.ico{width:40px;height:40px;font-size:20px}.meta b{font-size:15px}.meta small{font-size:12px}.buy{padding:6px 10px;font-size:14px}
-}
-@media (orientation:landscape) and (max-height:520px){
-  #app{width:100vw;max-width:none;height:100%;max-height:none;border-radius:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,46%);grid-template-rows:auto minmax(0,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-  .hud{grid-column:2;grid-row:1;padding:8px 12px 0}
-  #stage{grid-column:1;grid-row:1 / 3}
-  #shop{grid-column:2;grid-row:2;height:auto;min-height:0;border-radius:22px 0 0 0;padding-top:8px}
-  #bal{font-size:38px}.bal svg{width:28px;height:28px}.bal{margin-top:0}
-  .sub{font-size:13px}.prog{height:18px;margin-top:6px}
-  .shop-h{padding-bottom:4px}
-  .card{padding:5px 8px;gap:10px}.ico{width:38px;height:38px;font-size:19px}.meta b{font-size:14px}.meta small{font-size:11px}.buy{padding:5px 9px;font-size:13px}
-  #hint{bottom:5%}
-}
-@media (max-height:700px) and (min-width:0) and (orientation:portrait){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
 @media (prefers-reduced-motion:reduce){.blob,.prog i::after,#hint{animation:none}}
+/* ---- v8: slim HUD + upgrades drawer ---- */
+.hud{padding:8px 14px 0;gap:0}
+.chip{padding:4px 11px 4px 9px;gap:6px}
+.chip b{font-size:13px}.chip small{font-size:11px}.chip i{width:7px;height:7px}
+.tools{gap:5px}
+.tools button{width:30px;height:30px;border-radius:10px}
+.tools svg{width:15px;height:15px}
+.bal{margin-top:2px;gap:7px}
+.bal svg{width:22px;height:22px}
+#bal{font-size:clamp(30px,9vw,40px)}
+.sub{font-size:12px}
+.prog{height:14px;margin-top:6px}
+.prog span{font-size:10px}
+#shop{position:absolute;left:0;right:0;bottom:0;z-index:15;height:min(52%,440px);display:flex;flex-direction:column;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+  border-radius:26px 26px 0 0;border-top:1px solid var(--glass-line);background:linear-gradient(180deg,rgba(28,18,62,.98),rgba(9,5,22,.99));
+  box-shadow:0 -20px 60px rgba(0,0,0,.55);transform:translateY(104%);transition:transform .45s var(--spring)}
+.shop-open #shop{transform:none}
+#shopBtn{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:12;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:12px 20px 12px 16px;border-radius:99px;font-weight:700;font-size:16px;letter-spacing:.02em;
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#12062a;box-shadow:0 10px 30px -8px var(--accent),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .35s var(--spring),opacity .25s}
+#shopBtn:active{transform:translateX(-50%) scale(.94)}
+#shopBtn svg{width:19px;height:19px;stroke:#12062a;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#shopBtn.alert{animation:btnpulse 1.6s ease-in-out infinite}
+@keyframes btnpulse{50%{box-shadow:0 10px 44px 0 var(--accent),inset 0 1px 0 rgba(255,255,255,.5);transform:translateX(-50%) scale(1.06)}}
+#shopBadge{min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:#12062a;color:#fff;font-size:13px;display:grid;place-items:center}
+#shopBadge[hidden]{display:none}
+.shop-open #shopBtn{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(30px);animation:none}
+.clean #shopBtn{display:none}
+#closeShop{padding:5px 9px;display:grid;place-items:center}
+#closeShop svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round}
+#comboPill{bottom:84px}
+#hint{bottom:calc(98px + env(safe-area-inset-bottom,0px))}
+@media (max-height:640px) and (orientation:portrait){#shop{height:58%}#shopBtn{padding:10px 18px;font-size:15px}}
+@media (orientation:landscape) and (max-height:520px){
+  #app{width:100vw;max-width:none;height:100%;max-height:none;border-radius:0;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  #shop{left:auto;top:0;width:min(46%,400px);height:auto;border-radius:22px 0 0 22px;transform:translateX(104%)}
+  .shop-open #shop{transform:none}
+  .hud{padding-top:6px}#bal{font-size:30px}
+  #comboPill{bottom:70px}#hint{bottom:78px}
+  .card{padding:6px 8px;gap:10px}.ico{width:38px;height:38px;font-size:19px}.meta b{font-size:14px}.meta small{font-size:11px}.buy{padding:5px 9px;font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -310,8 +328,10 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
     <div id="banner"><small>EVOLVED</small><b id="bannerT">EMERALD</b></div>
   </main>
 
+  <button id="shopBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Upgrades<b id="shopBadge" hidden>0</b></button>
+
   <section id="shop">
-    <div class="shop-h"><div class="ttl">Upgrades <span id="achN"></span></div><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl">Gems</button><button class="amt" id="bReset">Reset</button></div></div>
+    <div class="shop-h"><div class="ttl">Upgrades <span id="achN"></span></div><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl">Gems</button><button class="amt" id="bReset">Reset</button><button class="amt" id="closeShop" aria-label="Close upgrades"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
     <button id="ascend" type="button"></button>
     <div id="list"></div>
   </section>
@@ -503,12 +523,15 @@ function startMusic() {
 /* ---------- canvas ---------- */
 const stage = $('#stage'), cv = $('#cv'), hring = $('#hring'); let ctx = cv.getContext('2d');
 let Q = 2, DPRCAP = 2, maxP = 420, W = 0, H = 0, DPR = 1, GX = 0, GY = 0, R = 100;
+let R0 = 100, GY0 = 0, shopOpen = false, shopK = 0, shopH = 0, shopW = 0;
+const LAND = matchMedia('(orientation:landscape) and (max-height:520px)');
 function resize() {
   DPR = Math.min(DPRCAP, window.devicePixelRatio || 1);
   W = stage.clientWidth; H = stage.clientHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
-  R = Math.min(W * .34, H * .30);
-  GX = W / 2; GY = H * .5 - R * .1; hring.style.left = GX + 'px'; hring.style.top = GY + 'px';
+  R0 = Math.min(W * .36, H * .27); GY0 = H * .47; R = R0; GX = W / 2; GY = GY0;
+  hring.style.left = GX + 'px'; hring.style.top = GY + 'px';
+  const sh = document.getElementById('shop'); shopH = sh.offsetHeight; shopW = sh.offsetWidth;
 }
 new ResizeObserver(resize).observe(stage);
 resize();
@@ -819,7 +842,7 @@ function drawGold(t) {
 /* ---------- game logic ---------- */
 const el = {
   bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
-  prog: $('.prog'), chip: $('.chip'), fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
+  prog: $('.prog'), chip: $('.chip'), shopBtn: $('#shopBtn'), badge: $('#shopBadge'), fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
   frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
   banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), hpFill: $('#hpFill'), bossT: $('#bossT'),
 };
@@ -896,6 +919,7 @@ stage.addEventListener('pointerdown', e => {
 });
 
 addEventListener('keydown', e => {
+  if (e.code === 'KeyU' && !e.metaKey && !e.ctrlKey) { setShop(!shopOpen); return; }
   if (e.code !== 'Space' || e.metaKey || e.ctrlKey) return;
   e.preventDefault(); audio();
   if (chal && chal.phase !== 'run') return;
@@ -948,11 +972,13 @@ function buy(u, quiet, one) {
   return true;
 }
 function refreshShop(force) {
+  let nCan = 0;
   const maxOwned = UPS.reduce((m, u, i) => lvl(u.id) > 0 ? i : m, -1);
   UPS.forEach((u, i) => {
     const cd = cards[u.id], l = lvl(u.id), maxed = u.max && l >= u.max, p = plan(u);
     const can = !maxed && S.gems >= p.cost;
     const show = i <= maxOwned + 2 || S.gems >= costOf(u);
+    if (can && show) nCan++;
     if (cd.shown !== show) { cd.shown = show; cd.b.hidden = !show; if (show && !force) { cd.b.classList.remove('reveal'); void cd.b.offsetWidth; cd.b.classList.add('reveal'); } }
     const pq = maxed ? 100 : Math.round(Math.min(1, S.gems / p.cost) * 100);
     if (cd.pq !== pq) { cd.pq = pq; cd.b.style.setProperty('--p', pq / 100); }
@@ -968,6 +994,7 @@ function refreshShop(force) {
     cd.b.classList.toggle('can', can);
     cd.b.classList.toggle('max', !!maxed);
   });
+  if (el.badge) { const t = String(nCan); if (el.badge.textContent !== t) el.badge.textContent = t; el.badge.hidden = !nCan; el.shopBtn.classList.toggle('alert', nCan > 0 && !shopOpen); }
 }
 function refreshMeta() {
   const g = ascGain();
@@ -980,7 +1007,7 @@ let achT = 0;
 function checkAch() {
   if (chal) return;
   if (!S.tips) S.tips = {};
-  if (!S.tips.buy && S.gems >= 15 && lvl('pick') === 0 && S.taps > 5) { S.tips.buy = 1; toast('Tap an upgrade to earn faster', 3200); }
+  if (!S.tips.buy && S.gems >= 15 && lvl('pick') === 0 && S.taps > 5) { S.tips.buy = 1; toast('Open Upgrades to earn faster', 3600); }
   else if (!S.tips.chal && tier >= 2) { S.tips.chal = 1; toast('Try the 60s Speedrun (stopwatch button)', 4200); }
   const got = [];
   ACH.forEach(a => { if (!S.ach[a[0]] && a[3]()) { S.ach[a[0]] = 1; got.push(a[1]); } });
@@ -1025,8 +1052,14 @@ $('#bReset').addEventListener('click', () => {
 $('#bAmt').addEventListener('click', () => { amt = amt === 1 ? 10 : amt === 10 ? 'max' : 1; $('#bAmt').textContent = amt === 'max' ? 'MAX' : 'x' + amt; $('#bAmt').animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 240, easing: 'cubic-bezier(.3,1.6,.5,1)' }); refreshShop(true); });
 $('#bClean').addEventListener('click', () => {
   const on = el.app.classList.toggle('clean'); $('#bClean').classList.toggle('on', on);
-  if (on) toast('Clean view. Turn on auto-play, then record.', 2600);
+  if (on) { setShop(false); toast('Clean view. Turn on auto-play, then record.', 2600); }
 });
+function setShop(on) {
+  shopOpen = on; el.app.classList.toggle('shop-open', on);
+  if (on) { const sh = document.getElementById('shop'); shopH = sh.offsetHeight; shopW = sh.offsetWidth; refreshShop(true); }
+}
+$('#shopBtn').addEventListener('click', () => { audio(); setShop(true); });
+$('#closeShop').addEventListener('click', () => setShop(false));
 let ascArm = 0;
 el.ascend.addEventListener('click', () => {
   const g = ascGain(); if (!g) return;
@@ -1255,6 +1288,10 @@ function update(dt) {
   if (chal) chalTick(dt);
 
   // spring squash + tilt
+  const tk = shopOpen ? 1 : 0; shopK += (tk - shopK) * Math.min(1, dt * 9); if (Math.abs(tk - shopK) < .002) shopK = tk;
+  const land = LAND.matches, visH = land ? H : H - shopH, visW = land ? W - shopW : W;
+  GX = lerp(W / 2, visW / 2, shopK); GY = lerp(GY0, land ? GY0 : visH * .5 + 10, shopK);
+  R = lerp(R0, Math.min(R0, (land ? H : visH) * .27, visW * .34), shopK);
   spinV += ((spinTarget - spinA) * 70 - spinV * 11) * dt; spinA += spinV * dt;
   sqv += ((1 - sq) * 280 - sqv * 14) * dt; sq += sqv * dt; sq = clamp(sq, .6, 1.25);
   tiltv += ((0 - tilt) * 220 - tiltv * 11) * dt; tilt += tiltv * dt;

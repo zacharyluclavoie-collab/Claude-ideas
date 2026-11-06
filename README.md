@@ -11,6 +11,7 @@ Open `index.html` in any browser. No build step, no dependencies.
 - Gem Rain: 9 seconds of falling gems to catch
 - Generative music (pad, bass, arp) that adds drums as your combo climbs, plus a three-way sound button (music and sound, sound only, off)
 - Daily gift with a streak bonus
+- Slim top bar. Upgrades live behind an **Upgrades** button (with a badge for how many you can afford, pulses when you can buy). The panel slides up, the gem shrinks above it so you can keep tapping, and the X closes it. Press U on a keyboard to toggle it.
 - Shop reveals upgrades step by step, every locked card shows a bar for how close you are to buying it, press and hold a card to keep buying
 - Combo pill glows orange, then pink, then rainbow as the streak grows; status bars slide in and out instead of popping
 - Gem collection screen (locked gems show as silhouettes)
