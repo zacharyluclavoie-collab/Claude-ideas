@@ -337,6 +337,29 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
 .led:nth-child(odd){animation-delay:.25s}
 .win .led{animation-duration:.16s}
 @keyframes ledb{50%{opacity:.2}}
+/* ---- tabs + quests + trophies ---- */
+.tabs{display:flex;gap:3px;padding:3px;border-radius:99px;background:rgba(255,255,255,.08)}
+.tab{position:relative;padding:6px 11px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim)}
+.tab.on{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#12062a}
+#qDot{margin-left:6px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:#ff4f7a;color:#fff;font-size:11px;display:inline-grid;place-items:center;letter-spacing:0}
+#qDot[hidden]{display:none}
+#list[hidden],#qlist[hidden]{display:none}
+#qlist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px 2px 4px;scrollbar-width:none;overscroll-behavior:contain;touch-action:pan-y}
+#qlist::-webkit-scrollbar{display:none}
+.qc{flex:none;display:flex;align-items:center;gap:12px;padding:10px;border-radius:18px;background:var(--glass);border:1px solid var(--glass-line)}
+.qc.done{border-color:var(--gold);background:linear-gradient(100deg,rgba(255,210,63,.18),var(--glass) 70%);box-shadow:0 0 22px -8px var(--gold)}
+.qc .meta{display:flex;flex-direction:column;gap:5px}
+.qc .meta b{font-size:15px;white-space:normal;line-height:1.15}
+.qbar{display:block;height:7px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}
+.qbar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .25s ease}
+.qc.done .qbar i{background:linear-gradient(90deg,#ffb100,#ffe45e)}
+.qc small{font-size:12px;color:var(--ink-dim);font-weight:500;white-space:normal}
+.claim{flex:none;padding:10px 14px;border-radius:14px;font-weight:700;font-size:14px;color:#2a1500;background:linear-gradient(180deg,#ffe45e,#ffb100);box-shadow:0 6px 18px -6px #ffb100;animation:throb .7s ease-in-out infinite alternate}
+.tlist{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;text-align:left}
+.tr{display:grid;grid-template-columns:22px 1fr;column-gap:8px;padding:6px 10px;border-radius:12px;background:rgba(0,0,0,.25);opacity:.55}
+.tr.got{opacity:1;border:1px solid rgba(255,210,63,.4)}
+.tr b{font-size:13px;font-weight:600}.tr small{grid-column:2;font-size:11px;color:var(--ink-dim);letter-spacing:0;font-weight:500}
+@media (max-width:350px){.tab{padding:6px 8px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -390,9 +413,10 @@ button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline
   <button id="shopBtn" type="button"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Upgrades<b id="shopBadge" hidden>0</b></button>
 
   <section id="shop">
-    <div class="shop-h"><div class="ttl">Upgrades <span id="achN"></span></div><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl">Gems</button><button class="amt" id="bReset">Reset</button><button class="amt" id="closeShop" aria-label="Close upgrades"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
+    <div class="shop-h"><div class="tabs"><button class="tab on" id="tabUp" type="button">Upgrades</button><button class="tab" id="tabQ" type="button">Quests<b id="qDot" hidden>0</b></button></div><span id="achN" hidden></span><div class="rowr"><button class="amt" id="bAmt">x1</button><button class="amt" id="bColl">Gems</button><button class="amt" id="closeShop" aria-label="Close upgrades"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
     <button id="ascend" type="button"></button>
     <div id="list"></div>
+    <div id="qlist" hidden></div>
   </section>
 
   <div id="overlay"></div>
@@ -473,15 +497,28 @@ const ACH = [
   ['as', 'Reborn', 'Ascend once', () => (S.shards || 0) > 0],
   ['bo', 'Gem breaker', 'Beat a boss gem', () => (S.bosses || 0) >= 1],
   ['rn', 'Rainmaker', 'Catch 100 rain gems', () => (S.rains || 0) >= 100],
+  ['q10', 'Busy bee', 'Complete 10 quests', () => (S.qdone || 0) >= 10],
+  ['q30', 'Quest master', 'Complete 30 quests', () => (S.qdone || 0) >= 30],
   ['rr', 'Treasure hunter', 'Break a Rare or better gem', () => [2, 3, 4, 5, 6].some(rare)],
   ['rl', 'Golden moment', 'Break a Legendary gem', () => rare(4) > 0],
   ['rs', 'The impossible', 'Break the Secret gem', () => rare(6) > 0],
+];
+const QDEF = [
+  { id: 'tap',   ev: 'tap',       ico: '👆', base: 260, txt: n => `Tap the gem ${n} times` },
+  { id: 'crit',  ev: 'crit',      ico: '💥', base: 30,  txt: n => `Land ${n} crits` },
+  { id: 'combo', ev: 'combo',     ico: '🔥', base: 30,  txt: n => `Reach a ${n} combo`, cap: 100 },
+  { id: 'buy',   ev: 'buy',       ico: '🛒', base: 16,  txt: n => `Buy ${n} upgrade levels` },
+  { id: 'earn',  ev: 'earn',      ico: '💎', base: 0,   txt: n => `Earn ${fmt(n)} gems` },
+  { id: 'gold',  ev: 'gold',      ico: '🌟', base: 1,   txt: n => `Catch ${n} golden gem${n > 1 ? 's' : ''}` },
+  { id: 'rain',  ev: 'rain',      ico: '🌧️', base: 26,  txt: n => `Catch ${n} rain gems`, need: () => tier >= 1 },
+  { id: 'boss',  ev: 'boss',      ico: '🪨', base: 1,   txt: n => `Break ${n} mystery gem${n > 1 ? 's' : ''}`, need: () => tier >= 1 },
+  { id: 'wr',    ev: 'wheelRare', ico: '🎡', base: 1,   txt: n => `Land Rare or better ${n > 1 ? n + ' times' : 'once'} on the wheel`, need: () => tier >= 2 },
 ];
 const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
 
 /* ---------- state ---------- */
 const KEY = 'gemrush.v1';
-const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {}, rare: {}, shd: 0, rgb: true, pity: 0 });
+const newState = () => ({ gems: 0, total: 0, up: Object.fromEntries(UPS.map(u => [u.id, 0])), taps: 0, t: Date.now(), snd: 0, shards: 0, ach: {}, fr: 0, bosses: 0, rains: 0, day: '', streak: 0, maxTier: 0, tips: {}, rare: {}, shd: 0, rgb: true, pity: 0, quests: [], qdone: 0 });
 let S = newState();
 try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
 UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
@@ -982,7 +1019,7 @@ function evolve(silent) {
   ring(GX, GY, R * .3, R * 2.6, .9, T.h, 10); ring(GX, GY, R * .3, R * 3.4, 1.2, T.h + 40, 6);
   sndEvolve(); vib([30, 40, 80]);
 }
-function addGems(n) { S.gems += n; S.total += n; }
+function addGems(n) { S.gems += n; S.total += n; qAdd('earn', n); }
 
 function doTap(x, y, auto) {
   const now = performance.now() / 1000;
@@ -992,7 +1029,7 @@ function doTap(x, y, auto) {
   const crit = Math.random() < critChance();
   let g = tapPower() * comboMult() * (frenzy > 0 ? FRENZY_MULT : 1) * buffMult() * (crit ? 5 : 1);
   g = Math.max(1, Math.round(g));
-  addGems(g); S.taps++;
+  addGems(g); S.taps++; qAdd('tap'); if (crit) qAdd('crit'); qMax('combo', combo);
   if (boss) { tone(rnd(90, 170), .08, 'square', .06, 0, .5); boss.hp -= (crit ? 3 : 1) + lvl('hammer'); shake = Math.max(shake, 5); if (boss.hp <= 0) endBoss(true); }
   hideHint();
   // juice
@@ -1012,7 +1049,7 @@ function doTap(x, y, auto) {
 function collectGold() {
   const gx = gold.x, gy = gold.y;
   gold = null; goldTimer = rnd(30, 50);
-  frenzy = FRENZY_TIME; S.fr = (S.fr || 0) + 1; whoosh(.7, 400, 6000, .16);
+  frenzy = FRENZY_TIME; S.fr = (S.fr || 0) + 1; qAdd('gold'); whoosh(.7, 400, 6000, .16);
   confetti(gx, gy, 70); ring(gx, gy, 10, 160, .7, 45, 8);
   flashA = .5; shake = 14; sndFrenzy(); vib([20, 30, 20]);
   toast('FRENZY! Everything x7 for 15s');
@@ -1034,6 +1071,71 @@ addEventListener('keydown', e => {
   if (chal && chal.phase !== 'run') return;
   doTap(GX + rnd(-R * .4, R * .4), GY + rnd(-R * .3, R * .3), false);
 });
+
+/* ---------- quests ---------- */
+let qDirty = false;
+function newQuest(avoid) {
+  const pool = QDEF.filter(d => !avoid.includes(d.id) && (!d.need || d.need()));
+  const d = pool[Math.floor(Math.random() * pool.length)], L = S.qdone || 0;
+  let n = d.id === 'earn' ? Math.max(2000, Math.round(Math.max(baseRate(), tapPower() * 6) * 3) * 100) : Math.max(1, Math.round(d.base * (1 + L * .22)));
+  if (d.cap) n = Math.min(d.cap, n);
+  const x = Math.random();
+  const rw = x < .4 ? { k: 'shd', v: 50 + 10 * Math.min(L, 20) } : x < .75 ? { k: 'gems', m: 1 + L * .06 } : { k: 'buff', r: L >= 15 ? 3 : L >= 6 ? 2 : 1 };
+  return { id: d.id, ev: d.ev, n, p: 0, rw };
+}
+function ensureQuests() {
+  if (!Array.isArray(S.quests)) S.quests = [];
+  while (S.quests.length < 3) S.quests.push(newQuest(S.quests.map(q => q.id)));
+}
+function qAdd(ev, n = 1) { for (const q of S.quests) if (q.ev === ev && q.p < q.n) q.p = Math.min(q.n, q.p + n); }
+function qMax(ev, v) { for (const q of S.quests) if (q.ev === ev && q.p < q.n) q.p = Math.min(q.n, Math.max(q.p, v)); }
+const rwGems = rw => Math.floor((baseRate() * 35 + tapPower() * 25) * rw.m);
+const rwText = rw => rw.k === 'shd' ? `+${rw.v} ◆` : rw.k === 'gems' ? `+${fmt(rwGems(rw))} gems` : `${RAR[rw.r].name} buff`;
+function giveBuff(r) {
+  const bf = BUFF[r], R_ = RAR[r]; if (!bf) return;
+  if (!buff || bf.m >= buff.m) { buff = { r, m: bf.m, t: bf.d, max: bf.d }; el.buffTxt.textContent = R_.name.toUpperCase() + ' BUFF  x' + bf.m; el.buffPill.style.setProperty('--rc', hsl(R_.rainbow ? 300 : R_.h, 100, Math.max(R_.l, 64))); }
+}
+function claimQuest(i) {
+  const q = S.quests[i]; if (!q || q.p < q.n) return;
+  const rw = q.rw;
+  if (rw.k === 'shd') S.shd = (S.shd || 0) + rw.v; else if (rw.k === 'gems') addGems(rwGems(rw)); else giveBuff(rw.r);
+  S.qdone = (S.qdone || 0) + 1;
+  S.quests.splice(i, 1); ensureQuests();
+  confetti(GX, GY, 60); ring(GX, GY, R * .4, R * 1.8, .7, tierHue(), 8); sndBuy(); tone(note(28), .3, 'triangle', .1, .12); vib([15, 20, 30]);
+  toast('Quest done! ' + rwText(rw), 2600);
+  renderQuests(); qDirty = true;
+}
+const qlist = $('#qlist');
+let qSig = '';
+function renderQuests() {
+  qlist.innerHTML = '';
+  S.quests.forEach((q, i) => {
+    const d = QDEF.find(x => x.id === q.id), done = q.p >= q.n;
+    const div = document.createElement('div'); div.className = 'qc' + (done ? ' done' : '');
+    div.innerHTML = `<span class="ico">${d.ico}</span><span class="meta"><b>${d.txt(q.n)}</b><span class="qbar"><i></i></span><small></small></span>${done ? '<button class="claim" type="button">CLAIM</button>' : ''}`;
+    if (done) div.querySelector('.claim').addEventListener('click', () => claimQuest(i));
+    qlist.appendChild(div);
+  });
+  qSig = S.quests.map(q => q.id + (q.p >= q.n ? 1 : 0)).join('|');
+  updateQuestBars();
+}
+function updateQuestBars() {
+  const sig = S.quests.map(q => q.id + (q.p >= q.n ? 1 : 0)).join('|');
+  if (sig !== qSig) { renderQuests(); return; }
+  [...qlist.children].forEach((div, i) => {
+    const q = S.quests[i]; if (!q) return;
+    div.querySelector('.qbar i').style.width = (q.p / q.n * 100).toFixed(1) + '%';
+    div.querySelector('small').textContent = `${fmt(Math.floor(q.p))} / ${fmt(q.n)}  ·  Reward ${rwText(q.rw)}`;
+  });
+}
+let tab = 'up';
+function setTab(t) {
+  tab = t; $('#tabUp').classList.toggle('on', t === 'up'); $('#tabQ').classList.toggle('on', t === 'q');
+  $('#list').hidden = t !== 'up'; qlist.hidden = t !== 'q'; $('#bAmt').style.display = t === 'up' ? '' : 'none';
+  if (t === 'q') renderQuests();
+}
+$('#tabUp').addEventListener('click', () => setTab('up'));
+$('#tabQ').addEventListener('click', () => { audio(); setTab('q'); });
 
 /* ---------- shop ---------- */
 const list = $('#list'), cards = {};
@@ -1068,7 +1170,7 @@ function buy(u, quiet, one) {
   if (p.n === 0) return false;
   if (S.gems < p.cost) { cards[u.id].b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 }); vib(10); return false; }
   const before = mileCount(u.id);
-  S.gems -= p.cost; S.up[u.id] += p.n;
+  S.gems -= p.cost; S.up[u.id] += p.n; qAdd('buy', p.n);
   const cd = cards[u.id].b; cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
   cards[u.id].lv.animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   if (!quiet) { sndBuy(); vib(12); }
@@ -1103,7 +1205,7 @@ function refreshShop(force) {
     cd.b.classList.toggle('can', can);
     cd.b.classList.toggle('max', !!maxed);
   });
-  if (el.badge) { const t = String(nCan); if (el.badge.textContent !== t) el.badge.textContent = t; el.badge.hidden = !nCan; el.shopBtn.classList.toggle('alert', nCan > 0 && !shopOpen); }
+  if (el.badge) { const nQ = S.quests.filter(q => q.p >= q.n).length, nTot = nCan + nQ, t = String(nTot); { const qd = document.getElementById('qDot'); qd.hidden = !nQ; qd.textContent = nQ; } if (el.badge.textContent !== t) el.badge.textContent = t; el.badge.hidden = !nTot; el.shopBtn.classList.toggle('alert', nTot > 0 && !shopOpen); }
 }
 function refreshMeta() {
   const g = ascGain();
@@ -1118,6 +1220,7 @@ function checkAch() {
   if (chal) return;
   if (!S.tips) S.tips = {};
   if (!S.tips.buy && S.gems >= 15 && lvl('pick') === 0 && S.taps > 5) { S.tips.buy = 1; toast('Open Upgrades to earn faster', 3600); }
+  else if (!S.tips.quest && S.taps >= 80 && !shopOpen) { S.tips.quest = 1; toast('New: Quests are in the Upgrades panel', 3800); }
   else if (!S.tips.chal && tier >= 2) { S.tips.chal = 1; toast('Try the 60s Speedrun (stopwatch button)', 4200); }
   const got = [];
   ACH.forEach(a => { if (!S.ach[a[0]] && a[3]()) { S.ach[a[0]] = 1; got.push(a[1]); } });
@@ -1151,14 +1254,14 @@ async function shareText(text) {
 }
 $('#bColl').addEventListener('click', () => { audio(); showCollection(); });
 let resetArm = -1e9;
-$('#bReset').addEventListener('click', () => {
+function resetClick() {
   if (chal) return;
   if (performance.now() - resetArm < 3000) {
     try { localStorage.removeItem(KEY); } catch (e) {}
-    S = Object.assign(newState(), { snd: S.snd });
-    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); toast('Progress reset'); resetArm = -1e9;
+    S = Object.assign(newState(), { snd: S.snd }); ensureQuests();
+    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); closeSheet(); toast('Progress reset'); resetArm = -1e9;
   } else { resetArm = performance.now(); toast('Tap reset again to wipe all progress'); }
-});
+}
 $('#bAmt').addEventListener('click', () => { amt = amt === 1 ? 10 : amt === 10 ? 'max' : 1; $('#bAmt').textContent = amt === 'max' ? 'MAX' : 'x' + amt; $('#bAmt').animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 240, easing: 'cubic-bezier(.3,1.6,.5,1)' }); refreshShop(true); });
 $('#bClean').addEventListener('click', () => {
   const on = el.app.classList.toggle('clean'); $('#bClean').classList.toggle('on', on);
@@ -1177,7 +1280,7 @@ el.ascend.addEventListener('click', () => {
   else { ascArm = performance.now(); toast(`Ascend resets gems and upgrades. Tap again for +${g} ★`, 3000); }
 });
 function doAscend(g) {
-  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak, maxTier: S.maxTier, tips: S.tips, rare: S.rare, shd: S.shd, rgb: S.rgb };
+  const keep = { shards: (S.shards || 0) + g, ach: S.ach, taps: S.taps, snd: S.snd, fr: S.fr, bosses: S.bosses, rains: S.rains, day: S.day, streak: S.streak, maxTier: S.maxTier, tips: S.tips, rare: S.rare, shd: S.shd, rgb: S.rgb, quests: S.quests, qdone: S.qdone };
   S = Object.assign(newState(), keep);
   tier = 0; frenzy = 0; combo = 0; dispGems = 0; gold = null; goldTimer = 10; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta(); checkAch();
@@ -1201,7 +1304,7 @@ function endBoss(win) {
   const b = boss; boss = null; el.app.classList.remove('boss-on');
   bossT = rnd(34, 46) * Math.pow(.97, lvl('radar')); rainT = Math.max(rainT, 18);
   if (!win) { toast('The gem got away', 2200); return; }
-  S.bosses = (S.bosses || 0) + 1;
+  S.bosses = (S.bosses || 0) + 1; qAdd('boss');
   burst(GX, GY, 70, true); confetti(GX, GY, 70); ring(GX, GY, R * .3, R * 3, .9, tierHue(), 12);
   spin(); flashA = 1; shake = 24; sndEvolve(); whoosh(1, 200, 6000, .22); vib([40, 40, 100]);
   startWheel(b.force);
@@ -1256,7 +1359,7 @@ function updateWheel(dt) {
 }
 function wheelResult() {
   const r = wheel.r, Rr = RAR[r];
-  if (!S.rare) S.rare = {}; S.rare[r] = (S.rare[r] || 0) + 1;
+  if (!S.rare) S.rare = {}; S.rare[r] = (S.rare[r] || 0) + 1; if (r >= 2) qAdd('wheelRare');
   const shd = 90 * (r + 1); S.shd = (S.shd || 0) + shd;
   const pay = Math.floor((baseRate() * (frenzy > 0 ? FRENZY_MULT : 1) * 3 + tapPower() * 16) * Rr.pay); addGems(pay);
   wheel.pay = pay; wheel.shd = shd;
@@ -1290,7 +1393,7 @@ function startRain() {
 function collectRain(i) {
   const g = RAIN[i]; RAIN.splice(i, 1);
   const val = Math.max(3 * tapPower(), perSec() * .5);
-  addGems(val); S.rains = (S.rains || 0) + 1;
+  addGems(val); S.rains = (S.rains || 0) + 1; qAdd('rain');
   if (rain) { rain.gain += val; tone(note(PENT[(rain.got++) % 10] + 12), .22, 'sine', .12); }
   floatText(g.x, g.y - 10, '+' + fmt(val), { sz: 26, col: hsl(g.hue, 100, 82), vy: -140 });
   for (let k = 0; k < 6; k++) add({ k: 'spark', x: g.x, y: g.y, vx: rnd(-200, 200), vy: rnd(-260, 40), g: 500, drag: 2, life: rnd(.3, .6), max: .6, sz: rnd(2, 5), h: g.hue });
@@ -1361,8 +1464,10 @@ function showCollection() {
   sheet.innerHTML = `<div class="rcard"><small>GEM COLLECTION</small><h2 style="font-size:34px;margin:6px 0 14px">${mt + 1} of ${TIERS.length}</h2><div class="coll"></div>
     <div class="rtitle">RARE GEMS DESTROYED</div>
     <div class="rares">${RAR.map((Rr, i) => { const n = rare(i), c = Rr.rainbow ? '#c58bff' : hsl(Rr.h, Math.max(Rr.s, 40), Math.max(Rr.l, 62)); return `<div class="rr" style="--c:${c}"><b>${i === 6 && !n ? '???' : Rr.name}</b><span>${n}</span></div>`; }).join('')}</div>
+    <div class="rtitle">TROPHIES ${achCount()} / ${ACH.length}</div>
+    <div class="tlist">${ACH.map(a => `<div class="tr ${S.ach[a[0]] ? 'got' : ''}"><span>${S.ach[a[0]] ? '🏆' : '🔒'}</span><b>${a[1]}</b><small>${a[2]}</small></div>`).join('')}</div>
     <div class="rtitle">RARE SHARDS: ${S.shd || 0} ◆ = +${((S.shd || 0) * .04).toFixed(1)}% gems</div>
-    <div class="rbtn"><button class="go" id="cShare">Make my share card</button><button id="cRgb">RGB lights: ${S.rgb === false ? 'Off' : 'On'}</button><button id="cClose">Close</button></div></div>`;
+    <div class="rbtn"><button class="go" id="cShare">Make my share card</button><button id="cRgb">RGB lights: ${S.rgb === false ? 'Off' : 'On'}</button><button id="cReset">Reset progress</button><button id="cClose">Close</button></div></div>`;
   const grid = sheet.querySelector('.coll');
   TIERS.forEach((T, i) => {
     const cell = document.createElement('div'); cell.className = 'cell' + (i === tier ? ' cur' : '');
@@ -1371,6 +1476,7 @@ function showCollection() {
     grid.appendChild(cell);
   });
   $('#cClose').onclick = closeSheet;
+  $('#cReset').onclick = resetClick;
   $('#cRgb').onclick = () => { S.rgb = S.rgb === false; applyRgb(); $('#cRgb').textContent = 'RGB lights: ' + (S.rgb === false ? 'Off' : 'On'); save(); };
   $('#cShare').onclick = () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: `I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?` });
 }
@@ -1546,6 +1652,7 @@ function update(dt) {
     demoBuyT -= dt;
     if (demoBuyT <= 0) {
       demoBuyT = rnd(.7, 1.1);
+      for (let qi = S.quests.length - 1; qi >= 0; qi--) if (S.quests[qi].p >= S.quests[qi].n) claimQuest(qi);
       for (let k = 0; k < 8; k++) {
         let best = null, bv = 0;
         UPS.forEach(u => {
@@ -1586,7 +1693,7 @@ function update(dt) {
   if (frenzy > 0) el.frenzyFill.style.transform = `scaleX(${frenzy / FRENZY_TIME})`;
   el.flash.style.opacity = flashA.toFixed(3);
 
-  accShop += dt; if (accShop > .12) { accShop = 0; refreshShop(false); refreshMeta(); }
+  accShop += dt; if (accShop > .12) { accShop = 0; refreshShop(false); refreshMeta(); if (shopOpen && tab === 'q') updateQuestBars(); }
   achT += dt; if (achT > .6) { achT = 0; checkAch(); }
   accSave += dt; if (accSave > 5) { accSave = 0; save(); }
 }
@@ -1622,7 +1729,7 @@ function frame(ts) {
 (function boot() {
   while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
   S.maxTier = Math.max(S.maxTier || 0, tier); if (!S.tips) S.tips = {}; sq = .45; sqv = 0;
-  setTierUI(); applyMute(); applyRgb();
+  ensureQuests(); setTierUI(); applyMute(); applyRgb();
   // offline progress
   const away = Math.min((Date.now() - (S.t || Date.now())) / 1000, 8 * 3600);
   const rate = baseRate();
@@ -1653,7 +1760,7 @@ function frame(ts) {
   addEventListener('pagehide', save);
   requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
   // test/recording hooks
-  window.__gem = { buffInfo: () => buff && { r: buff.r, m: buff.m, t: buff.t }, pity: () => S.pity, skipWheel: () => { if (!wheel) return; if (wheel.state === 'spin') { wheel.t = wheel.dur; updateWheel(0); } closeWheel(); }, wheelInfo: () => wheel && { r: wheel.r, state: wheel.state }, bossInfo: () => boss && { hp: boss.hp, max: boss.max, t: boss.t, r: boss.r }, step: sec => { for (let i = 0; i < sec * 30; i++) update(1 / 30); }, roll: rollRarity, icon: (size, ti) => { const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), T = TIERS[ti], hue = T.cosmic ? 300 : T.h; const bg = x.createLinearGradient(0, 0, size, size); bg.addColorStop(0, '#1d1048'); bg.addColorStop(1, '#05030b'); x.fillStyle = bg; x.fillRect(0, 0, size, size); const gl = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * .55); gl.addColorStop(0, hsl(hue, 100, 55, .65)); gl.addColorStop(1, hsl(hue, 100, 45, 0)); x.fillStyle = gl; x.fillRect(0, 0, size, size); withCanvas(x, size, size, size / 2, size * .5, size * .29, () => { drawBackdrop(1, hue, 0); drawGem(1.1, ti, 0, 1); }); return c.toDataURL('image/png'); }, coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+  window.__gem = { quests: () => S.quests, claim: i => claimQuest(i), setTab, buffInfo: () => buff && { r: buff.r, m: buff.m, t: buff.t }, pity: () => S.pity, skipWheel: () => { if (!wheel) return; if (wheel.state === 'spin') { wheel.t = wheel.dur; updateWheel(0); } closeWheel(); }, wheelInfo: () => wheel && { r: wheel.r, state: wheel.state }, bossInfo: () => boss && { hp: boss.hp, max: boss.max, t: boss.t, r: boss.r }, step: sec => { for (let i = 0; i < sec * 30; i++) update(1 / 30); }, roll: rollRarity, icon: (size, ti) => { const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), T = TIERS[ti], hue = T.cosmic ? 300 : T.h; const bg = x.createLinearGradient(0, 0, size, size); bg.addColorStop(0, '#1d1048'); bg.addColorStop(1, '#05030b'); x.fillStyle = bg; x.fillRect(0, 0, size, size); const gl = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size * .55); gl.addColorStop(0, hsl(hue, 100, 55, .65)); gl.addColorStop(1, hsl(hue, 100, 45, 0)); x.fillStyle = gl; x.fillRect(0, 0, size, size); withCanvas(x, size, size, size / 2, size * .5, size * .29, () => { drawBackdrop(1, hue, 0); drawGem(1.1, ti, 0, 1); }); return c.toDataURL('image/png'); }, coll: () => showCollection(), card: () => showShareCard({ ti: tier, title: TIERS[tier].name.toUpperCase(), l1: fmt(Math.floor(S.total)) + ' gems', l2: 'and still tapping', text: 'x' }), nodes: () => ({ AC, MUS, SFX }), q: () => Q, boss: startBoss, rain: startRain, setTier: n => { tier = n; setTierUI(); }, evoLog, sim: sec => { demo = true; for (let i = 0; i < sec * 30; i++) update(1 / 30); }, tierNow: () => tier, startChal: startChallenge, S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
 })();
 })();
 </script>

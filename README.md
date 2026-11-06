@@ -8,6 +8,8 @@ Open `index.html` in any browser. No build step, no dependencies.
 
 - Eight procedurally drawn gem cuts, one per tier: crystal cluster, brilliant, emerald cut, round, heart, marquise, diamond, star. Moving light sweep, squash-and-tilt on every tap, a 360 spin on crits and big moments, orbiting sparks, combo fire
 - **Mystery Gem.** Every so often a gem shows up with a health bar pinned to the top of the screen (health left, time left). Break it down by tapping, then a **spin wheel** decides its rarity: Common 62%, Uncommon 22%, Rare 10%, Epic 4%, Legendary 1.5%, Mythic 0.45%, Secret 0.1% (the slices are sized by a squashed version of the odds so the rare ones stay visible). The rarity sets your payout (x1 up to x400). Your collection screen counts how many of each you got, and Secret stays "???" until you land it.
+- **Quests.** Three goals at a time (tap, crit, combo, buy upgrades, earn gems, catch golden or rain gems, break mystery gems, land Rare or better). Finish one, press CLAIM for shards, gems or a buff, and a new goal slides in with a bigger target. They live in the Quests tab of the Upgrades panel, and the Upgrades button badge counts what you can buy plus what you can claim.
+- **Trophy list.** The Gems screen shows all 18 trophies, locked ones tell you what to do. Reset progress now lives there too.
 - **Wheel results give a timed buff.** Uncommon x1.25 for 12s, Rare x1.5, Epic x2, Legendary x3, Mythic x4, Secret x10 for 45s, on both taps and auto income. A colored aura and a buff bar show while it lasts. The result card shows your gem in that rarity's color.
 - **Bad luck protection.** After 6 Commons in a row, the next wheel cannot land on Common.
 - **Rare shards.** Every wheel result gives 90 shards, times its rarity step (Common 90, Uncommon 180 ... Secret 630). Each shard adds 0.04% to all gems, forever, and the count shows next to your tier.
@@ -36,7 +38,7 @@ No blur filters, glow and rays come from cached sprites, gem edges are batched. 
 
 ## Pacing (bot play)
 
-First evolve about 4s, Ruby about 35s, Amethyst about 100s, Cosmic about 3 to 4.5 min for a perfect bot (expect 7 to 10 min by hand).
+First evolve about 4s, Ruby about 35s, Amethyst about 100s, Cosmic about 3 to 4 min for a perfect bot (expect 8 to 10 min by hand).
 
 ## Recording for TikTok
 
