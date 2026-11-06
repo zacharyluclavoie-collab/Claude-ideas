@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07040f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Gem Rush</title>
+<meta name="description" content="Tap the gem. Watch it evolve. How far can you go?">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one portrait "phone" column (9:16 friendly) = HUD on top, gem stage in the middle, upgrade shelf at the bottom. */
+@property --h { syntax: '<number>'; inherits: true; initial-value: 205; }
+:root{
+  --h: 205;
+  --ink: #fff;
+  --ink-dim: rgba(255,255,255,.62);
+  --ink-faint: rgba(255,255,255,.38);
+  --glass: rgba(255,255,255,.065);
+  --glass-line: rgba(255,255,255,.13);
+  --gold: #ffd23f;
+  --font: 'Fredoka', ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#05030b;color:var(--ink);font-family:var(--font);overflow:hidden;overscroll-behavior:none}
+body{display:grid;place-items:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+#app{
+  --accent: hsl(var(--h) 95% 68%);--accent-2: hsl(calc(var(--h) + 38) 95% 62%);
+  position:relative;width:min(100vw,480px);height:100%;max-height:980px;overflow:hidden;
+  background:linear-gradient(180deg,#0c0720 0%,#07040f 60%,#05030b 100%);
+  display:flex;flex-direction:column;isolation:isolate;
+  transition:--h 1.4s ease;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (min-width:520px) and (min-height:760px){
+  #app{height:min(100%,920px);border-radius:38px;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 120px -20px hsl(var(--h) 90% 45% / .35)}
+}
+
+/* ambient background */
+.bg{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;will-change:transform}
+.b1{width:360px;height:360px;left:-120px;top:5%;background:hsl(var(--h) 90% 48%);animation:drift1 14s ease-in-out infinite alternate}
+.b2{width:320px;height:320px;right:-130px;top:30%;background:hsl(calc(var(--h) + 55) 90% 52%);animation:drift2 17s ease-in-out infinite alternate}
+.b3{width:300px;height:300px;left:10%;bottom:-120px;background:hsl(calc(var(--h) - 45) 90% 45%);animation:drift3 19s ease-in-out infinite alternate;opacity:.4}
+@keyframes drift1{to{transform:translate(70px,90px) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-80px,-60px) scale(1.2)}}
+@keyframes drift3{to{transform:translate(90px,-70px) scale(.9)}}
+.bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 40%,transparent 40%,rgba(5,3,11,.75) 100%)}
+
+/* HUD */
+.hud{padding:12px 16px 0;display:flex;flex-direction:column;align-items:center;gap:2px;flex:none}
+.row{width:100%;display:flex;align-items:center;justify-content:space-between}
+.chip{display:flex;align-items:baseline;gap:8px;padding:6px 14px 6px 12px;border-radius:99px;background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);align-self:center}
+.chip b{font-weight:600;font-size:15px;letter-spacing:.02em}
+.chip small{font-size:12px;color:var(--ink-faint);font-weight:500}
+.tools{display:flex;gap:6px}
+.tools button{width:36px;height:36px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-line);display:grid;place-items:center;transition:transform .15s,background .2s}
+.tools button:active{transform:scale(.88)}
+.tools button.on{background:hsl(var(--h) 90% 60% / .28);border-color:hsl(var(--h) 90% 70% / .6)}
+.tools svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+.bal{display:flex;align-items:center;gap:10px;margin-top:6px;will-change:transform;transform-origin:center}
+.bal svg{width:38px;height:38px;filter:drop-shadow(0 0 14px var(--accent))}
+#bal{font-size:clamp(44px,13vw,64px);font-weight:700;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,#fff 30%,hsl(var(--h) 100% 85%));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 4px 22px hsl(var(--h) 100% 60% / .45))}
+.sub{font-size:15px;font-weight:500;color:var(--ink-dim);display:flex;gap:6px;align-items:center}
+.sub b{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums}
+.prog{position:relative;width:100%;height:22px;margin-top:10px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid var(--glass-line);overflow:hidden}
+.prog i{position:absolute;inset:0;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent-2),var(--accent));box-shadow:0 0 18px var(--accent)}
+.prog i::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-100%);animation:shine 2.4s ease-in-out infinite}
+@keyframes shine{to{transform:translateX(100%)}}
+.prog span{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;font-weight:600;letter-spacing:.04em;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+
+/* stage */
+#stage{position:relative;flex:1;min-height:0;touch-action:none;cursor:pointer}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pill{position:absolute;left:50%;top:6px;transform:translate(-50%,-14px) scale(.9);opacity:0;pointer-events:none;transition:opacity .2s,transform .35s cubic-bezier(.2,1.6,.4,1)}
+.pill.on{opacity:1;transform:translate(-50%,0) scale(1)}
+#comboPill{top:auto;bottom:12px;transform:translate(-50%,16px) scale(.9)}
+#comboPill.on{transform:translate(-50%,0) scale(1)}
+#combo{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:99px;background:rgba(10,6,24,.55);border:1px solid hsl(var(--h) 100% 75% / .5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);overflow:hidden;white-space:nowrap}
+#combo b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#combo em{font-style:normal;font-weight:600;font-size:14px;color:var(--accent)}
+#combo small{font-size:11px;letter-spacing:.14em;color:var(--ink-dim);font-weight:600}
+#comboBar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--accent);transform-origin:left;box-shadow:0 0 8px var(--accent)}
+#frenzy{top:46px;display:flex;flex-direction:column;align-items:center;gap:5px}
+#frenzyTxt{font-weight:700;font-size:15px;letter-spacing:.08em;color:#2a1500;padding:5px 14px;border-radius:99px;background:linear-gradient(90deg,#ffb100,#ffe45e);box-shadow:0 0 24px rgba(255,190,40,.7);animation:throb .5s ease-in-out infinite alternate}
+@keyframes throb{to{transform:scale(1.07)}}
+#frenzyBar{width:150px;height:4px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden;position:relative}
+#frenzyBar i{position:absolute;inset:0;background:#ffd23f;transform-origin:left}
+#hint{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font-weight:600;font-size:15px;letter-spacing:.2em;color:#fff;opacity:.9;pointer-events:none;animation:hint 1.2s ease-in-out infinite alternate;text-shadow:0 0 16px var(--accent)}
+@keyframes hint{from{transform:translate(-50%,0);opacity:.55}to{transform:translate(-50%,-8px);opacity:1}}
+#flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#fff,hsl(var(--h) 100% 80%) 60%,transparent);opacity:0;pointer-events:none}
+#banner{position:absolute;left:0;right:0;top:20%;display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:0}
+#banner small{font-size:14px;letter-spacing:.5em;font-weight:600;color:var(--ink-dim);padding-left:.5em}
+#banner b{font-size:clamp(46px,14vw,68px);font-weight:700;line-height:1;background:linear-gradient(180deg,#fff,hsl(var(--h) 100% 75%));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 30px hsl(var(--h) 100% 60%))}
+#banner.show{animation:banner 2.4s cubic-bezier(.2,1,.3,1) forwards}
+@keyframes banner{0%{opacity:0;transform:scale(.4) translateY(30px)}14%{opacity:1;transform:scale(1.12)}22%{transform:scale(1)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15) translateY(-20px)}}
+
+/* shop */
+#shop{flex:none;height:clamp(200px,37%,330px);display:flex;flex-direction:column;padding:12px 12px 10px;border-radius:26px 26px 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.03));border-top:1px solid var(--glass-line);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 -20px 50px rgba(0,0,0,.35)}
+.shop-h{display:flex;justify-content:space-between;align-items:center;padding:0 6px 8px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+.shop-h span:last-child{letter-spacing:.04em;text-transform:none;color:var(--ink-faint);font-weight:500}
+#list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px 2px 4px;scrollbar-width:none;overscroll-behavior:contain;touch-action:pan-y}
+#list::-webkit-scrollbar{display:none}
+.card{flex:none;display:flex;align-items:center;gap:12px;width:100%;padding:9px 10px 9px 9px;border-radius:18px;text-align:left;
+  background:var(--glass);border:1px solid var(--glass-line);opacity:.5;transition:transform .12s,opacity .3s,border-color .3s,box-shadow .3s,background .3s}
+.card:active{transform:scale(.97)}
+.card.can{opacity:1;border-color:hsl(var(--h) 100% 72% / .6);background:linear-gradient(100deg,hsl(var(--h) 90% 60% / .2),var(--glass) 70%);box-shadow:0 0 22px -6px var(--accent)}
+.card.pop{animation:cardpop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes cardpop{0%{transform:scale(.94)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+.ico{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(145deg,hsl(var(--h) 80% 55% / .55),hsl(calc(var(--h) + 50) 80% 45% / .35));border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.meta b{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.meta b em{font-style:normal;font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;background:rgba(255,255,255,.12);color:var(--ink-dim)}
+.meta small{font-size:13px;color:var(--ink-dim);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.buy{flex:none;display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:13px;background:rgba(0,0,0,.35);border:1px solid var(--glass-line);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.card.can .buy{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#12062a;border-color:transparent;box-shadow:0 4px 14px -4px var(--accent)}
+.buy svg{width:15px;height:15px}
+.card.max .buy{background:none;border:0;color:var(--gold)}
+
+#toast{position:absolute;left:50%;top:76px;transform:translate(-50%,-20px);opacity:0;padding:9px 16px;border-radius:14px;background:rgba(15,9,34,.85);border:1px solid var(--glass-line);font-size:14px;font-weight:500;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.4,1);pointer-events:none;text-align:center;z-index:5;max-width:90%}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-height:700px){#shop{height:34%}.hud{padding-top:6px}.bal svg{width:30px;height:30px}}
+@media (prefers-reduced-motion:reduce){.blob,.prog i::after,#hint{animation:none}}
+</style>
+</head>
+<body>
+<div id="app">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color:hsl(var(--h) 100% 88%)"/>
+      <stop offset=".55" style="stop-color:hsl(var(--h) 95% 62%)"/>
+      <stop offset="1" style="stop-color:hsl(calc(var(--h) + 30) 90% 42%)"/>
+    </linearGradient>
+    <symbol id="gem" viewBox="0 0 24 24">
+      <path d="M7 3h10l5 6.2L12 21.5 2 9.2z" fill="url(#gg)"/>
+      <path d="M2 9.2h20M7 3l-1.6 6.2L12 21.5M17 3l1.6 6.2L12 21.5M9.6 9.2 12 3l2.4 6.2" fill="none" stroke="rgba(255,255,255,.65)" stroke-width=".8" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+  <div class="bg"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i></div>
+
+  <header class="hud">
+    <div class="row">
+      <div class="chip"><i></i><b id="tierName">Quartz</b><small id="tierNum">1/8</small></div>
+      <div class="tools">
+        <button id="bSound" aria-label="Sound" class="on"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="sndWave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+        <button id="bDemo" aria-label="Auto play for recording"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg></button>
+        <button id="bShare" aria-label="Share"><svg viewBox="0 0 24 24"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
+        <button id="bReset" aria-label="Reset progress"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3.5 4v4.5H8"/></svg></button>
+      </div>
+    </div>
+    <div class="bal" id="balWrap"><svg><use href="#gem"/></svg><span id="bal">0</span></div>
+    <div class="sub"><b id="ps">0</b> gems / sec</div>
+    <div class="prog"><i id="progFill"></i><span id="progLbl"></span></div>
+  </header>
+
+  <main id="stage">
+    <canvas id="cv"></canvas>
+    <div class="pill" id="comboPill"><div id="combo"><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
+    <div class="pill" id="frenzy"><span id="frenzyTxt">FRENZY x7</span><div id="frenzyBar"><i id="frenzyFill"></i></div></div>
+    <div id="hint">TAP THE GEM</div>
+    <div id="flash"></div>
+    <div id="banner"><small>EVOLVED</small><b id="bannerT">EMERALD</b></div>
+  </main>
+
+  <section id="shop">
+    <div class="shop-h"><span>Upgrades</span><span id="owned"></span></div>
+    <div id="list"></div>
+  </section>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const TAU = Math.PI * 2;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FONT = '700 {S}px Fredoka, ui-rounded, system-ui, sans-serif';
+
+/* ---------- data ---------- */
+const TIERS = [
+  { name: 'Quartz',   h: 205, s: 45, at: 0,      m: 3, tw: .50 },
+  { name: 'Citrine',  h: 42,  s: 95, at: 300,    m: 4, tw: .52 },
+  { name: 'Emerald',  h: 152, s: 80, at: 6e3,    m: 4, tw: .48 },
+  { name: 'Sapphire', h: 220, s: 90, at: 1.2e5,  m: 5, tw: .55 },
+  { name: 'Ruby',     h: 352, s: 88, at: 3e6,    m: 5, tw: .50 },
+  { name: 'Amethyst', h: 278, s: 75, at: 8e7,    m: 6, tw: .52 },
+  { name: 'Diamond',  h: 190, s: 70, at: 2.5e9,  m: 6, tw: .56 },
+  { name: 'Cosmic',   h: 300, s: 90, at: 8e10,   m: 8, tw: .50, cosmic: true },
+];
+const UPS = [
+  { id: 'pick',  name: 'Sharp Pick',    ico: '⛏️', base: 15,     g: 1.34, desc: () => `+${fmt(tapStep())} per tap` },
+  { id: 'luck',  name: 'Lucky Cut',     ico: '🍀', base: 120,    g: 1.75, max: 18, desc: () => `Crit chance ${Math.round(critChance() * 100)}%  ·  crits hit x5` },
+  { id: 'gob',   name: 'Goblin Miner',  ico: '👺', base: 50,     g: 1.15, rate: 1,      desc: u => `+${fmt(u.rate)} gem / sec each` },
+  { id: 'dwarf', name: 'Dwarf Crew',    ico: '⚒️', base: 600,    g: 1.15, rate: 8,      desc: u => `+${fmt(u.rate)} gems / sec each` },
+  { id: 'drill', name: 'Gem Drill',     ico: '🤖', base: 7500,   g: 1.15, rate: 60,     desc: u => `+${fmt(u.rate)} gems / sec each` },
+  { id: 'reac',  name: 'Crystal Reactor', ico: '⚡', base: 9e4,  g: 1.15, rate: 420,    desc: u => `+${fmt(u.rate)} gems / sec each` },
+  { id: 'forge', name: 'Star Forge',    ico: '🌟', base: 1.2e6,  g: 1.15, rate: 3200,   desc: u => `+${fmt(u.rate)} gems / sec each` },
+  { id: 'hole',  name: 'Black Hole',    ico: '🕳️', base: 2e7,    g: 1.15, rate: 26000,  desc: u => `+${fmt(u.rate)} gems / sec each` },
+];
+const COMBO_WINDOW = 1.2, FRENZY_MULT = 7, FRENZY_TIME = 15;
+
+/* ---------- state ---------- */
+const KEY = 'gemrush.v1';
+let S = { gems: 0, total: 0, up: {}, taps: 0, t: Date.now(), muted: false };
+try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && typeof r.gems === 'number') S = Object.assign(S, r); } catch (e) {}
+UPS.forEach(u => { if (!S.up[u.id]) S.up[u.id] = 0; });
+let tier = 0, frenzy = 0, combo = 0, lastTap = -9, comboPeak = 0, dispGems = S.gems, demo = false;
+const save = () => { try { S.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+/* ---------- math helpers ---------- */
+const SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+function fmt(n) {
+  if (!isFinite(n)) return '∞';
+  if (n < 1000) return n < 10 && n % 1 ? n.toFixed(1).replace(/\.0$/, '') : String(Math.floor(n));
+  const i = Math.floor(Math.log10(n) / 3);
+  if (i >= SUF.length) return n.toExponential(2).replace('+', '');
+  const v = n / Math.pow(1000, i);
+  return (v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : v.toFixed(0)) + SUF[i];
+}
+const lvl = id => S.up[id] || 0;
+const tapStep = () => 1 + Math.floor(lvl('pick') / 10);
+const tapPower = () => 1 + lvl('pick') * tapStep();
+const critChance = () => .03 + .025 * lvl('luck');
+const baseRate = () => UPS.reduce((s, u) => s + (u.rate ? u.rate * lvl(u.id) : 0), 0);
+const perSec = () => baseRate() * (frenzy > 0 ? FRENZY_MULT : 1);
+const costOf = u => Math.floor(u.base * Math.pow(u.g, lvl(u.id)));
+const comboMult = () => 1 + Math.min(combo, 100) * .02;
+
+/* ---------- audio ---------- */
+let AC;
+function audio() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (AC && AC.state === 'suspended') AC.resume();
+}
+function tone(f, d = .16, type = 'triangle', vol = .12, when = 0, slide = 0) {
+  if (!AC || S.muted) return;
+  const t0 = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t0);
+  if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t0 + d);
+  g.gain.setValueAtTime(.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + .008);
+  g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
+  o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d + .03);
+}
+const PENT = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
+const note = semis => 261.63 * Math.pow(2, semis / 12);
+function sndTap(c, crit) {
+  const i = c % 18, k = i < 9 ? i : 17 - i;
+  const f = note(PENT[k]);
+  tone(f, .2, 'triangle', .13); tone(f * 2, .12, 'sine', .05);
+  if (crit) { tone(f * 3, .3, 'square', .04, 0, 1.5); tone(note(PENT[k] + 12), .25, 'sine', .08, .04); }
+}
+const sndBuy = () => { tone(note(12), .1, 'sine', .12); tone(note(19), .16, 'sine', .12, .07); tone(note(24), .22, 'triangle', .1, .14); };
+const sndEvolve = () => [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => { tone(note(s), .4, 'triangle', .12, i * .07); tone(note(s + 12), .3, 'sine', .05, i * .07); });
+const sndFrenzy = () => [12, 16, 19, 24, 28].forEach((s, i) => tone(note(s), .25, 'square', .05, i * .05));
+const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+/* ---------- canvas ---------- */
+const stage = $('#stage'), cv = $('#cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, GX = 0, GY = 0, R = 100;
+function resize() {
+  DPR = Math.min(2.5, window.devicePixelRatio || 1);
+  W = stage.clientWidth; H = stage.clientHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  R = Math.min(W * .34, H * .30);
+  GX = W / 2; GY = H * .5 - R * .1;
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+
+/* gem geometry (side-view brilliant cut), built per tier */
+const gemCache = {};
+function gemFor(ti) {
+  if (gemCache[ti]) return gemCache[ti];
+  const { m, tw } = TIERS[ti];
+  const ty = -.62, gy = -.16, hy = .45, topY = ty - .13;
+  const Tp = [], Gp = [], Hp = [], F = [];
+  for (let j = 0; j <= m; j++) {
+    const u = j / m;
+    Tp.push([-tw + 2 * tw * u, ty]); Gp.push([-1 + 2 * u, gy]); Hp.push([(-1 + 2 * u) * .47, hy]);
+  }
+  const tip = [0, 1];
+  F.push({ p: [[-tw, ty], [tw, ty], [tw * .78, topY], [-tw * .78, topY]], z: 2 });
+  for (let j = 0; j < m; j++) {
+    const a = Tp[j], b = Tp[j + 1], c = Gp[j + 1], d = Gp[j];
+    if (j % 2 === 0) { F.push({ p: [a, b, c], z: 0 }); F.push({ p: [a, c, d], z: 0 }); }
+    else { F.push({ p: [a, b, d], z: 0 }); F.push({ p: [b, c, d], z: 0 }); }
+  }
+  for (let j = 0; j < m; j++) {
+    F.push({ p: [Gp[j], Gp[j + 1], Hp[j + 1], Hp[j]], z: 1 });
+    F.push({ p: [Hp[j], Hp[j + 1], tip], z: 1 });
+  }
+  F.forEach((f, i) => {
+    f.i = i; f.cx = f.p.reduce((s, q) => s + q[0], 0) / f.p.length; f.cy = f.p.reduce((s, q) => s + q[1], 0) / f.p.length;
+    f.k = .5 + .5 * Math.sin(i * 2.17 + 1);
+  });
+  const sil = [[-tw * .78, topY], [tw * .78, topY], [tw, ty], [1, gy], tip, [-1, gy], [-tw, ty]];
+  return (gemCache[ti] = { F, sil });
+}
+const hsl = (h, s, l, a = 1) => `hsl(${h} ${s}% ${l}% / ${a})`;
+
+function drawGem(t, ti, tilt, sq) {
+  const T = TIERS[ti], g = gemFor(ti);
+  const hue = T.cosmic ? (t * 40) % 360 : T.h;
+  const sweepX = ((t * .5) % 3.4) - 1.7;
+  ctx.save();
+  ctx.translate(GX, GY + Math.sin(t * 1.6) * R * .035);
+  ctx.rotate(tilt);
+  ctx.scale(1 + (1 - sq) * .7, sq);
+  ctx.scale(R, R);
+  ctx.lineJoin = 'round';
+  const path = pts => { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); };
+  for (const f of g.F) {
+    const d = f.cx - sweepX - f.cy * .3, sweep = Math.exp(-d * d * 4);
+    const zl = f.z === 2 ? 76 : f.z === 0 ? 58 : 40;
+    const L = Math.min(93, zl + (f.k - .5) * 24 + sweep * 28 + Math.sin(t * 2 + f.i * 1.3) * 3);
+    const h = hue + (f.k - .5) * 20 + (T.cosmic ? f.cx * 70 + f.cy * 30 : 0);
+    ctx.fillStyle = hsl(h, f.z === 2 ? T.s * .7 : T.s, L);
+    path(f.p); ctx.fill();
+    ctx.lineWidth = .012; ctx.strokeStyle = 'rgba(255,255,255,.38)'; ctx.stroke();
+  }
+  // glossy overlay
+  path(g.sil); ctx.save(); ctx.clip();
+  const gr = ctx.createLinearGradient(-1, -.8, 1, 1);
+  gr.addColorStop(0, 'rgba(255,255,255,.32)'); gr.addColorStop(.42, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,30,.34)');
+  ctx.fillStyle = gr; ctx.fillRect(-1.2, -1, 2.4, 2.2);
+  ctx.restore();
+  path(g.sil); ctx.lineWidth = .028; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.stroke();
+  // sparkles
+  ctx.globalCompositeOperation = 'lighter';
+  [[-.62, -.45, 0], [.52, -.62, 2.1], [.12, .28, 4.2], [-.2, .7, 1.1]].forEach(([x, y, ph]) => {
+    const a = Math.pow(Math.max(0, Math.sin(t * 2.3 + ph)), 6);
+    if (a > .02) star(x, y, .18 * a + .02, a, t);
+  });
+  ctx.restore();
+}
+function star(x, y, r, a) {
+  ctx.save(); ctx.translate(x, y); ctx.fillStyle = `rgba(255,255,255,${a})`;
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) { const rr = i % 2 ? r * .18 : r; const an = i * Math.PI / 4 - Math.PI / 2; ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+/* ---------- particles ---------- */
+const P = [];
+const MAXP = 520;
+function add(p) { if (P.length < MAXP) P.push(p); }
+const tierHue = () => TIERS[tier].cosmic ? (performance.now() / 20) % 360 : TIERS[tier].h;
+
+function burst(x, y, n, crit) {
+  const h = tierHue();
+  for (let i = 0; i < n; i++) {
+    const a = rnd(-Math.PI * .95, -Math.PI * .05), v = rnd(220, crit ? 780 : 520);
+    add({ k: 'shard', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 1500, drag: 1.4, life: rnd(.5, .95), max: .95, sz: rnd(5, crit ? 13 : 10), rot: rnd(0, TAU), vr: rnd(-12, 12), h: h + rnd(-18, 18), l: rnd(60, 86) });
+  }
+  for (let i = 0; i < n; i++) {
+    const a = rnd(0, TAU), v = rnd(60, 340);
+    add({ k: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0, drag: 3, life: rnd(.25, .55), max: .55, sz: rnd(2, 5), h: h + rnd(-10, 30) });
+  }
+}
+function ring(x, y, r0, r1, life, hue, w = 5) { add({ k: 'ring', x, y, r0, r1, life, max: life, h: hue, w }); }
+function floatText(x, y, text, o = {}) { add(Object.assign({ k: 'text', x, y, vx: rnd(-25, 25), vy: -150, g: 120, drag: .6, life: .9, max: .9, text, sz: 30, col: '#fff' }, o)); }
+function confetti(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rnd(-Math.PI * .9, -Math.PI * .1), v = rnd(300, 900);
+    add({ k: 'conf', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 900, drag: 1.1, life: rnd(1.2, 2.2), max: 2.2, sz: rnd(6, 12), rot: rnd(0, TAU), vr: rnd(-10, 10), h: rnd(0, 360), ph: rnd(0, TAU) });
+  }
+}
+function updateParticles(dt) {
+  for (let i = P.length - 1; i >= 0; i--) {
+    const p = P[i]; p.life -= dt;
+    if (p.life <= 0) { P[i] = P[P.length - 1]; P.pop(); continue; }
+    if (p.k === 'ring') continue;
+    p.vy += (p.g || 0) * dt;
+    const d = Math.max(0, 1 - (p.drag || 0) * dt); p.vx *= d; if (p.k !== 'text') p.vy *= d; else p.vy *= Math.max(0, 1 - 1.2 * dt);
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.rot !== undefined) p.rot += p.vr * dt;
+  }
+}
+function drawParticles(t) {
+  // normal blend: shards, confetti
+  for (const p of P) {
+    if (p.k === 'shard') {
+      const a = clamp(p.life / p.max * 1.6, 0, 1);
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.globalAlpha = a;
+      ctx.fillStyle = hsl(p.h, 90, p.l); ctx.beginPath();
+      ctx.moveTo(0, -p.sz); ctx.lineTo(p.sz * .75, p.sz * .6); ctx.lineTo(-p.sz * .75, p.sz * .6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    } else if (p.k === 'conf') {
+      const a = clamp(p.life / .6, 0, 1), fl = Math.abs(Math.cos(p.rot * 1.3 + p.ph));
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, .25 + fl * .75); ctx.globalAlpha = a;
+      ctx.fillStyle = hsl(p.h, 95, 62); ctx.fillRect(-p.sz / 2, -p.sz / 3, p.sz, p.sz * .66);
+      ctx.restore();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // additive: sparks, rings
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of P) {
+    if (p.k === 'spark') {
+      const a = clamp(p.life / p.max, 0, 1);
+      ctx.fillStyle = hsl(p.h, 100, 72, a);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * (.4 + a), 0, TAU); ctx.fill();
+    } else if (p.k === 'ring') {
+      const u = 1 - p.life / p.max, e = 1 - Math.pow(1 - u, 3);
+      ctx.lineWidth = p.w * (1 - u) + .5; ctx.strokeStyle = hsl(p.h, 100, 75, (1 - u) * .9);
+      ctx.beginPath(); ctx.arc(p.x, p.y, lerp(p.r0, p.r1, e), 0, TAU); ctx.stroke();
+    }
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // text on top
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  for (const p of P) {
+    if (p.k !== 'text') continue;
+    const u = 1 - p.life / p.max, pop = u < .12 ? lerp(.5, 1.2, u / .12) : u < .22 ? lerp(1.2, 1, (u - .12) / .1) : 1;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.scale(pop, pop); ctx.globalAlpha = clamp(p.life / (p.max * .35), 0, 1);
+    ctx.font = FONT.replace('{S}', p.sz);
+    ctx.lineWidth = Math.max(4, p.sz * .22); ctx.strokeStyle = 'rgba(8,4,24,.55)'; ctx.strokeText(p.text, 0, 0);
+    ctx.fillStyle = p.col; ctx.fillText(p.text, 0, 0);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ambient dust */
+const DUST = Array.from({ length: 34 }, () => ({ x: Math.random(), y: Math.random(), v: rnd(.01, .04), s: rnd(1, 2.8), ph: rnd(0, TAU) }));
+function drawBackdrop(t, hue, heat) {
+  // light rays
+  ctx.save(); ctx.translate(GX, GY); ctx.globalCompositeOperation = 'lighter';
+  const rays = 12, rot = t * .12, len = Math.max(W, H) * .9;
+  const gr = ctx.createRadialGradient(0, 0, R * .4, 0, 0, len * .75);
+  gr.addColorStop(0, hsl(hue, 100, 70, .22 + heat * .1)); gr.addColorStop(1, hsl(hue, 100, 70, 0));
+  ctx.fillStyle = gr;
+  for (let i = 0; i < rays; i++) {
+    const a = rot + i * TAU / rays, w = .09 + .03 * Math.sin(t + i);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a - w) * len, Math.sin(a - w) * len); ctx.lineTo(Math.cos(a + w) * len, Math.sin(a + w) * len); ctx.closePath(); ctx.fill();
+  }
+  // core glow
+  const gl = ctx.createRadialGradient(0, 0, R * .1, 0, 0, R * 1.9);
+  gl.addColorStop(0, hsl(hue, 100, 62, .55)); gl.addColorStop(1, hsl(hue, 100, 55, 0));
+  ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, R * 1.9, 0, TAU); ctx.fill();
+  if (heat > .01) {
+    const hg = ctx.createRadialGradient(0, 0, R * .2, 0, 0, R * 2.3);
+    hg.addColorStop(0, `rgba(255,170,40,${.5 * heat})`); hg.addColorStop(1, 'rgba(255,90,0,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, 0, R * 2.3, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  // dust motes
+  for (const d of DUST) {
+    d.y -= d.v * .016; if (d.y < -.02) { d.y = 1.02; d.x = Math.random(); }
+    const a = .25 + .25 * Math.sin(t * 1.5 + d.ph);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.beginPath(); ctx.arc(d.x * W + Math.sin(t * .6 + d.ph) * 10, d.y * H, d.s, 0, TAU); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  // floor shadow
+  const sy = GY + R * 1.22;
+  ctx.save(); ctx.translate(GX, sy); ctx.scale(1, .17);
+  const sh = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.05);
+  sh.addColorStop(0, 'rgba(0,0,0,.55)'); sh.addColorStop(.6, hsl(hue, 90, 40, .22)); sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(0, 0, R * 1.05, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function drawOrbiters(t, hue, front) {
+  const n = Math.min(6, tier + 1);
+  ctx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < n; k++) {
+    const sp = .8 + k * .13, ph = k * 2.4, rx = R * (1.3 + .12 * (k % 3)), ry = R * .34;
+    for (let tr = 0; tr < 9; tr++) {
+      const a = t * sp + ph - tr * .07, s = Math.sin(a);
+      if ((s > 0) !== front) continue;
+      const x = GX + Math.cos(a) * rx, y = GY + R * .1 + s * ry + Math.sin(t + k) * 4;
+      const f = 1 - tr / 9;
+      ctx.fillStyle = hsl(hue + k * 25, 100, 78, f * .8);
+      ctx.beginPath(); ctx.arc(x, y, (2 + 3.2 * f) * (.8 + .3 * s), 0, TAU); ctx.fill();
+    }
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/* ---------- golden gem (frenzy trigger) ---------- */
+let gold = null, goldTimer = 9;
+function spawnGold() {
+  const dir = Math.random() < .5 ? 1 : -1;
+  gold = { x: dir > 0 ? -40 : W + 40, y: rnd(H * .12, H * .34), vx: dir * rnd(85, 120), t: 0 };
+}
+function drawGold(t) {
+  if (!gold) return;
+  const y = gold.y + Math.sin(gold.t * 2.4) * 22, r = 26 + Math.sin(gold.t * 6) * 2;
+  ctx.save(); ctx.translate(gold.x, y);
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 3);
+  g.addColorStop(0, 'rgba(255,210,70,.8)'); g.addColorStop(1, 'rgba(255,150,0,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 3, 0, TAU); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.rotate(Math.sin(gold.t * 3) * .25); ctx.scale(r, r);
+  ctx.beginPath(); ctx.moveTo(0, -1); ctx.lineTo(.9, -.1); ctx.lineTo(0, 1.05); ctx.lineTo(-.9, -.1); ctx.closePath();
+  const fg = ctx.createLinearGradient(-1, -1, 1, 1); fg.addColorStop(0, '#fff6b8'); fg.addColorStop(.5, '#ffc928'); fg.addColorStop(1, '#e07a00');
+  ctx.fillStyle = fg; ctx.fill(); ctx.lineWidth = .08; ctx.strokeStyle = '#fff'; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-.9, -.1); ctx.lineTo(.9, -.1); ctx.moveTo(0, -1); ctx.lineTo(-.35, -.1); ctx.lineTo(0, 1.05); ctx.moveTo(0, -1); ctx.lineTo(.35, -.1);
+  ctx.lineWidth = .05; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.font = FONT.replace('{S}', 15); ctx.textAlign = 'center'; ctx.fillStyle = '#ffe58a'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(8,4,24,.6)';
+  ctx.strokeText('TAP ME!', gold.x, y + r * 1.9); ctx.fillText('TAP ME!', gold.x, y + r * 1.9); ctx.restore();
+}
+
+/* ---------- game logic ---------- */
+const el = {
+  bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
+  fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
+  frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
+  banner: $('#banner'), bannerT: $('#bannerT'), toast: $('#toast'), app: $('#app'), owned: $('#owned'),
+};
+let sq = 1, sqv = 0, tilt = 0, tiltv = 0, shake = 0, flashA = 0, bump = 0, heat = 0, t = 0, toastT = 0;
+
+function setTierUI() {
+  const T = TIERS[tier];
+  el.app.style.setProperty('--h', T.cosmic ? 292 : T.h);
+  el.tierName.textContent = T.name; el.tierNum.textContent = `${tier + 1}/${TIERS.length}`;
+  document.querySelector('meta[name=theme-color]').setAttribute('content', `hsl(${T.h} 60% 6%)`);
+}
+function evolve(silent) {
+  tier++; setTierUI();
+  if (silent) return;
+  const T = TIERS[tier];
+  flashA = 1; shake = 22; bump = 1.4;
+  el.bannerT.textContent = T.name.toUpperCase();
+  el.banner.classList.remove('show'); void el.banner.offsetWidth; el.banner.classList.add('show');
+  confetti(GX, GY, 90);
+  ring(GX, GY, R * .3, R * 2.6, .9, T.h, 10); ring(GX, GY, R * .3, R * 3.4, 1.2, T.h + 40, 6);
+  sndEvolve(); vib([30, 40, 80]);
+}
+function addGems(n) { S.gems += n; S.total += n; }
+
+function doTap(x, y, auto) {
+  const now = performance.now() / 1000;
+  if (now - lastTap > COMBO_WINDOW) combo = 0;
+  combo++; lastTap = now; comboPeak = Math.max(comboPeak, combo);
+  const crit = Math.random() < critChance();
+  let g = tapPower() * comboMult() * (frenzy > 0 ? FRENZY_MULT : 1) * (crit ? 5 : 1);
+  g = Math.max(1, Math.round(g));
+  addGems(g); S.taps++;
+  el.hint.style.display = 'none';
+  // juice
+  sqv -= crit ? 5.4 : 3.3;
+  tiltv += clamp((x - GX) / R, -1.2, 1.2) * 2.6;
+  bump = Math.min(1.2, bump + .5);
+  const h = tierHue();
+  burst(x, y, crit ? 20 : 8, crit);
+  ring(x, y, 6, crit ? 90 : 52, crit ? .5 : .35, crit ? 45 : h, crit ? 7 : 4);
+  floatText(x + rnd(-14, 14), y - 30, (crit ? 'CRIT +' : '+') + fmt(g), crit ? { sz: 42, col: '#ffd84a', vy: -210, life: 1.1, max: 1.1 } : { sz: 28 + Math.min(10, combo * .1), col: '#fff' });
+  if (crit) { shake = Math.max(shake, 12); flashA = Math.max(flashA, .18); vib(18); } else vib(6);
+  const ms = { 10: 'NICE!', 25: 'SWEET!', 50: 'INSANE!', 75: 'UNREAL!', 100: 'GODLIKE!' }[combo];
+  if (ms) { floatText(GX, GY - R * 1.25, ms, { sz: 46, col: '#ff8ad8', vy: -90, life: 1.3, max: 1.3 }); confetti(GX, GY - R * .6, 18); shake = Math.max(shake, 8); }
+  if (!auto || demo) sndTap(combo, crit);
+}
+
+function collectGold() {
+  const gx = gold.x, gy = gold.y;
+  gold = null; goldTimer = rnd(30, 50);
+  frenzy = FRENZY_TIME;
+  confetti(gx, gy, 70); ring(gx, gy, 10, 160, .7, 45, 8);
+  flashA = .5; shake = 14; sndFrenzy(); vib([20, 30, 20]);
+  toast('FRENZY! Everything x7 for 15s');
+}
+
+stage.addEventListener('pointerdown', e => {
+  e.preventDefault(); audio();
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  if (gold) { const gyy = gold.y + Math.sin(gold.t * 2.4) * 22; if (Math.hypot(x - gold.x, y - gyy) < 62) { collectGold(); return; } }
+  doTap(x, y, false);
+});
+
+/* ---------- shop ---------- */
+const list = $('#list'), cards = {};
+UPS.forEach(u => {
+  const b = document.createElement('button'); b.className = 'card'; b.type = 'button';
+  b.innerHTML = `<span class="ico">${u.ico}</span><span class="meta"><b>${u.name}<em>Lv 0</em></b><small></small></span><span class="buy"><svg><use href="#gem"/></svg><span></span></span>`;
+  list.appendChild(b);
+  cards[u.id] = { b, lv: b.querySelector('em'), desc: b.querySelector('small'), cost: b.querySelector('.buy span'), buy: b.querySelector('.buy'), last: '' };
+  b.addEventListener('pointerdown', e => { e.stopPropagation(); audio(); });
+  b.addEventListener('click', () => buy(u));
+});
+function buy(u, quiet) {
+  const c = costOf(u);
+  if (u.max && lvl(u.id) >= u.max) return false;
+  if (S.gems < c) { cards[u.id].b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 }); vib(10); return false; }
+  S.gems -= c; S.up[u.id]++;
+  const cd = cards[u.id].b; cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
+  if (!quiet) { sndBuy(); vib(12); }
+  ring(GX, GY, R * .4, R * 1.4, .5, tierHue(), 5); bump = 1;
+  refreshShop(true);
+  return true;
+}
+function refreshShop(force) {
+  let owned = 0;
+  UPS.forEach(u => {
+    const c = costOf(u), cd = cards[u.id], l = lvl(u.id), maxed = u.max && l >= u.max;
+    owned += l;
+    const sig = l + '|' + (S.gems >= c ? 1 : 0) + '|' + tier;
+    if (!force && sig === cd.last) return;
+    cd.last = sig;
+    cd.lv.textContent = maxed ? 'MAX' : 'Lv ' + l;
+    cd.desc.textContent = u.desc(u);
+    cd.cost.textContent = maxed ? 'Maxed' : fmt(c);
+    cd.buy.querySelector('svg').style.display = maxed ? 'none' : '';
+    cd.b.classList.toggle('can', !maxed && S.gems >= c);
+    cd.b.classList.toggle('max', !!maxed);
+  });
+  el.owned.textContent = owned + ' owned';
+}
+
+/* ---------- HUD, toast, tools ---------- */
+function toast(msg, ms = 2400) { el.toast.textContent = msg; el.toast.classList.add('on'); toastT = ms / 1000; }
+function applyMute() {
+  $('#bSound').classList.toggle('on', !S.muted);
+  $('#sndWave').style.display = S.muted ? 'none' : '';
+}
+$('#bSound').addEventListener('click', () => { S.muted = !S.muted; applyMute(); audio(); save(); });
+$('#bDemo').addEventListener('click', () => {
+  demo = !demo; $('#bDemo').classList.toggle('on', demo); audio();
+  toast(demo ? 'Auto-play on. Hit record and watch it go.' : 'Auto-play off');
+});
+$('#bShare').addEventListener('click', async () => {
+  const text = `I reached ${TIERS[tier].name} in Gem Rush with ${fmt(Math.floor(S.total))} gems. Can you beat that?`;
+  try { if (navigator.share) { await navigator.share({ title: 'Gem Rush', text, url: location.href }); return; } } catch (e) { return; }
+  try { await navigator.clipboard.writeText(text + ' ' + location.href); toast('Copied. Paste it anywhere.'); } catch (e) { toast(text, 4000); }
+});
+let resetArm = 0;
+$('#bReset').addEventListener('click', () => {
+  if (performance.now() - resetArm < 3000) {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    S = { gems: 0, total: 0, up: {}, taps: 0, t: Date.now(), muted: S.muted }; UPS.forEach(u => S.up[u.id] = 0);
+    tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); toast('Progress reset'); resetArm = 0;
+  } else { resetArm = performance.now(); toast('Tap reset again to wipe all progress'); }
+});
+[...document.querySelectorAll('.tools button')].forEach(b => b.addEventListener('pointerdown', e => e.stopPropagation()));
+
+/* ---------- loop ---------- */
+let accAuto = 0, accShop = 0, accSave = 0, demoT = 0, demoBuyT = 2, last = performance.now(), balStr = '', psStr = '';
+function update(dt) {
+  t += dt;
+  // production
+  const ps = perSec();
+  if (ps > 0) addGems(ps * dt);
+  while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) evolve(false);
+
+  // spring squash + tilt
+  sqv += ((1 - sq) * 280 - sqv * 14) * dt; sq += sqv * dt; sq = clamp(sq, .6, 1.25);
+  tiltv += ((0 - tilt) * 220 - tiltv * 11) * dt; tilt += tiltv * dt;
+  if (!RM) shake = Math.max(0, shake - dt * 48); else shake = 0;
+  flashA = Math.max(0, flashA - dt * (flashA > .5 ? 1.4 : 2.5));
+  bump = Math.max(0, bump - dt * 5);
+  toastT -= dt; if (toastT <= 0) el.toast.classList.remove('on');
+
+  // combo decay
+  const now = performance.now() / 1000, since = now - lastTap;
+  if (combo > 0 && since > COMBO_WINDOW) combo = 0;
+  // frenzy
+  if (frenzy > 0) {
+    frenzy -= dt; heat = Math.min(1, heat + dt * 3);
+    if (Math.random() < dt * 55) add({ k: 'spark', x: GX + rnd(-R, R), y: GY + R * .9, vx: rnd(-30, 30), vy: rnd(-260, -120), g: -60, drag: .8, life: rnd(.5, 1), max: 1, sz: rnd(3, 6), h: rnd(15, 48) });
+    if (frenzy <= 0) { frenzy = 0; toast('Frenzy over. Nice run!'); }
+  } else heat = Math.max(0, heat - dt * 2);
+
+  // auto-mining visuals
+  accAuto += dt;
+  if (baseRate() > 0 && accAuto > .55) {
+    accAuto = 0;
+    const a = rnd(-Math.PI * .85, -Math.PI * .15), rr = R * rnd(1.05, 1.5);
+    const gain = Math.max(1, Math.round(ps * .55));
+    floatText(GX + Math.cos(a) * rr, GY + Math.sin(a) * rr * .8, '+' + fmt(gain), { sz: 20, col: hsl(tierHue(), 100, 82), vy: -60, life: .9, max: .9 });
+    add({ k: 'spark', x: GX + Math.cos(a) * rr, y: GY + Math.sin(a) * rr * .8, vx: 0, vy: -20, g: 0, drag: 1, life: .5, max: .5, sz: 4, h: tierHue() });
+  }
+
+  // golden gem
+  goldTimer -= dt;
+  if (!gold && goldTimer <= 0 && frenzy <= 0) spawnGold();
+  else if (!gold && goldTimer <= 0) goldTimer = 5;
+  if (gold) { gold.t += dt; gold.x += gold.vx * dt; if (gold.x < -70 || gold.x > W + 70) { gold = null; goldTimer = rnd(20, 35); } }
+
+  // demo bot
+  if (demo) {
+    demoT -= dt;
+    if (demoT <= 0) {
+      demoT = rnd(.085, .14);
+      const a = rnd(0, TAU), rr = rnd(0, R * .7);
+      doTap(GX + Math.cos(a) * rr, GY + Math.sin(a) * rr * .8, true);
+    }
+    demoBuyT -= dt;
+    if (demoBuyT <= 0) {
+      demoBuyT = rnd(1.2, 2);
+      const opts = UPS.filter(u => (!u.max || lvl(u.id) < u.max) && S.gems >= costOf(u));
+      if (opts.length) buy(opts[opts.length - 1], false);
+    }
+    if (gold && gold.t > .8) collectGold();
+  }
+
+  updateParticles(dt);
+
+  // HUD
+  dispGems += (S.gems - dispGems) * Math.min(1, dt * 14);
+  if (Math.abs(S.gems - dispGems) < 1) dispGems = S.gems;
+  const bs = fmt(Math.floor(dispGems)); if (bs !== balStr) { balStr = bs; el.bal.textContent = bs; }
+  const pss = fmt(ps); if (pss !== psStr) { psStr = pss; el.ps.textContent = pss; }
+  el.balWrap.style.transform = `scale(${1 + bump * .07})`;
+  const cur = TIERS[tier], nxt = TIERS[tier + 1];
+  if (nxt) {
+    const f = clamp((S.total - cur.at) / (nxt.at - cur.at), 0, 1);
+    el.fill.style.width = (f * 100).toFixed(1) + '%';
+    el.lbl.textContent = `${fmt(Math.floor(S.total))} / ${fmt(nxt.at)}  ·  next: ${nxt.name}`;
+  } else { el.fill.style.width = '100%'; el.lbl.textContent = `${fmt(Math.floor(S.total))} gems  ·  max tier`; }
+  const showCombo = combo >= 3;
+  el.comboPill.classList.toggle('on', showCombo);
+  if (showCombo) {
+    el.comboN.textContent = combo; el.comboM.textContent = 'x' + comboMult().toFixed(2);
+    el.comboBar.style.transform = `scaleX(${clamp(1 - since / COMBO_WINDOW, 0, 1)})`;
+  }
+  el.frenzy.classList.toggle('on', frenzy > 0);
+  if (frenzy > 0) el.frenzyFill.style.transform = `scaleX(${frenzy / FRENZY_TIME})`;
+  el.flash.style.opacity = flashA.toFixed(3);
+
+  accShop += dt; if (accShop > .12) { accShop = 0; refreshShop(false); }
+  accSave += dt; if (accSave > 5) { accSave = 0; save(); }
+}
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const T = TIERS[tier], hue = T.cosmic ? (t * 40) % 360 : T.h;
+  ctx.save();
+  if (shake > .1) ctx.translate(rnd(-shake, shake) * .6, rnd(-shake, shake) * .6);
+  drawBackdrop(t, hue, heat);
+  drawOrbiters(t, hue, false);
+  drawGem(t, tier, tilt, sq);
+  drawOrbiters(t, hue, true);
+  drawParticles(t);
+  drawGold(t);
+  ctx.restore();
+}
+function frame(ts) {
+  const dt = Math.min(.05, (ts - last) / 1000); last = ts;
+  update(dt); draw();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+(function boot() {
+  while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
+  setTierUI(); applyMute();
+  // offline progress
+  const away = Math.min((Date.now() - (S.t || Date.now())) / 1000, 8 * 3600);
+  const rate = baseRate();
+  if (away > 60 && rate > 0) {
+    const gain = Math.floor(rate * away * .5); addGems(gain); dispGems = S.gems - gain;
+    setTimeout(() => toast(`Welcome back! Your miners found ${fmt(gain)} gems`, 3500), 600);
+  }
+  if (S.taps > 0) el.hint.style.display = 'none';
+  refreshShop(true);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  addEventListener('pagehide', save);
+  requestAnimationFrame(ts => { last = ts; requestAnimationFrame(frame); });
+  // test/recording hooks
+  window.__gem = { S: () => S, tap: (x, y) => doTap(x ?? GX, y ?? GY, true), addGems, buy: id => buy(UPS.find(u => u.id === id)), demo: v => { demo = v; }, spawnGold };
+})();
+})();
+</script>
+</body>
+</html>
