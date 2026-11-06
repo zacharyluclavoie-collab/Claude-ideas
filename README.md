@@ -30,7 +30,7 @@ Checked against the CrazyGames developer requirements (technical, gameplay, adve
 | Audio muted when the ad actually starts, restored on finish or error | Done. SDK `muteAudio` always takes priority over the in-game toggle |
 | Rewarded ads never pay on `adError` | Fixed. They used to pay out on error |
 | No rewarded button over active gameplay | Fixed. The floating "watch ad" pop-up is removed. Rewarded options live in the Shop, the Lucky Spin menu and the Welcome Back popup |
-| Rewarded options have a cooldown timer and a non-ad alternative | Done. Shop cards show "Ready in Ns" and every reward can also be bought with coins |
+| Rewarded options have a cooldown timer and a non-ad alternative | Done. Shop cards show "Ready in Ns". Each ad reward has a no-ad route: the free timed Lucky Spin, the plain Collect button, or a similar boost you can buy with coins in the Shop. Coins also come from missions and golden flies |
 | No-ad option same size, font and colour as the ad option | Done (Welcome Back, Lucky Spin) |
 | Ad blocker support | Done. The game never blocks players. Rewarded cards are disabled with a "Blocked by ad blocker" notice |
 | Basic Launch (`adsDisabled`) | Rewarded buttons hide themselves instead of doing nothing |
