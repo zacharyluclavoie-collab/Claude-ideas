@@ -201,6 +201,44 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cell b{font-size:11px;font-weight:600}
 .cell span{font-size:10px;color:var(--ink-faint)}
 .scard{display:block;width:100%;max-height:64vh;object-fit:contain;border-radius:16px}
+/* ---- v7 polish ---- */
+:root{--spring:cubic-bezier(.34,1.56,.64,1)}
+#app{animation:appin .7s ease-out}
+@keyframes appin{from{opacity:0}}
+button{transition:transform .22s var(--spring),background .2s,opacity .2s,border-color .2s}
+button:active{transform:scale(.94)}
+button:focus-visible,.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{position:relative;overflow:hidden}
+.card[hidden]{display:none}
+.card::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--accent-2),var(--accent));transform-origin:left;transform:scaleX(var(--p,0));opacity:.85;transition:transform .3s ease,opacity .3s}
+.card.can::after,.card.max::after{opacity:0}
+.card.pop::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%);transform:translateX(-100%);animation:sweep .6s ease-out}
+@keyframes sweep{to{transform:translateX(100%)}}
+.card.reveal{animation:reveal .55s var(--spring)}
+@keyframes reveal{from{opacity:0;transform:translateY(16px) scale(.95)}}
+.card.can{animation:canpulse 2.2s ease-in-out infinite}
+@keyframes canpulse{50%{box-shadow:0 0 30px -4px var(--accent)}}
+.card.can.pop{animation:cardpop .45s var(--spring)}
+.card.can.reveal{animation:reveal .55s var(--spring)}
+.prog.near i{animation:nearp .45s ease-in-out infinite alternate}
+@keyframes nearp{to{box-shadow:0 0 34px 2px var(--accent)}}
+.lane .pill.leaving,.lane #toast.leaving{animation:pillout .24s ease-in forwards}
+@keyframes pillout{to{opacity:0;transform:translateY(-10px) scale(.92)}}
+#sheet{animation:fadein .25s ease-out}
+@keyframes fadein{from{opacity:0}}
+#comboPill[data-lv="1"] #combo{border-color:#ffb100;box-shadow:0 0 22px -4px #ff9d00}
+#comboPill[data-lv="1"] #comboBar{background:#ffb100;box-shadow:0 0 8px #ffb100}
+#comboPill[data-lv="1"] #comboM{color:#ffc84a}
+#comboPill[data-lv="2"] #combo{border-color:#ff4fa0;box-shadow:0 0 28px -2px #ff4fa0}
+#comboPill[data-lv="2"] #comboBar{background:#ff4fa0;box-shadow:0 0 8px #ff4fa0}
+#comboPill[data-lv="2"] #comboM{color:#ff7ab8}
+#comboPill[data-lv="3"] #combo{border:1px solid transparent;background:linear-gradient(rgba(10,6,24,.88),rgba(10,6,24,.88)) padding-box,linear-gradient(90deg,#ff4fa0,#ffb100,#4fe0ff,#a46bff,#ff4fa0) border-box;box-shadow:0 0 32px -2px #a46bff}
+#comboPill[data-lv="3"] #comboBar{background:linear-gradient(90deg,#ff4fa0,#ffb100,#4fe0ff)}
+#comboPill[data-lv="3"] #comboM{color:#9ff0ff}
+#comboN{display:inline-block;min-width:2ch;text-align:center}
+#hring{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;border:3px solid var(--accent);pointer-events:none;opacity:0;animation:hr 1.7s ease-out infinite}
+@keyframes hr{0%{transform:scale(.45);opacity:.95}100%{transform:scale(1.5);opacity:0}}
+@media (prefers-reduced-motion:reduce){.card.can,#hring,.prog.near i{animation:none}}
 @media (max-height:640px) and (orientation:portrait){
   .hud{padding-top:8px}
   #bal{font-size:40px}.bal svg{width:28px;height:28px}.bal{margin-top:2px}
@@ -266,7 +304,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
       <div class="pill" id="frenzy"><span id="frenzyTxt">FRENZY x7</span><div id="frenzyBar"><i id="frenzyFill"></i></div></div>
     </div>
     <div class="pill" id="comboPill"><div id="combo"><small>COMBO</small><b id="comboN">0</b><em id="comboM">x1.00</em><i id="comboBar"></i></div></div>
-        <div id="hint">TAP THE GEM</div>
+        <i id="hring"></i>
+    <div id="hint">TAP THE GEM</div>
             <div id="flash"></div>
     <div id="banner"><small>EVOLVED</small><b id="bannerT">EMERALD</b></div>
   </main>
@@ -462,14 +501,14 @@ function startMusic() {
 }
 
 /* ---------- canvas ---------- */
-const stage = $('#stage'), cv = $('#cv'); let ctx = cv.getContext('2d');
+const stage = $('#stage'), cv = $('#cv'), hring = $('#hring'); let ctx = cv.getContext('2d');
 let Q = 2, DPRCAP = 2, maxP = 420, W = 0, H = 0, DPR = 1, GX = 0, GY = 0, R = 100;
 function resize() {
   DPR = Math.min(DPRCAP, window.devicePixelRatio || 1);
   W = stage.clientWidth; H = stage.clientHeight;
   cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
   R = Math.min(W * .34, H * .30);
-  GX = W / 2; GY = H * .5 - R * .1;
+  GX = W / 2; GY = H * .5 - R * .1; hring.style.left = GX + 'px'; hring.style.top = GY + 'px';
 }
 new ResizeObserver(resize).observe(stage);
 resize();
@@ -629,7 +668,8 @@ function burst(x, y, n, crit) {
   }
 }
 function ring(x, y, r0, r1, life, hue, w = 5) { add({ k: 'ring', x, y, r0, r1, life, max: life, h: hue, w }); }
-function floatText(x, y, text, o = {}) { add(Object.assign({ k: 'text', x, y, vx: rnd(-25, 25), vy: -150, g: 120, drag: .6, life: .9, max: .9, text, sz: 30, col: '#fff' }, o)); }
+function floatText(x, y, text, o = {}) {
+  if (!(o.sz >= 40)) { let nt = 0; for (const q of P) if (q.k === 'text') nt++; if (nt >= 9) return; } add(Object.assign({ k: 'text', x, y, vx: rnd(-25, 25), vy: -150, g: 120, drag: .6, life: .9, max: .9, text, sz: 30, col: '#fff' }, o)); }
 function confetti(x, y, n) {
   for (let i = 0; i < n; i++) {
     const a = rnd(-Math.PI * .9, -Math.PI * .1), v = rnd(300, 900);
@@ -779,7 +819,7 @@ function drawGold(t) {
 /* ---------- game logic ---------- */
 const el = {
   bal: $('#bal'), ps: $('#ps'), balWrap: $('#balWrap'), tierName: $('#tierName'), tierNum: $('#tierNum'),
-  fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
+  prog: $('.prog'), chip: $('.chip'), fill: $('#progFill'), lbl: $('#progLbl'), comboPill: $('#comboPill'), comboN: $('#comboN'), comboM: $('#comboM'), comboBar: $('#comboBar'),
   frenzy: $('#frenzy'), frenzyFill: $('#frenzyFill'), frenzyTxt: $('#frenzyTxt'), hint: $('#hint'), flash: $('#flash'),
   banner: $('#banner'), bannerT: $('#bannerT'), bannerS: $('#banner small'), toast: $('#toast'), app: $('#app'), shards: $('#shards'), achN: $('#achN'), ascend: $('#ascend'), timer: $('#timer'), timerN: $('#timerN'), bossPill: $('#bossPill'), hpFill: $('#hpFill'), bossT: $('#bossT'),
 };
@@ -792,6 +832,7 @@ function setTierUI() {
   document.querySelector('meta[name=theme-color]').setAttribute('content', `hsl(${T.h} 60% 6%)`);
 }
 function spin() { if (!RM && Math.abs(spinTarget - spinA) < .6) spinTarget += TAU; }
+function hideHint() { el.hint.style.display = 'none'; hring.style.display = 'none'; }
 function showBanner(small, big) {
   el.bannerS.textContent = small; el.bannerT.textContent = big;
   el.banner.classList.remove('show'); void el.banner.offsetWidth; el.banner.classList.add('show');
@@ -800,7 +841,8 @@ const evoLog = [];
 function evolve(silent) {
   tier++; setTierUI(); S.maxTier = Math.max(S.maxTier || 0, tier);
   if (silent) return;
-  sq = .6; sqv = 0;
+  sq = .6; sqv = 0; fillD = 1;
+  el.chip.animate([{ transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 480, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   const T = TIERS[tier];
   flashA = 1; shake = 22; bump = 1.4;
   spin(); showBanner('EVOLVED', T.name.toUpperCase()); evoLog.push([tier, +t.toFixed(1)]);
@@ -814,12 +856,13 @@ function doTap(x, y, auto) {
   const now = performance.now() / 1000;
   if (now - lastTap > COMBO_WINDOW) combo = 0;
   combo++; lastTap = now; comboPeak = Math.max(comboPeak, combo);
+  if (combo >= 3) el.comboN.animate([{ transform: 'scale(1.45)' }, { transform: 'scale(1)' }], { duration: 170, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   const crit = Math.random() < critChance();
   let g = tapPower() * comboMult() * (frenzy > 0 ? FRENZY_MULT : 1) * (crit ? 5 : 1);
   g = Math.max(1, Math.round(g));
   addGems(g); S.taps++;
   if (boss) { tone(rnd(90, 170), .08, 'square', .06, 0, .5); boss.hp -= crit ? 3 : 1; shake = Math.max(shake, 5); if (boss.hp <= 0) endBoss(true); }
-  el.hint.style.display = 'none';
+  hideHint();
   // juice
   sqv -= crit ? 5.4 : 3.3;
   tiltv += clamp((x - GX) / R, -1.2, 1.2) * 2.6;
@@ -827,7 +870,7 @@ function doTap(x, y, auto) {
   const h = tierHue();
   burst(x, y, crit ? 20 : 8, crit);
   ring(x, y, 6, crit ? 90 : 52, crit ? .5 : .35, crit ? 45 : h, crit ? 7 : 4);
-  floatText(x + rnd(-14, 14), y - 30, (crit ? 'CRIT +' : '+') + fmt(g), crit ? { sz: 42, col: '#ffd84a', vy: -210, life: 1.1, max: 1.1 } : { sz: 28 + Math.min(10, combo * .1), col: '#fff' });
+  floatText(x + rnd(-34, 34), y - 30 - rnd(0, 26), (crit ? 'CRIT +' : '+') + fmt(g), crit ? { sz: 42, col: '#ffd84a', vy: -210, life: 1.1, max: 1.1 } : { sz: 28 + Math.min(10, combo * .1), col: '#fff' });
   if (crit) { shake = Math.max(shake, 12); flashA = Math.max(flashA, .18); vib(18); if (!boss) spin(); } else vib(6);
   const ms = { 10: 'NICE!', 25: 'SWEET!', 50: 'INSANE!', 75: 'UNREAL!', 100: 'GODLIKE!' }[combo];
   if (ms) { floatText(GX, GY - R * 1.25, ms, { sz: 46, col: '#ff8ad8', vy: -90, life: 1.3, max: 1.3 }); confetti(GX, GY - R * .6, 18); shake = Math.max(shake, 8); }
@@ -866,8 +909,13 @@ UPS.forEach(u => {
   b.innerHTML = `<span class="ico">${u.ico}</span><span class="meta"><b>${u.name}<em>Lv 0</em><i class="mile" hidden>x1</i></b><small></small></span><span class="buy"><svg><use href="#gem"/></svg><span></span></span>`;
   list.appendChild(b);
   cards[u.id] = { b, mile: b.querySelector('.mile'), lv: b.querySelector('em'), desc: b.querySelector('small'), cost: b.querySelector('.buy span'), buy: b.querySelector('.buy'), last: '' };
-  b.addEventListener('pointerdown', e => { e.stopPropagation(); audio(); });
-  b.addEventListener('click', () => buy(u));
+  let hold = 0;
+  b.addEventListener('pointerdown', e => {
+    e.stopPropagation(); audio(); b._held = false; let d = 140;
+    hold = setTimeout(function tick() { b._held = true; if (buy(u, false)) { d = Math.max(38, d * .92); hold = setTimeout(tick, d); } }, 380);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => clearTimeout(hold)));
+  b.addEventListener('click', () => { if (b._held) { b._held = false; return; } buy(u); });
 });
 function plan(u) {
   const l0 = lvl(u.id), cap = u.max ? u.max - l0 : Infinity;
@@ -889,6 +937,7 @@ function buy(u, quiet, one) {
   const before = mileCount(u.id);
   S.gems -= p.cost; S.up[u.id] += p.n;
   const cd = cards[u.id].b; cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop');
+  cards[u.id].lv.animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'cubic-bezier(.3,1.6,.5,1)' });
   if (!quiet) { sndBuy(); vib(12); }
   ring(GX, GY, R * .4, R * 1.4, .5, tierHue(), 5); bump = 1;
   if (mileCount(u.id) > before) {
@@ -899,9 +948,14 @@ function buy(u, quiet, one) {
   return true;
 }
 function refreshShop(force) {
-  UPS.forEach(u => {
+  const maxOwned = UPS.reduce((m, u, i) => lvl(u.id) > 0 ? i : m, -1);
+  UPS.forEach((u, i) => {
     const cd = cards[u.id], l = lvl(u.id), maxed = u.max && l >= u.max, p = plan(u);
     const can = !maxed && S.gems >= p.cost;
+    const show = i <= maxOwned + 2 || S.gems >= costOf(u);
+    if (cd.shown !== show) { cd.shown = show; cd.b.hidden = !show; if (show && !force) { cd.b.classList.remove('reveal'); void cd.b.offsetWidth; cd.b.classList.add('reveal'); } }
+    const pq = maxed ? 100 : Math.round(Math.min(1, S.gems / p.cost) * 100);
+    if (cd.pq !== pq) { cd.pq = pq; cd.b.style.setProperty('--p', pq / 100); }
     const sig = [l, can ? 1 : 0, tier, amt, p.cost, S.shards || 0, achCount()].join('|');
     if (!force && sig === cd.last) return;
     cd.last = sig;
@@ -934,7 +988,14 @@ function checkAch() {
 }
 
 /* ---------- HUD, toast, tools ---------- */
-function toast(msg, ms = 2400) { el.toast.textContent = msg; el.toast.classList.add('on'); toastT = ms / 1000; }
+const pillOn = new WeakMap();
+function pill(e, on) {
+  if (on === !!pillOn.get(e)) return;
+  pillOn.set(e, on); clearTimeout(e._t);
+  if (on) { e.classList.remove('leaving'); e.classList.add('on'); }
+  else { e.classList.add('leaving'); e._t = setTimeout(() => e.classList.remove('on', 'leaving'), 240); }
+}
+function toast(msg, ms = 2400) { el.toast.textContent = msg; pill(el.toast, true); toastT = ms / 1000; }
 function applyMute() {
   const b = $('#bSound'); b.classList.toggle('on', S.snd === 0); b.classList.toggle('half', S.snd === 1);
   $('#sndWave').style.display = S.snd === 2 ? 'none' : '';
@@ -961,7 +1022,7 @@ $('#bReset').addEventListener('click', () => {
     tier = 0; combo = 0; frenzy = 0; dispGems = 0; setTierUI(); refreshShop(true); refreshMeta(); toast('Progress reset'); resetArm = 0;
   } else { resetArm = performance.now(); toast('Tap reset again to wipe all progress'); }
 });
-$('#bAmt').addEventListener('click', () => { amt = amt === 1 ? 10 : amt === 10 ? 'max' : 1; $('#bAmt').textContent = amt === 'max' ? 'MAX' : 'x' + amt; refreshShop(true); });
+$('#bAmt').addEventListener('click', () => { amt = amt === 1 ? 10 : amt === 10 ? 'max' : 1; $('#bAmt').textContent = amt === 'max' ? 'MAX' : 'x' + amt; $('#bAmt').animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 240, easing: 'cubic-bezier(.3,1.6,.5,1)' }); refreshShop(true); });
 $('#bClean').addEventListener('click', () => {
   const on = el.app.classList.toggle('clean'); $('#bClean').classList.toggle('on', on);
   if (on) toast('Clean view. Turn on auto-play, then record.', 2600);
@@ -1028,7 +1089,7 @@ function updateEvents(dt) {
       el.hpFill.style.transform = `scaleX(${clamp(boss.hp / boss.max, 0, 1)})`; el.bossT.textContent = Math.ceil(boss.t);
     }
   }
-  el.bossPill.classList.toggle('on', !!boss);
+  pill(el.bossPill, !!boss);
   if (rain) {
     rain.t -= dt;
     if (rain.t > 0) { rain.acc += dt; while (rain.acc > .13) { rain.acc -= .13; RAIN.push({ x: rnd(26, W - 26), y: -30, vy: rnd(230, 380), r: rnd(15, 23), hue: rnd(0, 360), rot: rnd(0, TAU), vr: rnd(-5, 5) }); } }
@@ -1132,9 +1193,9 @@ function startChallenge() {
   S = newState(); S.snd = backup.snd;
   tier = 0; combo = 0; comboPeak = 0; frenzy = 0; dispGems = 0; gold = null; goldTimer = 9; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta();
-  el.app.classList.add('chal'); el.timerN.textContent = CHAL_TIME; el.timer.classList.remove('low'); el.timer.classList.add('on');
+  el.app.classList.add('chal'); el.timerN.textContent = CHAL_TIME; el.timer.classList.remove('low'); pill(el.timer, true);
   overlay.className = 'count'; overlay.innerHTML = '<b id="cnt"></b>'; overlay.style.display = 'grid';
-  el.hint.style.display = 'none';
+  hideHint();
 }
 function chalTick(dt) {
   if (chal.phase === 'count' || (chal.phase === 'run' && chal.cd > -.5)) {
@@ -1157,7 +1218,7 @@ function chalTick(dt) {
   }
 }
 function endChallenge() {
-  chal.phase = 'done'; el.timer.classList.remove('on');
+  chal.phase = 'done'; pill(el.timer, false);
   const total = Math.floor(S.total), name = TIERS[tier].name;
   const nb = total > (chalBest.total || 0);
   if (nb) { chalBest = { total, tier: name }; try { localStorage.setItem('gemrush.best', JSON.stringify(chalBest)); } catch (e) {} }
@@ -1175,7 +1236,7 @@ function endChallenge() {
 }
 function exitChallenge() {
   S = chal.backup; chal = null;
-  el.app.classList.remove('chal'); el.timer.classList.remove('on'); overlay.style.display = 'none'; overlay.innerHTML = '';
+  el.app.classList.remove('chal'); pill(el.timer, false); overlay.style.display = 'none'; overlay.innerHTML = '';
   tier = 0; while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
   combo = 0; frenzy = 0; dispGems = S.gems; gold = null; goldTimer = 10; P.length = 0; clearEvents();
   setTierUI(); refreshShop(true); refreshMeta();
@@ -1183,7 +1244,7 @@ function exitChallenge() {
 $('#bChal').addEventListener('click', () => { audio(); if (chal) { exitChallenge(); return; } startChallenge(); });
 
 /* ---------- loop ---------- */
-let accAuto = 0, accShop = 0, accSave = 0, demoT = 0, demoBuyT = 2, last = performance.now(), balStr = '', psStr = '';
+let fillD = -1, accAuto = 0, accShop = 0, accSave = 0, demoT = 0, demoBuyT = 2, last = performance.now(), balStr = '', psStr = '';
 function update(dt) {
   t += dt;
   // production
@@ -1200,7 +1261,7 @@ function update(dt) {
   if (!RM) shake = Math.max(0, shake - dt * 48); else shake = 0;
   flashA = Math.max(0, flashA - dt * (flashA > .5 ? 1.4 : 2.5));
   bump = Math.max(0, bump - dt * 5);
-  toastT -= dt; if (toastT <= 0) el.toast.classList.remove('on');
+  toastT -= dt; if (toastT <= 0) pill(el.toast, false);
 
   // combo decay
   const now = performance.now() / 1000, since = now - lastTap;
@@ -1271,16 +1332,18 @@ function update(dt) {
   const cur = TIERS[tier], nxt = TIERS[tier + 1];
   if (nxt) {
     const f = clamp((S.total - cur.at) / (nxt.at - cur.at), 0, 1);
-    el.fill.style.width = (f * 100).toFixed(1) + '%';
+    if (fillD < 0) fillD = f; fillD += (f - fillD) * Math.min(1, dt * 9); if (Math.abs(f - fillD) < .0004) fillD = f;
+    el.fill.style.width = (fillD * 100).toFixed(2) + '%'; el.prog.classList.toggle('near', f > .9);
     el.lbl.textContent = `${fmt(Math.floor(S.total))} / ${fmt(nxt.at)}  ·  next: ${nxt.name}`;
   } else { el.fill.style.width = '100%'; el.lbl.textContent = `${fmt(Math.floor(S.total))} gems  ·  max tier`; }
   const showCombo = combo >= 3;
   el.comboPill.classList.toggle('on', showCombo);
+  const lvStr = combo >= 100 ? '3' : combo >= 50 ? '2' : combo >= 25 ? '1' : '0'; if (el.comboPill.dataset.lv !== lvStr) el.comboPill.dataset.lv = lvStr;
   if (showCombo) {
     el.comboN.textContent = combo; el.comboM.textContent = 'x' + comboMult().toFixed(2);
     el.comboBar.style.transform = `scaleX(${clamp(1 - since / COMBO_WINDOW, 0, 1)})`;
   }
-  el.frenzy.classList.toggle('on', frenzy > 0);
+  pill(el.frenzy, frenzy > 0);
   if (frenzy > 0) el.frenzyFill.style.transform = `scaleX(${frenzy / FRENZY_TIME})`;
   el.flash.style.opacity = flashA.toFixed(3);
 
@@ -1318,7 +1381,7 @@ function frame(ts) {
 /* ---------- boot ---------- */
 (function boot() {
   while (tier < TIERS.length - 1 && S.total >= TIERS[tier + 1].at) tier++;
-  S.maxTier = Math.max(S.maxTier || 0, tier); if (!S.tips) S.tips = {};
+  S.maxTier = Math.max(S.maxTier || 0, tier); if (!S.tips) S.tips = {}; sq = .45; sqv = 0;
   setTierUI(); applyMute();
   // offline progress
   const away = Math.min((Date.now() - (S.t || Date.now())) / 1000, 8 * 3600);
@@ -1335,7 +1398,7 @@ function frame(ts) {
     addGems(gift); dispGems = S.gems - gift;
     setTimeout(() => { toast(`Daily gift, day ${S.streak}: +${fmt(gift)} gems`, 3200); confetti(GX, GY, 40); sndBuy(); }, away > 60 && rate > 0 ? 4300 : 900);
   }
-  if (S.taps > 0) el.hint.style.display = 'none';
+  if (S.taps > 0) hideHint();
   refreshShop(true); refreshMeta();
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', () => {

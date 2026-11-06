@@ -11,6 +11,8 @@ Open `index.html` in any browser. No build step, no dependencies.
 - Gem Rain: 9 seconds of falling gems to catch
 - Generative music (pad, bass, arp) that adds drums as your combo climbs, plus a three-way sound button (music and sound, sound only, off)
 - Daily gift with a streak bonus
+- Shop reveals upgrades step by step, every locked card shows a bar for how close you are to buying it, press and hold a card to keep buying
+- Combo pill glows orange, then pink, then rainbow as the streak grows; status bars slide in and out instead of popping
 - Gem collection screen (locked gems show as silhouettes)
 - **Share card**: a 1080x1920 image of your gem, tier and gem count with "Can you beat it?" on it. On a phone the Share button opens the share sheet with the image attached, so it goes straight to TikTok, Instagram or Messages. The speedrun result screen makes one too.
 - Gems keep coming while the app is in the background, and short tips appear the first time you can buy an upgrade and when you reach Emerald
