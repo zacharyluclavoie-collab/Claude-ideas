@@ -931,6 +931,8 @@ const TAU=Math.PI*2;
 const fmt=n=>{n=Math.floor(n);if(n<1e4)return n.toLocaleString("en-US");const u=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];let i=-1;while(n>=1000&&i<u.length-1){n/=1000;i++}return(n<10?n.toFixed(2):n<100?n.toFixed(1):n.toFixed(0))+u[i]};
 const clock=s=>{s=Math.floor(s);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
 const need=L=>L<NL?NEED[L]:NEED[NL-1]*Math.pow(1.08,L-NL+1);
+const BOSS_NEED=3.5;
+const needL=L=>need(L)*((isBoss(L)&&L!==EARTH_L&&!S.endless)?BOSS_NEED:1);
 const unlockL=u=>Math.round((u.s+S.lv[u.id]*u.d)*(S.world>0?NL/310:1));
 const locked=u=>false;
 const cost=u=>(S.tut<9&&u.id==="sticky"&&!S.lv.sticky)?30:Math.ceil(0.3*need(unlockL(u)));
@@ -952,7 +954,7 @@ const bubMult=()=>Math.min(10,1+actives.reduce((a,b)=>a+b.v-1,0));
 const goldMult=()=>Date.now()<goldUntil?3:1;
 const passMult=()=>goldMult()*bubMult();
 const totalMult=()=>lvlM()*Math.pow(2,S.lv.sticky)*Math.pow(3,S.lv.appetite)*lateM()*rebM()*passMult()*frenzyMult();
-const frac=()=>S.ended?1:Math.min(1,S.prog/need(S.L));
+const frac=()=>S.ended?1:Math.min(1,S.prog/needL(S.L));
 const sAt=x=>S.world>0?0.04*Math.pow(1e7,x/NL):x<=150?0.04*Math.pow(5e8,x/150):x<=210?2e7*Math.pow(2.15,x-150):2e7*Math.pow(2.15,60)*Math.pow(1.15,x-210);
 const frogH=()=>sAt(S.L+frac());
 const levelH=()=>sAt(Math.min(S.L,NL-1));
@@ -1482,12 +1484,12 @@ function gain(n){lastBiteT=performance.now();
 let progBank=0;
 function drainProg(dt){
   if(S.ended||endT>=0||progBank<=0)return;
-  const minT=S.L<3?0.7:1.6,cap=need(S.L)/minT*dt,d=Math.min(progBank,Math.max(cap,0));progBank-=d;S.prog+=d;
-  if(progBank>need(S.L)*4)progBank=need(S.L)*4;
-  if(S.prog>=need(S.L)){lvlStart=performance.now();
-    if(S.L>=NL-1&&!S.endless){S.prog=need(S.L);startEnding("universe");return}
-    if(S.L===EARTH_L&&!S.earthGone){S.prog=need(S.L);startEnding("earth");return}
-    S.prog=Math.min(S.prog-need(S.L),need(S.L+1)*0.2);S.L++;levelUp();
+  const minT=S.L<3?0.7:1.6,cap=needL(S.L)/minT*dt,d=Math.min(progBank,Math.max(cap,0));progBank-=d;S.prog+=d;
+  if(progBank>needL(S.L)*4)progBank=needL(S.L)*4;
+  if(S.prog>=needL(S.L)){lvlStart=performance.now();
+    if(S.L>=NL-1&&!S.endless){S.prog=needL(S.L);startEnding("universe");return}
+    if(S.L===EARTH_L&&!S.earthGone){S.prog=needL(S.L);startEnding("earth");return}
+    S.prog=Math.min(S.prog-needL(S.L),need(S.L+1)*0.2);S.L++;levelUp();
   }
 }
 function confetti(n,x,y){if(S.lowfx)n=Math.ceil(n/4);const cs=["#ff5d8f","#ffc53a","#7cc242","#3dbbff","#c58aff","#fff"];for(let i=0;i<n;i++)parts.push({x,y,vx:(Math.random()-0.5)*900,vy:-Math.random()*800,t:0,life:1.8,r:5+Math.random()*5,c:cs[i%6],conf:true,rot:Math.random()*6,vr:(Math.random()-0.5)*14})}
@@ -1525,7 +1527,7 @@ function finishEnding(){
 function showEnd(){
   S.worldsDone=S.worldsDone||{};S.worldsDone[S.world]=1;
   try{if(CG.ok)CG.sdk.game.happytime()}catch(e){}
-  if(!S.endPaid){S.endPaid=true;S.coins+=20}
+  if(!S.endPaid){S.endPaid=true;S.coins+=10}
   const nx=SKINS[Math.min(SKINS.length-1,S.reb+1)];
   $("endTx").textContent=S.world>0?WORLDS[S.world].end:"And so the frog ate literally everything: the planets, the galaxies, the internet, dreams, even time. It got very quiet… and then, somehow, she got hungry again.";
   document.querySelector("#endCard h3").textContent=S.world>0?WORLDS[S.world].name+": eaten":"Everything: eaten";
@@ -1813,43 +1815,43 @@ function midgameAd(){
     clearInterval(iv);el.classList.remove("on");adWarnOn=false;showAd("midgame")},1000)}
 const SHOP=[
   {id:"admoney",kind:"ad",nm:"Money Boost",ds:"",dyn:()=>"Watch an ad: triple your food (+"+fmt(moneyBoost())+")",ic:"choco",bg:"#e8ffd6",cd:180,go:()=>giveMoney()},
-  {id:"adcoins",kind:"ad",nm:"Free Coins",ds:"Watch an ad for +6 coins",ic:"coin",bg:"#fff6c8",cd:120,go:()=>addCoins(6)},
+  {id:"adcoins",kind:"ad",nm:"Free Coins",ds:"Watch an ad for +3 coins",ic:"coin",bg:"#fff6c8",cd:300,go:()=>addCoins(3)},
   {id:"adfrenzy",kind:"ad",nm:"Free Mega Frenzy",ds:"Watch an ad: x3 food for 90 seconds",ic:"star",bg:"#fff0c4",cd:120,go:()=>actives.push({v:3,until:Date.now()+90000})},
   {id:"adgold",kind:"ad",nm:"Free Golden Hour",ds:"Watch an ad: golden x3 for 60 seconds",ic:"fly",v:-1,bg:"#fff6c8",cd:150,go:()=>{goldUntil=Date.now()+60000}},
   {id:"adgulp",kind:"ad",nm:"Free Mega gulp",ds:"Watch an ad: gulp everything now",ic:"mouthI",bg:"#e3f5c9",cd:90,go:()=>{S.meter=1;startGulp()}},
-  {id:"goldtongue",kind:"perk",nm:"Golden Tongue",ds:"x2 food forever, even after rebirth",price:300,ic:"tongueI",bg:"#fff3b0"},
-  {id:"feast",kind:"perk",nm:"Eternal Feast",ds:"x3 food forever, even after rebirth",price:900,ic:"pizza",bg:"#ffe9a8"},
-  {id:"charm",kind:"perk",nm:"Lucky Charm",ds:"+10% crit chance forever",price:200,ic:"star",bg:"#e8f6d0"},
-  {id:"buddy",kind:"perk",nm:"Frog Buddy",ds:"A little frog friend who eats 3 things a second",price:400,ic:"miniFrog",bg:"#dff3c4"},
-  {id:"headstart",kind:"perk",nm:"Head Start",ds:"Every rebirth starts with Auto tongue 3 and Sticky 2",price:250,ic:"robotI",bg:"#dcefff"},
-  {id:"magnet",kind:"perk",nm:"Coin Magnet",ds:"Golden flies give 3 coins instead of 1",price:150,ic:"coin",bg:"#fff6c8"},
-  {id:"neon",kind:"skin",nm:"Neon Frog",ds:"Glows in the dark",price:150},
-  {id:"candy",kind:"skin",nm:"Candy Frog",ds:"Mint and bubblegum",price:150},
-  {id:"robot",kind:"skin",nm:"Robo Frog",ds:"Beep boop. Hungry.",price:200},
-  {id:"ghost",kind:"skin",nm:"Ghost Frog",ds:"Spooky see-through frog",price:250},
-  {id:"galaxy",kind:"skin",nm:"Galaxy Frog",ds:"Made of space, glows purple",price:350},
-  {id:"shadow",kind:"skin",nm:"Shadow Frog",ds:"Dark and mysterious",price:350},
+  {id:"goldtongue",kind:"perk",nm:"Golden Tongue",ds:"x2 food forever, even after rebirth",price:6000,ic:"tongueI",bg:"#fff3b0"},
+  {id:"feast",kind:"perk",nm:"Eternal Feast",ds:"x3 food forever, even after rebirth",price:30000,ic:"pizza",bg:"#ffe9a8"},
+  {id:"charm",kind:"perk",nm:"Lucky Charm",ds:"+10% crit chance forever",price:3000,ic:"star",bg:"#e8f6d0"},
+  {id:"buddy",kind:"perk",nm:"Frog Buddy",ds:"A little frog friend who eats 3 things a second",price:5000,ic:"miniFrog",bg:"#dff3c4"},
+  {id:"headstart",kind:"perk",nm:"Head Start",ds:"Every rebirth starts with Auto tongue 3 and Sticky 2",price:3500,ic:"robotI",bg:"#dcefff"},
+  {id:"magnet",kind:"perk",nm:"Coin Magnet",ds:"Golden flies give 2 coins instead of 1",price:2000,ic:"coin",bg:"#fff6c8"},
+  {id:"neon",kind:"skin",nm:"Neon Frog",ds:"Glows in the dark",price:800},
+  {id:"candy",kind:"skin",nm:"Candy Frog",ds:"Mint and bubblegum",price:800},
+  {id:"robot",kind:"skin",nm:"Robo Frog",ds:"Beep boop. Hungry.",price:1100},
+  {id:"ghost",kind:"skin",nm:"Ghost Frog",ds:"Spooky see-through frog",price:1500},
+  {id:"galaxy",kind:"skin",nm:"Galaxy Frog",ds:"Made of space, glows purple",price:2200},
+  {id:"shadow",kind:"skin",nm:"Shadow Frog",ds:"Dark and mysterious",price:2200},
   {id:"gilded",kind:"skin",nm:"Gilded Frog",ds:"Trophy reward",price:1e12,lock:"gold50"},
   {id:"storm",kind:"skin",nm:"Storm Frog",ds:"Trophy reward",price:1e12,lock:"world5"},
   {id:"collector",kind:"skin",nm:"Collector Frog",ds:"Trophy reward",price:1e12,lock:"dex100"},
   {id:"ancient",kind:"skin",nm:"Ancient Frog",ds:"Trophy reward",price:1e12,lock:"ancmax"},
-  {id:"slime",kind:"tongue",nm:"Slime Tongue",ds:"Green and gooey",price:80,col:"#7cff4a"},
-  {id:"gold",kind:"tongue",nm:"Golden Tongue Skin",ds:"Shiny gold",price:120,col:"#ffcf33"},
-  {id:"lightning",kind:"tongue",nm:"Lightning Tongue",ds:"Electric glow",price:160,col:"#8ff5ff"},
-  {id:"galaxy",kind:"tongue",nm:"Galaxy Tongue",ds:"Purple space shimmer",price:180,col:"#9a6aff",tid:"tgalaxy"},
-  {id:"rainbow",kind:"tongue",nm:"Rainbow Tongue",ds:"Every color at once",price:220,col:"rainbow"},
-  {id:"double",kind:"boost",nm:"Food Frenzy",ds:"x2 food for 60 seconds",price:25,ic:"star",bg:"#fff0c4",go:()=>actives.push({v:2,until:Date.now()+60000})},
-  {id:"gulp",kind:"boost",nm:"Instant Mega gulp",ds:"Fill the meter and gulp right now",price:15,ic:"mouthI",bg:"#e3f5c9",go:()=>{S.meter=1;startGulp()}},
-  {id:"storm",kind:"boost",nm:"Bubble Storm",ds:"6 multiplier bubbles rain down",price:30,ic:"portal",bg:"#e3d6fa",go:()=>{for(let i=0;i<6;i++)setTimeout(spawnBubble,i*200)}},
-  {id:"golden",kind:"boost",nm:"Golden Hour",ds:"Golden x3 for 45 seconds",price:30,ic:"fly",v:-1,bg:"#fff6c8",go:()=>{goldUntil=Date.now()+45000}},
-  {id:"skip",kind:"boost",nm:"Skip a Level",ds:"Instantly finish this level",price:75,ic:"bolt",bg:"#ffe3f0",go:()=>gain(Math.max(0,need(S.L)-S.prog)+1)},
-  {id:"party",kind:"hat",nm:"Party Hat",ds:"Cosmetic hat",price:60},
-  {id:"chef",kind:"hat",nm:"Chef Hat",ds:"Cosmetic hat",price:90},
-  {id:"propeller",kind:"hat",nm:"Propeller Cap",ds:"It spins!",price:120},
-  {id:"cowboy",kind:"hat",nm:"Cowboy Hat",ds:"Cosmetic hat",price:160},
-  {id:"top",kind:"hat",nm:"Fancy Top Hat",ds:"Very classy",price:220},
-  {id:"wizard",kind:"hat",nm:"Wizard Hat",ds:"Cosmetic hat",price:300},
-  {id:"halo",kind:"hat",nm:"Glowing Halo",ds:"It glows",price:450}
+  {id:"slime",kind:"tongue",nm:"Slime Tongue",ds:"Green and gooey",price:400,col:"#7cff4a"},
+  {id:"gold",kind:"tongue",nm:"Golden Tongue Skin",ds:"Shiny gold",price:700,col:"#ffcf33"},
+  {id:"lightning",kind:"tongue",nm:"Lightning Tongue",ds:"Electric glow",price:1000,col:"#8ff5ff"},
+  {id:"galaxy",kind:"tongue",nm:"Galaxy Tongue",ds:"Purple space shimmer",price:1200,col:"#9a6aff",tid:"tgalaxy"},
+  {id:"rainbow",kind:"tongue",nm:"Rainbow Tongue",ds:"Every color at once",price:1600,col:"rainbow"},
+  {id:"double",kind:"boost",nm:"Food Frenzy",ds:"x2 food for 60 seconds",price:60,ic:"star",bg:"#fff0c4",go:()=>actives.push({v:2,until:Date.now()+60000})},
+  {id:"gulp",kind:"boost",nm:"Instant Mega gulp",ds:"Fill the meter and gulp right now",price:40,ic:"mouthI",bg:"#e3f5c9",go:()=>{S.meter=1;startGulp()}},
+  {id:"storm",kind:"boost",nm:"Bubble Storm",ds:"6 multiplier bubbles rain down",price:70,ic:"portal",bg:"#e3d6fa",go:()=>{for(let i=0;i<6;i++)setTimeout(spawnBubble,i*200)}},
+  {id:"golden",kind:"boost",nm:"Golden Hour",ds:"Golden x3 for 45 seconds",price:70,ic:"fly",v:-1,bg:"#fff6c8",go:()=>{goldUntil=Date.now()+45000}},
+  {id:"skip",kind:"boost",nm:"Skip a Level",ds:"Instantly finish this level",price:250,ic:"bolt",bg:"#ffe3f0",go:()=>gain(Math.max(0,needL(S.L)-S.prog)+1)},
+  {id:"party",kind:"hat",nm:"Party Hat",ds:"Cosmetic hat",price:300},
+  {id:"chef",kind:"hat",nm:"Chef Hat",ds:"Cosmetic hat",price:500},
+  {id:"propeller",kind:"hat",nm:"Propeller Cap",ds:"It spins!",price:700},
+  {id:"cowboy",kind:"hat",nm:"Cowboy Hat",ds:"Cosmetic hat",price:1000},
+  {id:"top",kind:"hat",nm:"Fancy Top Hat",ds:"Very classy",price:1400},
+  {id:"wizard",kind:"hat",nm:"Wizard Hat",ds:"Cosmetic hat",price:2200},
+  {id:"halo",kind:"hat",nm:"Glowing Halo",ds:"It glows",price:3500}
 ];
 const shopEl=$("shopItems"),adCd={};
 const SECT={perk:["Power-ups","keep forever, even after rebirth"],skin:["Frog skins","tap to wear"],tongue:["Tongues","tap to wear"],iap:["Premium","coming soon"],ad:["Free stuff","watch a short ad"],boost:["Boosts","spend coins"],hat:["Hats","yours forever"]};
@@ -1972,7 +1974,7 @@ $("pClose").addEventListener("click",()=>{$("paperWrap").classList.remove("show"
 const MT={eat:["Eat {n} things",40,1.35],bubble:["Catch {n} multiplier bubbles",2,1.25],combo:["Reach a x{n} combo",2,0],gulp:["Use Mega gulp {n} times",2,1.2],big:["Eat {n} big snacks",1,1.2],gold:["Catch {n} golden flies",1,1.15],level:["Level up {n} times",5,1.25],boss:["Beat {n} boss",1,1]};
 function newMission(){const keys=Object.keys(MT).filter(k=>!(S.miss||[]).some(m=>m&&m.k===k));const k=keys[Math.random()*keys.length|0],d=MT[k],tier=(S.mDone||0);
   let n=k==="combo"?Math.min(comboCap(),2+Math.floor(tier/4)*0.5+(Math.random()<0.5?0.5:0)):Math.max(1,Math.round(d[1]*Math.pow(d[2],tier/3)));
-  return{k,n,p:0,r:2+Math.min(8,Math.floor(tier/3))+(k==="boss"?3:0)}}
+  return{k,n,p:0,r:1+Math.min(5,Math.floor(tier/4))+(k==="boss"?2:0)}}
 if(!S.miss||S.miss.length!==3)S.miss=[newMission(),newMission(),newMission()];
 function track(k,v){let ch=false;(S.miss||[]).forEach(m=>{if(m.k!==k||m.p>=m.n)return;if(k==="combo"){if(v>m.p){m.p=Math.min(m.n,v);ch=true}}else{m.p=Math.min(m.n,m.p+(v||1));ch=true}if(m.p>=m.n&&ch){pushNews("Mission complete: "+MT[k][0].replace("{n}",m.n),true);tone(700,1100,0.15,"triangle",0.15)}});if(ch&&missOpen)renderMiss()}
 let missOpen=false;
@@ -1983,7 +1985,7 @@ $("missClose").addEventListener("click",()=>{missOpen=false;$("missModal").class
 
 /* ---------- Lucky spin ---------- */
 let openMini=()=>{};
-const WHEEL=[{t:"2",c:"#ffc53a",go:()=>2},{t:"Game!",c:"#9fd8ff",go:()=>{setTimeout(()=>{$("spinModal").classList.remove("show");openMini()},1100);return"Bonus round!"}},{t:"x2 Food",c:"#ff5d8f",go:()=>{actives.push({v:2,until:Date.now()+60000});return"x2 food for 60s!"}},{t:"6",c:"#7cc242",go:()=>6},{t:"Golden",c:"#ffe14a",go:()=>{goldUntil=Date.now()+40000;return"Golden x3 for 40s!"}},{t:"4",c:"#3dbbff",go:()=>4},{t:"Gulp",c:"#b9ec6e",go:()=>{S.meter=1;return"Mega gulp ready!"}},{t:"20!",c:"#c58aff",go:()=>20},{t:"Bubbles",c:"#9fe0ff",go:()=>{for(let i=0;i<5;i++)setTimeout(spawnBubble,i*250);return"Bubble storm!"}}];
+const WHEEL=[{t:"1",c:"#ffc53a",go:()=>1},{t:"Game!",c:"#9fd8ff",go:()=>{setTimeout(()=>{$("spinModal").classList.remove("show");openMini()},1100);return"Bonus round!"}},{t:"x2 Food",c:"#ff5d8f",go:()=>{actives.push({v:2,until:Date.now()+60000});return"x2 food for 60s!"}},{t:"3",c:"#7cc242",go:()=>3},{t:"Golden",c:"#ffe14a",go:()=>{goldUntil=Date.now()+40000;return"Golden x3 for 40s!"}},{t:"2",c:"#3dbbff",go:()=>2},{t:"Gulp",c:"#b9ec6e",go:()=>{S.meter=1;return"Mega gulp ready!"}},{t:"10!",c:"#c58aff",go:()=>10},{t:"Bubbles",c:"#9fe0ff",go:()=>{for(let i=0;i<5;i++)setTimeout(spawnBubble,i*250);return"Bubble storm!"}}];
 let wheelA=0,spinning=false;
 function drawWheel(){const c=$("wheel").getContext("2d"),r=280,cx=290,n=WHEEL.length;c.clearRect(0,0,580,580);c.save();c.translate(cx,cx);c.rotate(wheelA);
   WHEEL.forEach((w,i)=>{const a0=i/n*TAU-Math.PI/2-Math.PI/n,a1=a0+TAU/n;c.beginPath();c.moveTo(0,0);c.arc(0,0,r,a0,a1);c.closePath();c.fillStyle=w.c;c.fill();c.lineWidth=6;c.strokeStyle="#1d2416";c.stroke();
@@ -2170,7 +2172,7 @@ function tutTap(){if(S.tut===0&&++tutTaps>=6)S.tut=1}
 function tutBought(){if(S.tut<=3){S.tut=9;$("tut").classList.remove("on");texts.push({x:W/2,y:H*0.4,t:0,txt:"You got it! Keep growing!",big:true,call:true});confetti(40,W/2,H*0.4);setTimeout(checkDaily,4000)}}
 
 /* ---------- daily reward ---------- */
-const DAILY=[5,8,10,12,15,20,40];
+const DAILY=[3,4,5,6,8,10,20];
 function checkDaily(){if(!(S.unl&&S.unl.spin))return;S.daily=S.daily||{streak:0,last:0};const gap=Date.now()-S.daily.last;if(gap<20*3600e3||S.tut<9||uiOpen())return;if(gap>48*3600e3)S.daily.streak=0;
   const d=S.daily.streak%7;$("dayList").innerHTML=DAILY.map((c,i)=>'<div class="'+(i<d?"got":i===d?"today":"")+(i===6?" big":"")+'">Day '+(i+1)+'<b><i class="cn"></i>'+c+'</b></div>').join("");$("dailyModal").classList.add("show")}
 $("dailyClaim").addEventListener("click",()=>{const d=S.daily.streak%7;S.daily.streak++;S.daily.last=Date.now();flyCoins(DAILY[d],$("dailyClaim"));dsparks($("dailyClaim"),18);$("dailyModal").classList.remove("show");save()});
@@ -2269,7 +2271,7 @@ function rebirthCine(done){
 let rbSparks=[],rbConf=[],rbRings=[];
 
 /* ---------- Money Boost: watch an ad, triple your food ---------- */
-const moneyBoost=()=>Math.floor(Math.max(need(S.L)*0.25,S.eaten*2));
+const moneyBoost=()=>Math.floor(Math.max(needL(S.L)*0.25,S.eaten*2));
 function giveMoney(){const v=moneyBoost();S.eaten+=v;texts.push({x:W/2,y:H*0.42,t:0,txt:"+"+fmt(v)+" food!",big:true,call:true});flash=Math.max(flash,0.35);confetti(50,W/2,H*0.42);tone(500,1200,0.4,"triangle",0.22);pushNews("Frog gets a huge food delivery!",true);renderHud(true)}
 
 /* ---------- endless mode: keep growing after a world ---------- */
@@ -2281,7 +2283,7 @@ $("setRebirth").addEventListener("click",()=>{$("setModal").classList.remove("sh
 setInterval(()=>{const b=$("setRebirth");if(b)b.style.display=S.endless?"":"none"},1000);
 
 /* ---------- rebirth whenever you want after the halfway point ---------- */
-const rbAt=()=>S.world===0?150:Math.floor(NL*0.5);
+const rbAt=()=>1e9;
 let rbHinted=false;
 setInterval(()=>{const ok=!S.ended&&endT<0&&S.L>=rbAt();$("rbReady").classList.toggle("on",ok);
   if(ok&&!rbHinted&&!S.rbHint){rbHinted=true;S.rbHint=1;unlockBanner("Rebirth ready! Start over stronger anytime");}},800);
@@ -2305,10 +2307,10 @@ setInterval(()=>{
   const on=S.L>=RACE_UNLOCK||S.reb>0;$("raceChip").classList.toggle("on",on&&S.tut>=9);if(!on)return;
   raceEma=raceEma*0.92+raceTickN*0.08;raceTickN=0;
   if(!S.race||!S.race.start){raceNew();unlockBanner("Frog Race unlocked! Beat 49 frogs in 10 minutes")}
-  else if(Date.now()-S.race.start>=RACE_MS){const rk=raceRank(),prize=rk===1?15:rk===2?10:rk===3?6:rk<=10?3:0;
+  else if(Date.now()-S.race.start>=RACE_MS){const rk=raceRank(),prize=rk===1?8:rk===2?5:rk===3?3:rk<=10?1:0;
     if(prize){addCoins(prize);unlockBanner("Frog Race over! You placed #"+rk+" · +"+prize+" coins")}else unlockBanner("Frog Race over! You placed #"+rk+". New race started!");
     raceNew()}
-  const base=Math.max(raceEma,need(S.L)/900);if(!S.ended&&endT<0&&!adPause&&!document.hidden)S.race.rivals.forEach(r=>{r.s+=r.k*base*(0.7+Math.random()*0.6)});
+  const base=Math.max(raceEma,needL(S.L)/900);if(!S.ended&&endT<0&&!adPause&&!document.hidden)S.race.rivals.forEach(r=>{r.s+=r.k*base*(0.7+Math.random()*0.6)});
   $("raceRank").textContent="#"+Math.min(50,raceRank());
   if($("raceModal").classList.contains("show"))renderRace();
 },1000);
@@ -2473,26 +2475,26 @@ function drawFrog(t){drawBuddy(t);
 /* boss patterns: single throw, volley, barrage from above, swirl. Later chapters mix them; low health makes bosses angrier */
 function bossPattern(m){
   const c=chapOf(S.L),hp=1-frac(),bp=bossPos,top=hudBottom()+14;
-  const one=o=>bossShots.push(Object.assign({x:bp.x,y:bp.y,sx:bp.x,sy:bp.y,tx:m.x,ty:m.y,t:0,dur:2.1-Math.min(0.8,c*0.06),r:Math.max(16,bp.size*0.13),rot:0},o));
-  const pool=c<1?["single"]:c<3?["single","volley"]:["single","volley","barrage","swirl"];
+  const one=o=>bossShots.push(Object.assign({x:bp.x,y:bp.y,sx:bp.x,sy:bp.y,tx:m.x,ty:m.y,t:0,dur:1.7-Math.min(0.6,c*0.05),r:Math.max(16,bp.size*0.13),rot:0},o));
+  const pool=c<1?["single","volley"]:["single","volley","barrage","swirl"];
   let p=pool[Math.random()*pool.length|0];if(hp<0.35&&c>=1&&Math.random()<0.5)p=pool.length>2?"barrage":"volley";
   const say=t=>texts.push({x:W/2,y:H*0.5,t:0,txt:t,big:true,call:true});
-  if(p==="volley"){say("Volley!");[-1,0,1].forEach((d,i)=>one({delay:i*0.35,tx:Math.max(40,Math.min(W-40,m.x+d*W*0.16)),dur:2.3,w:0.5}))}
-  else if(p==="barrage"){say("Barrage!");for(let i=0;i<4;i++){const x=W*(0.15+Math.random()*0.7);one({delay:i*0.28,sx:x,sy:top,x,y:top,tx:Math.max(40,Math.min(W-40,m.x+(Math.random()-0.5)*W*0.3)),ty:m.y,dur:1.5,flat:1,w:0.4})}}
-  else if(p==="swirl"){say("Swirl!");const R=bp.size*0.75;for(let i=0;i<5;i++){const a=i/5*Math.PI*2,x=bp.x+Math.cos(a)*R,y=bp.y+Math.sin(a)*R*0.6;one({delay:i*0.16,sx:x,sy:y,x,y,dur:2.5,w:0.35})}}
+  if(p==="volley"){say("Volley!");[-1,0,1].forEach((d,i)=>one({delay:i*0.35,tx:Math.max(40,Math.min(W-40,m.x+d*W*0.16)),dur:1.9,w:0.6}))}
+  else if(p==="barrage"){say("Barrage!");for(let i=0;i<4;i++){const x=W*(0.15+Math.random()*0.7);one({delay:i*0.28,sx:x,sy:top,x,y:top,tx:Math.max(40,Math.min(W-40,m.x+(Math.random()-0.5)*W*0.3)),ty:m.y,dur:1.25,flat:1,w:0.5})}}
+  else if(p==="swirl"){say("Swirl!");const R=bp.size*0.75;for(let i=0;i<5;i++){const a=i/5*Math.PI*2,x=bp.x+Math.cos(a)*R,y=bp.y+Math.sin(a)*R*0.6;one({delay:i*0.16,sx:x,sy:y,x,y,dur:2,w:0.45})}}
   else one({})
 }
 let bossShots=[],bossAtkT=4,hurtT=0,bossTipShown=false,bossPos=null;
 function bossAttack(t,dt){
   const can=isBoss(S.L)&&S.L!==EARTH_L&&!S.ended&&endT<0&&gulpT<=0&&!uiOpen()&&!adPause&&S.tut>=9&&bossPos;
-  if(can){bossAtkT-=dt;if(bossAtkT<=0){bossAtkT=(3.6+Math.random()*2.4)*((1-frac())<0.35?0.72:1);const m=toScreen(0,-0.66*F());
+  if(can){bossAtkT-=dt;if(bossAtkT<=0){bossAtkT=(2.3+Math.random()*1.7)*((1-frac())<0.35?0.7:1)*(1-Math.min(0.3,chapOf(S.L)*0.02));const m=toScreen(0,-0.66*F());
       bossPattern(m);
       texts.push({x:bossPos.x,y:bossPos.y-bossPos.size*0.5,t:0,txt:"!",big:true});tone(300,120,0.25,"sawtooth",0.1);
       if(!bossTipShown){bossTipShown=true;texts.push({x:W/2,y:H*0.5,t:0,txt:"Tap the attacks to block!",big:true,call:true})}}}
   else if(!isBoss(S.L))bossShots=[];
   hurtT=Math.max(0,hurtT-dt*1.6);
   for(const b of bossShots){if(b.delay>0){b.delay-=dt;b.hid=1;continue}b.hid=0;b.t+=dt/b.dur;const k=Math.min(1,b.t),arc=b.flat?0:Math.sin(k*Math.PI)*H*0.12;b.x=b.sx+(b.tx-b.sx)*k;b.y=b.sy+(b.ty-b.sy)*k-arc;b.rot+=dt*8;
-    if(k>=1&&!b.done){b.done=true;const loss=need(S.L)*(S.L<40?0.1:0.15)*(b.w||1);S.prog=Math.max(0,S.prog-loss);progBank=Math.max(0,progBank-loss*0.5);hurtT=1;shake=Math.max(shake,20);
+    if(k>=1&&!b.done){b.done=true;const loss=needL(S.L)*(S.L<40?0.14:0.17)*(b.w||1);S.prog=Math.max(0,S.prog-loss);progBank=Math.max(0,progBank-loss*0.5);hurtT=1;shake=Math.max(shake,20);
       texts.push({x:W/2,y:b.ty-60,t:0,txt:"OUCH! Shrunk!",big:true,hurt:true});tone(160,60,0.4,"sawtooth",0.2);crunch(0.6);if(navigator.vibrate)try{navigator.vibrate(80)}catch(e){}
       for(let i=0;i<16;i++)parts.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*500,vy:-Math.random()*400,t:0,life:0.7,r:5+Math.random()*4,c:["#ff3a3a","#ffb02e","#1d2416"][i%3],spark:true,rot:0})}
     // draw
@@ -2591,7 +2593,7 @@ function tickInner(now){
         if(o.big){const v=biteVal()*20*frenzyMult()*passMult();gain(v);S.meter=Math.min(1,S.meter+0.3);shake=16;flash=0.35;jv-=0.25;crunch(0.5);texts.push({x:W/2,y:H*0.42,t:0,txt:"Big snack! +"+fmt(v),big:true});for(let i=0;i<24;i++)parts.push({x:mp.x,y:mp.y,vx:(Math.random()-0.5)*700,vy:-Math.random()*600,t:0,life:1,r:7,c:["#ffc53a","#ff5d8f","#fff"][i%3],spark:true,rot:Math.random()*3})}
         else crunch(0.18);
         if(o.mult){actives.push({v:o.v,until:Date.now()+12000});flash=0.3;shake=Math.max(shake,8);texts.push({x:W/2,y:H*0.4,t:0,txt:"x"+o.v+"!",big:true});[0,60,120,180].forEach((d,i)=>setTimeout(()=>tone(600+i*150,900+i*150,0.1,"triangle",0.2),d));rings.push({x:mp.x,y:mp.y,t:0,life:0.6,r0:20,r1:Math.max(W,H)*0.7,w:12,c:BUBC[o.v][0]})}
-        if(o.gold){addCoins(S.perks&&S.perks.magnet?3:1,mp.x,mp.y-60);goldUntil=Date.now()+15000;flash=0.5;texts.push({x:W/2,y:H*0.45,t:0,txt:"Golden fly! x3",big:true});[0,80,160,240].forEach((d,i)=>setTimeout(()=>croak(300+i*60),d))}
+        if(o.gold){addCoins(S.perks&&S.perks.magnet?2:1,mp.x,mp.y-60);goldUntil=Date.now()+15000;flash=0.5;texts.push({x:W/2,y:H*0.45,t:0,txt:"Golden fly! x3",big:true});[0,80,160,240].forEach((d,i)=>setTimeout(()=>croak(300+i*60),d))}
         {const cc=CRUMB[o.spr]||["#ffc53a","#ff8fb0"];for(let i=0;i<(S.lowfx?3:8);i++)parts.push({x:mp.x,y:mp.y,vx:(Math.random()-0.5)*420,vy:-80-Math.random()*360,t:0,life:0.7,r:3+Math.random()*4,c:cc[i%cc.length],conf:true,rot:Math.random()*6,vr:(Math.random()-0.5)*20})}
         for(let i=0;i<4;i++)parts.push({x:mp.x,y:mp.y,vx:(Math.random()-0.5)*320,vy:-Math.random()*320,t:0,life:0.6,r:6+Math.random()*4,c:["#fff","#ffe14a","#ff8fb0"][i%3],spark:true,rot:Math.random()*3});
         rings.push({x:mp.x,y:mp.y,t:0,life:0.3,r0:F()*zoom*0.1,r1:F()*zoom*0.45,w:6,c:"rgba(255,255,255,.8)"});
@@ -2692,6 +2694,7 @@ const css=(tag,cls,html,parent,id)=>{const e=document.createElement(tag);if(cls)
 /* ---- trophy definitions: [id, sprite, name, description, valueFn, target, coins] ---- */
 const A=[];
 const add=(id,spr,nm,ds,fn,n,r)=>A.push({id,spr,nm,ds,fn,n,r});
+const trC=a=>a.r?Math.max(1,Math.round(a.r*0.4)):0;
 add("first","fly","First Bite","Eat your very first thing",()=>ST.items,1,1);
 add("snack","apple","Snack Time","Eat 100 things",()=>ST.items,100,2);
 add("buffet","pizza","All You Can Eat","Eat 1,000 things",()=>ST.items,1000,4);
@@ -2756,10 +2759,10 @@ function checkTrophies(){
   unlockSkins();
   const got=[];A.forEach(a=>{if(S.ach[a.id])return;let v=0;try{v=a.fn()}catch(e){}if(v>=a.n){S.ach[a.id]=Date.now();got.push(a)}});
   if(!got.length)return;
-  let coins=0;got.forEach(a=>coins+=a.r);
+  let coins=0;got.forEach(a=>coins+=trC(a));
   if(coins){S.coins+=coins;const ch=$("coinChip");ch.classList.remove("bump");void ch.offsetWidth;ch.classList.add("bump")}
   if(got.length>2){tq.push({spr:"crown",nm:got.length+" trophies!",ds:"Reward: "+coins+" coins",head:"Trophies unlocked!"})}
-  else got.forEach(a=>tq.push({spr:a.spr,nm:a.nm,ds:a.r?a.ds+" · +"+a.r+" coins":a.ds}));
+  else got.forEach(a=>tq.push({spr:a.spr,nm:a.nm,ds:trC(a)?a.ds+" · +"+trC(a)+" coins":a.ds}));
   nextToast();renderTrBadge();renderHud(true);save()}
 let badgeExtra=()=>0;
 function renderTrBadge(){const n=A.filter(a=>S.ach[a.id]).length,u=n-S.achSeen+badgeExtra();$("trBadge").textContent=u>0?u:"";tb.classList.toggle("ready",u>0)}
@@ -2771,7 +2774,7 @@ function renderTrophies(){
   $("trStats").innerHTML=tiles.map(t=>'<div><b>'+esc(t[1])+'</b><span>'+t[0]+'</span></div>').join("");
   const order=A.slice().sort((a,b)=>(S.ach[b.id]?1:0)-(S.ach[a.id]?1:0)||0);
   const g=$("trGrid");g.innerHTML=order.map(a=>{const done=!!S.ach[a.id];let v=0;try{v=a.fn()}catch(e){}const pc=Math.min(100,v/a.n*100);
-    return'<div class="tr'+(done?" got":"")+'"><canvas width="96" height="96" data-s="'+a.spr+'"></canvas><div class="trt"><b>'+esc(a.nm)+'</b><span>'+esc(a.ds)+'</span>'+(done?'<em>'+(a.r?'+'+a.r+' coins · ':'')+new Date(S.ach[a.id]).toLocaleDateString()+'</em>':'<span class="trbar"><i style="width:'+pc+'%"></i></span>')+'</div></div>'}).join("");
+    return'<div class="tr'+(done?" got":"")+'"><canvas width="96" height="96" data-s="'+a.spr+'"></canvas><div class="trt"><b>'+esc(a.nm)+'</b><span>'+esc(a.ds)+'</span>'+(done?'<em>'+(trC(a)?'+'+trC(a)+' coins · ':'')+new Date(S.ach[a.id]).toLocaleDateString()+'</em>':'<span class="trbar"><i style="width:'+pc+'%"></i></span>')+'</div></div>'}).join("");
   g.querySelectorAll("canvas").forEach(c=>iconTo(c,c.dataset.s,!c.parentNode.classList.contains("got")));
   S.achSeen=n;renderTrBadge()}
 function openTrophies(){openBook()}
@@ -2786,7 +2789,7 @@ function awayCalc(sec){
   if(S.tut<9||S.ended||sec<90)return;
   const cap=4*3600,s=Math.min(sec,cap);
   const bites=1+S.lv.auto+2*(S.lv.warp||0)+(S.perks&&S.perks.buddy?3:0);
-  const v=Math.min(biteVal()*bites*s*0.2,need(S.L)*1.5)*(1+0.5*ancLv("time"));
+  const v=Math.min(biteVal()*bites*s*0.2,needL(S.L)*1.5)*(1+0.5*ancLv("time"));
   if(!(v>=1))return;
   awayPending=v;ST.away=Math.max(ST.away,sec);
   $("awTx").innerHTML="Your frog snacked while you were gone for <b>"+dur(sec)+"</b>"+(sec>cap?" (max "+dur(cap)+")":"")+".";
@@ -2797,7 +2800,7 @@ function awayCalc(sec){
 function tryAway(sec,n){if(S.tut<9||sec<90)return;if(uiOpen()||adPause){if((n||0)<60)setTimeout(()=>tryAway(sec,(n||0)+1),1000);return}awayCalc(sec)}
 function awayGive(m){
   if(!awayPending)return;const v=awayPending*m;awayPending=0;
-  S.eaten+=v;S.prog=Math.min(need(S.L)*0.95,S.prog+v);
+  S.eaten+=v;S.prog=Math.min(needL(S.L)*0.95,S.prog+v);
   texts.push({x:W/2,y:H*0.42,t:0,txt:"+"+fmt(v)+" food!",big:true,call:true});confetti(30,W/2,H*0.4);tone(500,1000,.2,"triangle",.18);
   am.classList.remove("show");renderHud(true);save()}
 $("awGo").addEventListener("click",()=>awayGive(1));
@@ -2829,7 +2832,7 @@ setInterval(()=>{
 document.addEventListener("touchend",()=>{try{if(ac&&!adMute&&(ac.state==="suspended"||ac.state==="interrupted"))ac.resume()}catch(e){}},{passive:true});
 let lastPct=-1,lastCtx="",cgMax=0;
 function cgReport(){if(!CG.ok||S.tut<9)return;try{
-  const wn=Math.max(1,WORLDS.length),run=S.ended?0:Math.min(.99,(S.L+S.prog/need(S.L))/Math.max(1,NL-1));
+  const wn=Math.max(1,WORLDS.length),run=S.ended?0:Math.min(.99,(S.L+S.prog/needL(S.L))/Math.max(1,NL-1));
   let pct=Math.floor(Math.min(1,(nWorlds()+run)/wn)*100);if(nWorlds()<wn)pct=Math.min(99,pct);
   cgMax=Math.max(cgMax,pct);
   if(cgMax!==lastPct){lastPct=cgMax;CG.sdk.game.reportGameCompletedPercentage(lastPct)}
@@ -2881,7 +2884,7 @@ function dexList(){
   COSMIC.forEach(sp=>{if(!seen.has(sp)){seen.add(sp);out.push({id:sp,reg:"Space",at:"The cosmos"})}});
   out.push({id:"goldfly",reg:"Everywhere",at:"Rare and shiny"});
   return dexList.c=out}
-const DEXMS=[[0.1,3,0],[0.25,6,0],[0.5,10,1],[0.75,20,0],[1,40,2]];
+const DEXMS=[[0.1,2,0],[0.25,3,0],[0.5,5,0],[0.75,10,0],[1,20,0]];
 function dexMilestones(){
   const tot=dexList().length,f=Math.min(tot,dexCount());S.dexMs=S.dexMs||{};
   DEXMS.forEach(m=>{if(S.dexMs[m[0]]||f<Math.ceil(tot*m[0]))return;S.dexMs[m[0]]=1;S.coins+=m[1];S.ancBonus=(S.ancBonus||0)+m[2];
@@ -2921,7 +2924,7 @@ const ANC=[
   {id:"auto",nm:"Ancient Hunger",ic:"gear",max:4,cost:3,eff:l=>"+"+(l*1.5)+" auto bites a second"}]}];
 const ANCN=ANC.reduce((a,b)=>a.concat(b.nodes),[]);
 const ancSpent=()=>ANCN.reduce((a,n)=>a+n.cost*ancLv(n.id),0);
-const ancTotal=()=>(S.reb||0)+nWorlds()+(S.ancBonus||0);
+const ancTotal=()=>(S.reb||0);
 const ancFree=()=>ancTotal()-ancSpent();
 function buyAnc(id){
   const n=ANCN.find(x=>x.id===id),br=ANC.find(b=>b.nodes.includes(n)),i=br.nodes.indexOf(n);
@@ -2930,7 +2933,7 @@ function buyAnc(id){
 let resetAncT=0;
 function renderAnc(){
   S.ancSeen=ancTotal();const free=ancFree();
-  let h='<div class="trsum"><b>'+free+'</b> Ancestor point'+(free===1?"":"s")+' to spend</div><p class="mnote" style="margin:4px 0 10px">Earn a point for every rebirth and every world you finish. Upgrades are permanent. Each upgrade unlocks the next one in its row.</p>';
+  let h='<div class="trsum"><b>'+free+'</b> Ancestor point'+(free===1?"":"s")+' to spend</div><p class="mnote" style="margin:4px 0 10px">You earn exactly 1 Ancestor point every time you rebirth, and nowhere else. Upgrades are permanent. Each upgrade unlocks the next one in its row.</p>';
   ANC.forEach(br=>{h+='<h4 class="dxh">'+br.b+'</h4><div class="ancrow">';
     br.nodes.forEach((n,i)=>{const lv=ancLv(n.id),locked=i>0&&ancLv(br.nodes[i-1].id)<1,full=lv>=n.max,can=!locked&&!full&&free>=n.cost;
       h+='<div class="an'+(locked?" lock":"")+(lv?" has":"")+'"><canvas width="80" height="80" data-s="'+n.ic+'" data-v="'+(n.v||0)+'"></canvas><b>'+n.nm+'</b>'
@@ -2959,10 +2962,10 @@ const tierN=()=>1+Math.min(7,(S.reb||0)*0.6+S.L/70);
 function mkChal(slot,R){
   const pool=CT.slice(),wf=worldFoods();
   Object.keys(GROUPS).forEach(k=>{const m=GROUPS[k][1].filter(x=>wf.has(x)).length;if(m>=2)pool.push({k:"grp:"+k,t:"Eat {n} "+GROUPS[k][0],b:Math.max(8,Math.round(34*Math.min(1,m/wf.size*2.2))),e:1.1})});
-  const d=pool[Math.floor(R()*pool.length)],mul=[0.6,1,1.6][slot],rw=[4,6,9][slot];
+  const d=pool[Math.floor(R()*pool.length)],mul=[0.6,1,1.6][slot],rw=[2,3,5][slot];
   let n=d.k==="combo"?Math.min(comboCap(),[2.5,3.5,4.5][slot]):Math.max(1,Math.round(d.b*mul*Math.pow(tierN(),d.e)));
   return{k:d.k,t:d.t,n,p:0,r:rw,c:0}}
-function mkWeekly(R){const d=WT[Math.floor(R()*WT.length)];return{k:d.k,t:d.t,n:Math.round(d.b*Math.pow(tierN(),d.e)),p:0,r:30,c:0}}
+function mkWeekly(R){const d=WT[Math.floor(R()*WT.length)];return{k:d.k,t:d.t,n:Math.round(d.b*Math.pow(tierN(),d.e)),p:0,r:15,c:0}}
 function chalSync(){
   const dk=dayKey(),wk=weekKey();let ch=S.chal;if(!ch)ch=S.chal={};
   if(ch.d!==dk){ch.d=dk;ch.list=[0,1,2].map(i=>mkChal(i,rng(hash(dk+i))));ch.sweep=0;ch.rr=[0,0,0]}
@@ -2984,21 +2987,21 @@ function chalCard(c,key,extra){
   const done=c.p>=c.n,txt=c.t.replace("{n}",c.k==="combo"?String(+c.n.toFixed(1)):fmt(c.n)),pc=Math.min(100,c.p/c.n*100);
   return'<div class="ch'+(c.c?" claimed":done?" done":"")+'"><span class="cht">'+esc(txt)+'</span>'
    +'<span class="chb"><i style="width:'+pc+'%"></i></span><span class="chp">'+(c.k==="combo"?(+Math.min(c.p,c.n).toFixed(1))+" / "+(+c.n.toFixed(1)):fmt(Math.min(c.p,c.n))+" / "+fmt(c.n))+'</span>'
-   +'<button class="chk" data-cl="'+key+'"'+(done&&!c.c?"":" disabled")+'><i class="cn"></i>'+(c.c?"Done":c.r)+(key==="w"&&!c.c?'<em>+1 pt</em>':'')+'</button>'+(extra||"")+'</div>'}
+   +'<button class="chk" data-cl="'+key+'"'+(done&&!c.c?"":" disabled")+'><i class="cn"></i>'+(c.c?"Done":c.r)+''+'</button>'+(extra||"")+'</div>'}
 function renderChal(){
   chalSync();const c=S.chal;chalSig=JSON.stringify([c.list,c.wk,c.sweep,mgReady()]);
   let h='<div class="chhead"><span>Today</span><span id="chTime">Resets in '+hms(nextMidnight()-Date.now())+'</span></div>';
   c.list.forEach((x,i)=>{h+=chalCard(x,"d"+i,(!x.c&&x.p===0&&!c.rr[i])?'<button class="chrr" data-rr="'+i+'" aria-label="Swap challenge" title="Swap for another">&#8635;</button>':'')});
   const all=c.list.every(x=>x.c);
-  h+='<div class="ch sweep'+(c.sweep?" claimed":all?" done":"")+'"><span class="cht">Finish all three for a bonus</span><span class="chp">8 coins and x2 food for a minute</span><button class="chk" data-cl="s"'+(all&&!c.sweep?"":" disabled")+'><i class="cn"></i>'+(c.sweep?"Done":"8")+'</button></div>';
+  h+='<div class="ch sweep'+(c.sweep?" claimed":all?" done":"")+'"><span class="cht">Finish all three for a bonus</span><span class="chp">5 coins and x2 food for a minute</span><button class="chk" data-cl="s"'+(all&&!c.sweep?"":" disabled")+'><i class="cn"></i>'+(c.sweep?"Done":"5")+'</button></div>';
   h+='<div class="chhead" style="margin-top:12px"><span>This week</span><span id="chTimeW">Resets in '+hms(weekStart()+7*86400000-Date.now())+'</span></div>'+chalCard(c.wk,"w");
   h+='<div class="chhead" style="margin-top:12px"><span>Bonus round</span></div><div class="ch"><span class="cht">Snack Catch</span><span class="chp">Tap falling snacks for 15 seconds. Win coins and food.</span><button class="chk" data-mg="1"'+(mgReady()?"":" disabled")+'>'+(mgReady()?"Play":hms((S.mgAt||0)-Date.now()))+'</button></div>';
   $("bkBody").innerHTML=h}
 function claimChal(key){
   const c=S.chal;if(!c)return;
-  if(key==="s"){if(c.sweep||!c.list.every(x=>x.c))return;c.sweep=1;addCoins(8);actives.push({v:2,until:Date.now()+60000});unlockBanner("Daily sweep! <b>x2 food for 1 minute</b>")}
+  if(key==="s"){if(c.sweep||!c.list.every(x=>x.c))return;c.sweep=1;addCoins(5);actives.push({v:2,until:Date.now()+60000});unlockBanner("Daily sweep! <b>x2 food for 1 minute</b>")}
   else{const x=key==="w"?c.wk:c.list[+key.slice(1)];if(!x||x.c||x.p<x.n)return;x.c=1;addCoins(x.r);
-    if(key==="w"){S.ancBonus=(S.ancBonus||0)+1;ST.weekly=(ST.weekly||0)+1;unlockBanner("Weekly done! <b>+1 Ancestor point</b>")}else ST.chal=(ST.chal||0)+1}
+    if(key==="w"){ST.weekly=(ST.weekly||0)+1;unlockBanner("Weekly challenge done!")}else ST.chal=(ST.chal||0)+1}
   tone(600,1200,.2,"triangle",.2);confetti(20,W/2,H*0.4);renderChal();renderTrBadge();renderHud(true);save()}
 $("bkBody").addEventListener("click",e=>{
   const a=e.target.closest("[data-cl]");if(a){claimChal(a.dataset.cl);return}
@@ -3037,8 +3040,8 @@ function mgStep(now){
     if(MG.t<=0)mgEnd()}
   mgDraw(t);mgRaf=requestAnimationFrame(mgStep)}
 function mgEnd(){
-  MG.state="done";const sc=MG.score,coins=Math.min(10,Math.max(1,Math.round(sc/8))),food=Math.floor(moneyBoost()*Math.min(1,sc/80)*0.5);
-  S.coins+=coins;S.eaten+=food;S.prog=Math.min(need(S.L)*0.95,S.prog+food);S.mgAt=Date.now()+900000;
+  MG.state="done";const sc=MG.score,coins=Math.min(6,Math.max(1,Math.round(sc/12))),food=Math.floor(moneyBoost()*Math.min(1,sc/80)*0.5);
+  S.coins+=coins;S.eaten+=food;S.prog=Math.min(needL(S.L)*0.95,S.prog+food);S.mgAt=Date.now()+900000;
   ST.mini=(ST.mini||0)+1;ST.miniBest=Math.max(ST.miniBest||0,sc);
   $("mgNote").innerHTML="<b>Score "+sc+"!</b> +"+coins+" coin"+(coins>1?"s":"")+(food?" and +"+fmt(food)+" food":"");$("mgGo").textContent="Close";$("mgGo").style.display="";
   tone(500,1100,.25,"triangle",.2);confetti(30,W/2,H*0.4);renderHud(true);save()}
