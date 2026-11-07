@@ -471,6 +471,23 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .adwarn{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);z-index:30;display:flex;align-items:center;gap:10px;background:var(--sheet);color:var(--ink);border:3px solid var(--line);border-radius:18px;box-shadow:0 5px 0 var(--line);padding:8px 16px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s}
 .adwarn.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .adwarn small{font-weight:900;font-size:14px}.adwarn b{font:400 34px "Bagel Fat One",sans-serif;color:var(--pink-d);min-width:24px;text-align:center}
+/* ===== theme fixes: no pale text on pale cards ===== */
+.racelist{background:var(--card)}
+.rrow{border-bottom:1.5px solid rgba(128,128,128,.28)}
+.rrow.me{color:#1d2416}
+.wcard i{color:#1d2416}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]) .card.ad{background:linear-gradient(180deg,#2c4d63,var(--card))}
+:root:not([data-theme="light"]) .card.perk{background:linear-gradient(180deg,#5c4c20,var(--card))}
+:root:not([data-theme="light"]) .card.perk .cnm{color:#ffc65a}
+:root:not([data-theme="light"]) .card.iap{background:linear-gradient(180deg,#4d4a2a,var(--card))}
+:root:not([data-theme="light"]) .wcard.cur{background:linear-gradient(180deg,#4d4a22,var(--card))}
+}
+:root[data-theme="dark"] .card.ad{background:linear-gradient(180deg,#2c4d63,var(--card))}
+:root[data-theme="dark"] .card.perk{background:linear-gradient(180deg,#5c4c20,var(--card))}
+:root[data-theme="dark"] .card.perk .cnm{color:#ffc65a}
+:root[data-theme="dark"] .card.iap{background:linear-gradient(180deg,#4d4a2a,var(--card))}
+:root[data-theme="dark"] .wcard.cur{background:linear-gradient(180deg,#4d4a22,var(--card))}
 /* ===== extras: trophies, welcome back, backup ===== */
 .atoast{position:absolute;left:50%;top:0;z-index:40;width:min(92%,340px);transform:translate(-50%,-140%);display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#fff8d6,#ffe69a);color:var(--line);border:3px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line);padding:8px 14px 8px 8px;pointer-events:none;transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
 .atoast.on{transform:translate(-50%,calc(env(safe-area-inset-top,0px) + 14px))}
@@ -548,6 +565,11 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .mgbar b{font:400 18px "Bagel Fat One",sans-serif;color:var(--pink-d)}
 #mgCv{display:block;width:100%;aspect-ratio:360/440;border:3px solid var(--line);border-radius:14px;touch-action:none;cursor:pointer;background:#9fe0ff}
 @media (max-width:560px) and (min-height:621px){.hud .chips{top:calc(156px + env(safe-area-inset-top,0px))!important}}
+/* theme: gold cards keep dark text in dark mode */
+.tr.got,.dx.got,.an.has{color:#1d2416}
+.tr.got .trt span,.dx.got small{color:#6b5a1a}
+.an.has small{color:#3f5a2a}
+.tr.got .trt em{color:#3a7a1a}
 </style>
 </head>
 <body>
