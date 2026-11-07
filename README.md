@@ -30,6 +30,19 @@ Also new:
 - **Snack Catch**, a 15-second bonus round where you tap falling snacks. Stars are worth 5, clocks add time, and streaks double points. It's a new Lucky Spin segment and also playable from the Daily tab every 15 minutes.
 - **Trophy skins:** Gilded Frog, Storm Frog, Collector Frog and Ancient Frog, each unlocked by a trophy and worn from the Shop.
 
+## Worlds 2 to 5 rebuilt, balance changes
+
+- **300 levels per world** (was 60), in **8 chapters** each, with a boss at the end of every chapter and a finale at level 300.
+- **One continuous world instead of swapping backdrops.** Like the Frog Planet, the scenery now stays the same and grows: as the frog gets bigger and the camera zooms out, bigger objects appear in the background and small ones shrink away. The sky colours drift smoothly (candy goes pink to starry sugar space, the ocean goes bright to abyss, neon goes smog to night, storm goes blue to space).
+- **Many more foods per world** (Frog Planet 60, Candy Kingdom 49, Ocean Deep 44, Neon Factory 48, Storm Skies 45), all with new art in the same glossy style, and each food swims, flies, walks or sits as fits it. 129 new sprites in total.
+- **New journey maps** for worlds 2 to 5: eight chapter bands in each world's palette with its own scenery, the same road and unlock fog as the first map.
+- **New rebirth cutscene:** the universe is pulled into the frog, she becomes light, a big bang makes a new universe around an egg, the egg cracks and a bigger frog hatches with orbiting stars. Choosing a world plays a themed warp tunnel with that world's foods and title card.
+- **Rebirth only at the end:** the mid-game Rebirth button is gone. You can rebirth once you have eaten everything in a world.
+- **Ancestor points come only from rebirths** (1 per rebirth).
+- **Economy:** power-ups, skins, tongues and hats cost 10 to 30 times more (Golden Tongue 6,000, Eternal Feast 30,000), and coin income from missions, daily rewards, race prizes, trophies, challenges, the spin and the bonus round is roughly halved.
+- **Bosses:** a boss level needs 3.5 times the food, attacks about twice as often and faster, and every unblocked hit takes 14 to 17 percent of the level's bar.
+- **Dark mode:** the Frog Race leaderboard, Shop cards, world picker and Frog Book gold cards are readable.
+
 ## Art upgrade
 
 - **New hero frog.** Redrawn at high resolution with whole-silhouette shading, rim light, glossy eyes, blush and freckles, in three poses (idle, mouth open, chewing). It keeps the old size and mouth position, so the tongue still comes out of the mouth, and the colour skins still work.

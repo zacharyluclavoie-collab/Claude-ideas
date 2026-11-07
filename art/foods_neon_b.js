@@ -1,0 +1,86 @@
+Object.assign(ART,{
+speaker(c){
+  R(c,110,40,292,432,50,"#2a3040",18);
+  E(c,256,150,70,70,"#4a5468",14);E(c,256,150,30,30,"#3df0ff",10);E(c,256,340,110,110,"#4a5468",16);E(c,256,340,66,66,"#6a7488",12);E(c,256,340,22,22,"#ff5dd0",8);
+  c.strokeStyle="rgba(61,240,255,.8)";c.lineWidth=7;c.lineCap="round";[1,2].forEach(i=>{[-1,1].forEach(s=>{c.beginPath();c.arc(256,150,60+i*26,s>0?-.7:Math.PI-.5+.2,s>0?-.0+.2:Math.PI+.7-.2*0);c.stroke()})});gloss(c,150,90,16,40,0,.35)},
+headphones(c){
+  c.beginPath();c.arc(256,260,160,Math.PI,0);c.lineWidth=52;c.strokeStyle=OL;c.stroke();c.lineWidth=30;c.strokeStyle=toon(c,"#ff5dd0",100,260);c.stroke();
+  [[96],[416]].forEach(a=>{R(c,a[0]-56,240,112,190,46,"#3a4258",18);E(c,a[0],335,30,52,"#ff5dd0",10)});
+  c.strokeStyle="rgba(255,255,255,.55)";c.lineWidth=9;c.lineCap="round";c.beginPath();c.arc(256,260,160,Math.PI*1.1,Math.PI*1.4);c.stroke();sparkle(c,430,100,28)},
+monitor(c){
+  R(c,40,60,432,310,36,"#3a4258",18);R(c,70,90,372,250,18,"#101a30",14);
+  c.save();rr(c,74,94,364,242,14,null,0);c.clip();c.fillStyle=lg(c,0,94,0,336,[[0,"#6af0ff"],[1,"#3a60d8"]]);c.fillRect(70,90,372,250);c.fillStyle="rgba(255,255,255,.18)";c.beginPath();c.moveTo(74,94);c.lineTo(250,94);c.lineTo(120,336);c.lineTo(74,336);c.fill();c.restore();
+  eyes(c,196,316,200,22,0);smile(c,256,262,34,22,10);cheeks(c,150,362,254,18);
+  R(c,226,370,60,64,8,"#6a7488",12);R(c,150,430,212,40,18,"#4a5468",14)},
+jetpack(c){
+  [[170],[342]].forEach(a=>{R(c,a[0]-52,70,104,290,48,"#c8d0e4",18);R(c,a[0]-52,100,104,34,6,"#e8423f",10);E(c,a[0],372,40,22,"#4a5468",12);
+    c.beginPath();c.moveTo(a[0]-34,380);c.quadraticCurveTo(a[0],500,a[0]+34,380);c.closePath();FS(c,lg(c,0,380,0,500,[[0,"#fff6a0"],[.5,"#ff9a1f"],[1,"#e8423f"]]),12)});
+  R(c,150,190,212,70,22,"#8a96aa",14);E(c,256,225,26,26,"#3df0ff",9);gloss(c,140,150,10,100,0,.5);gloss(c,312,150,10,100,0,.5)},
+joystick(c){
+  E(c,256,430,196,52,"#3a4258",16);R(c,66,350,380,100,36,"#4a5468",18);
+  stroke2(c,p=>{p.moveTo(256,370);p.lineTo(256,160)},40,"#aab6cc",14);
+  E(c,256,120,92,92,"#e8233a",18);shine(c,226,90,30,18,-.7);
+  [[110,400,"#3df0ff"],[402,400,"#ffe14a"]].forEach(a=>E(c,a[0],a[1],26,26,a[2],10));sparkle(c,430,100,28)},
+drill(c){
+  c.beginPath();c.moveTo(380,250);c.lineTo(500,226);c.lineTo(500,290);c.closePath();FS(c,toon(c,"#c8d0e4",226,290),12);
+  c.strokeStyle="rgba(40,50,70,.5)";c.lineWidth=7;[420,444,468].forEach(x=>{c.beginPath();c.moveTo(x,246);c.lineTo(x+10,284);c.stroke()});
+  R(c,70,200,310,120,40,"#ffcf3a",18);R(c,170,300,100,170,26,"#2a3040",16);
+  R(c,300,170,80,34,10,"#3a4258",12);E(c,130,260,26,26,"#e8423f",8);gloss(c,150,222,80,9,0,.5)},
+router(c){
+  stroke2(c,p=>{p.moveTo(130,200);p.lineTo(90,50)},20,"#2a3040",10);stroke2(c,p=>{p.moveTo(256,200);p.lineTo(256,30)},20,"#2a3040",10);stroke2(c,p=>{p.moveTo(382,200);p.lineTo(422,50)},20,"#2a3040",10);
+  R(c,40,190,432,200,50,"#e8ecf8",18);
+  [[110,"#7cff9a"],[170,"#7cff9a"],[230,"#ffe14a"],[290,"#3df0ff"]].forEach(a=>E(c,a[0],300,16,16,a[1],8));R(c,330,276,100,50,14,"#2a3040",10);
+  eyes(c,180,332,240,16,0);smile(c,256,276,22,14,8);gloss(c,130,210,70,9,0,.55)},
+harddrive(c){
+  R(c,60,110,392,300,40,"#9aa6bc",18);E(c,230,260,110,110,"#2a3040",16);E(c,230,260,84,84,"#c8d0e4",10);E(c,230,260,16,16,"#6a7488",8);
+  c.strokeStyle="#4a5468";c.lineWidth=12;c.lineCap="round";c.beginPath();c.moveTo(390,160);c.lineTo(260,240);c.stroke();E(c,396,156,16,16,"#6a7488",8);
+  E(c,96,150,12,12,"#ffe14a",5);E(c,96,370,12,12,"#6a7488",5);E(c,416,370,12,12,"#6a7488",5);gloss(c,140,134,60,8,0,.5)},
+usb(c){
+  R(c,150,210,212,250,40,"#3a4258",18);R(c,186,70,140,150,14,"#c8d0e4",16);R(c,212,110,28,40,6,"#2a3040",8);R(c,272,110,28,40,6,"#2a3040",8);
+  E(c,256,400,26,26,"#ff5dd0",9);face(c,256,320,.62);gloss(c,190,260,10,90,0,.4)},
+cd(c){
+  E(c,256,256,226,226,"#d8e0f0",18);
+  clipEll(c,256,256,226,226,()=>{["rgba(255,90,200,.45)","rgba(61,240,255,.45)","rgba(255,225,74,.45)","rgba(124,255,154,.45)"].forEach((col,i)=>{c.fillStyle=col;c.beginPath();c.moveTo(256,256);c.arc(256,256,260,i*T/4+.3,i*T/4+T/4+.3);c.closePath();c.fill()})});
+  E(c,256,256,226,226,null,18);E(c,256,256,70,70,"#fff",14);E(c,256,256,22,22,"#8a96aa",10);shine(c,170,160,50,14,-.7)},
+floppy(c){
+  c.beginPath();c.moveTo(66,70);c.lineTo(390,70);c.lineTo(446,126);c.lineTo(446,446);c.lineTo(66,446);c.closePath();FS(c,toon(c,"#3a60d8",70,446),18);
+  R(c,130,70,230,130,10,"#c8d0e4",14);R(c,290,96,40,80,6,"#2a3040",8);R(c,120,270,270,176,14,"#f6f0d8",14);
+  c.strokeStyle="#9a9aae";c.lineWidth=7;[300,332,364].forEach(y=>{c.beginPath();c.moveTo(144,y);c.lineTo(366,y);c.stroke()});E(c,256,440,0,0,null,0);gloss(c,100,200,10,100,0,.4)},
+mouse(c){
+  stroke2(c,p=>{p.moveTo(256,100);p.bezierCurveTo(256,20,420,10,470,40)},12,"#3a4258",8);
+  c.beginPath();c.moveTo(110,300);c.bezierCurveTo(110,100,402,100,402,300);c.bezierCurveTo(402,440,110,440,110,300);c.closePath();FS(c,toon(c,"#e8ecf8",120,440),18);
+  c.beginPath();c.moveTo(256,138);c.lineTo(256,260);c.lineWidth=10;c.strokeStyle=OL;c.stroke();c.beginPath();c.moveTo(118,262);c.quadraticCurveTo(256,290,394,262);c.stroke();
+  R(c,236,170,40,66,18,"#3df0ff",10);face(c,256,350,.8);gloss(c,170,170,50,16,-.7,.7)},
+keyboard(c){
+  R(c,30,170,452,220,34,"#3a4258",18);
+  for(let r=0;r<3;r++)for(let k=0;k<7;k++){const x=62+k*58-(r===1?-12:0),w=r===2&&k===3?116:44;if(r===2&&k>3)break;R(c,x+(r===2&&k>3?58:0),196+r*58,w,44,10,["#e8ecf8","#3df0ff","#ff5dd0"][(k+r)%3===0?1:0],8)}
+  R(c,150,330,212,34,12,"#e8ecf8",10);gloss(c,100,185,100,6,0,.4)},
+vrheadset(c){
+  c.beginPath();c.moveTo(30,260);c.quadraticCurveTo(30,150,130,150);c.lineTo(130,370);c.quadraticCurveTo(30,370,30,260);c.closePath();FS(c,"#3a4258",14);c.beginPath();c.moveTo(482,260);c.quadraticCurveTo(482,150,382,150);c.lineTo(382,370);c.quadraticCurveTo(482,370,482,260);c.closePath();FS(c,"#3a4258",14);
+  R(c,90,120,332,250,70,"#e8ecf8",18);R(c,120,160,272,170,46,"#101a30",14);
+  c.save();rr(c,124,164,264,162,40,null,0);c.clip();c.fillStyle=lg(c,0,164,0,326,[[0,"#ff5dd0"],[1,"#3a60d8"]]);c.fillRect(120,160,272,170);c.restore();
+  eyes(c,200,312,244,22,0);smile(c,256,292,22,14,8);c.fillStyle="rgba(255,255,255,.3)";c.beginPath();c.ellipse(190,190,60,16,-.2,0,T);c.fill();sparkle(c,440,90,30)},
+lavalamp(c){
+  c.beginPath();c.moveTo(190,90);c.lineTo(322,90);c.lineTo(350,360);c.lineTo(162,360);c.closePath();FS(c,"rgba(255,120,200,.55)",16);
+  clipPath(c,p=>{p.moveTo(194,96);p.lineTo(318,96);p.lineTo(346,356);p.lineTo(166,356);p.closePath()},()=>{c.fillStyle=lg(c,0,96,0,356,[[0,"#ff9ad0"],[1,"#c83ab8"]]);c.fillRect(140,90,240,280);[[230,280,44],[290,200,30],[250,130,22],[280,330,26]].forEach(p=>{c.beginPath();c.arc(p[0],p[1],p[2],0,T);c.fillStyle="#ffe14a";c.fill();c.lineWidth=7;c.strokeStyle=OL;c.stroke()})});
+  Pg(c,[[196,60],[256,10],[316,60]],"#8a96aa",14);R(c,150,350,212,120,26,"#3a4258",16);E(c,256,350,106,22,"#6a7488",10);gloss(c,206,150,12,150,.1,.5)},
+hologram(c){
+  E(c,256,440,150,36,"#3a4258",16);E(c,256,432,90,18,"#3df0ff",8);
+  c.fillStyle="rgba(61,240,255,.3)";c.beginPath();c.moveTo(166,432);c.lineTo(346,432);c.lineTo(400,120);c.lineTo(112,120);c.closePath();c.fill();
+  c.globalAlpha=.9;c.save();c.translate(256,260);E(c,0,0,100,110,"#7aeaff",14);E(c,-40,-30,22,30,"#fff",8);E(c,40,-30,22,30,"#fff",8);ell(c,-36,-24,10,14,OL,0);ell(c,44,-24,10,14,OL,0);smile(c,0,50,30,20,9);c.restore();c.globalAlpha=1;
+  c.strokeStyle="rgba(190,250,255,.7)";c.lineWidth=5;[160,220,280,340].forEach(y=>{c.beginPath();c.moveTo(160,y);c.lineTo(352,y);c.stroke()});sparkle(c,430,100,28)},
+radar(c){
+  R(c,150,380,212,90,26,"#6a7488",16);stroke2(c,p=>{p.moveTo(256,390);p.lineTo(256,250)},34,"#aab6cc",12);
+  c.save();c.translate(256,230);c.rotate(-.5);c.beginPath();c.ellipse(0,0,200,76,0,0,Math.PI);c.closePath();FS(c,toon(c,"#e8ecf8",0,76),18);E(c,0,0,200,28,"#c8d0e4",12);stroke2(c,p=>{p.moveTo(0,0);p.lineTo(0,-130)},12,"#8a96aa",8);E(c,0,-136,18,18,"#ff3a5a",8);c.restore();
+  c.strokeStyle="rgba(61,240,255,.8)";c.lineWidth=7;c.lineCap="round";[1,2].forEach(i=>{c.beginPath();c.arc(366,100,i*34,-.2,1.6);c.stroke()});gloss(c,200,230,60,8,-.4,.5)},
+microphone(c){
+  stroke2(c,p=>{p.moveTo(256,300);p.lineTo(256,440)},34,"#6a7488",12);R(c,170,440,172,40,16,"#3a4258",12);
+  c.beginPath();c.arc(256,200,110,0,T);FS(c,toon(c,"#c8d0e4",90,310),18);
+  clipEll(c,256,200,110,110,()=>{c.strokeStyle="rgba(60,70,90,.55)";c.lineWidth=7;for(let i=-4;i<=4;i++){c.beginPath();c.moveTo(256+i*28,80);c.lineTo(256+i*28,320);c.stroke();c.beginPath();c.moveTo(130,200+i*28);c.lineTo(390,200+i*28);c.stroke()}});
+  E(c,256,200,110,110,null,18);R(c,196,296,120,40,14,"#3a4258",12);shine(c,200,150,34,14,-.7);face(c,256,206,.7)},
+cassette(c){
+  R(c,40,110,432,290,36,"#e8423f",18);R(c,90,150,332,100,20,"#f6f0d8",14);
+  E(c,170,200,40,40,"#3a4258",12);E(c,342,200,40,40,"#3a4258",12);E(c,170,200,14,14,"#e8ecf8",6);E(c,342,200,14,14,"#e8ecf8",6);
+  c.strokeStyle="#3a4258";c.lineWidth=7;c.beginPath();c.moveTo(210,200);c.lineTo(302,200);c.stroke();
+  c.beginPath();c.moveTo(130,400);c.lineTo(160,310);c.lineTo(352,310);c.lineTo(382,400);c.closePath();FS(c,"#3a4258",14);E(c,200,360,16,16,"#aab6cc",7);E(c,312,360,16,16,"#aab6cc",7);gloss(c,120,130,80,8,0,.4)}
+});
