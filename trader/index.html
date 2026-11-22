@@ -179,7 +179,7 @@ const CFG = {
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   lenient:{sec:true,regime:true},
-  watchdog:true,
+  watchdog:true, autoRearmMin:20,
   secMode:"balanced",
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
@@ -236,6 +236,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
+const BUILD = "2026-11-22 22:30";
 
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
@@ -712,8 +713,9 @@ function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.
 async function updateRegime(t){let m=await P().majors();if(!m&&CFG.lenient.regime&&uniMedian!=null)m={universe:uniMedian};const r=regimeOf(m);
   if(r!=="unknown"){regimeOk=t;if(r!==regime)ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);regime=r}
   if(regime==="crash")for(const p of Object.values(S.pf.positions))p.emergency=p.emergency||"market crash"}
-function safety(t){const pf=S.pf;let why="";if(LS.get("pt_kill_"+MODE)==="1")why="manual emergency stop";if(!why)why=shutdownReason();
-  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions")}
+function safety(t){const pf=S.pf;let why="";
+  if(pf.shutdown&&CFG.autoRearmMin>0&&LS.get("pt_kill_"+MODE)!=="1"&&t-(pf.shutAt||t)>=CFG.autoRearmMin*60){pf.shutdown=false;pf.why="";pf.peak=equity();pf.streak=0;ev("warn","auto_rearm","","Shutdown cleared automatically after "+CFG.autoRearmMin+" minutes (paper mode); drawdown measured from here")}if(LS.get("pt_kill_"+MODE)==="1")why="manual emergency stop";if(!why)why=shutdownReason();
+  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;pf.shutAt=t;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions")}
   if(pf.shutdown)for(const p of Object.values(pf.positions))p.emergency=p.emergency||"shutdown: "+pf.why}
 /* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
@@ -935,8 +937,17 @@ function diagnose(){const L=[],sb=stats.secNull||0;
   if(!L.length)L.push(["ok","Nothing is blocking trades. It buys when a token passes the setup rules, the security checks and the risk checks."]);
   return L}
 function rows3(title,o,n){const t=topList(o,n);if(!t.length)return"";const mx=t[0][1];return`<div class="sub" style="margin:14px 0 4px">${title}</div>`+t.map(([k,v])=>`<div class="hbar"><span style="width:150px">${esc(k)}</span><i style="width:${(v/mx*40).toFixed(0)}%"></i><span>${v.toLocaleString()}</span></div>`).join("")}
+function reportText(){const L=[];L.push("Paper Trader report · build "+BUILD+" · "+(MODE==="live"?"live":"demo")+" · "+new Date().toISOString());
+  L.push("settings: security="+CFG.secMode+" activity="+ACT+" keepOpen="+(CFG.keep.on?CFG.keep.target:"off")+" lenient="+JSON.stringify(CFG.lenient)+" maxRisk="+CFG.risk.maxRisk+" maxCost="+CFG.risk.maxCostPct+"% turbo="+CFG.turbo+" exit="+(CFG.scalp?"scalp":"big"));
+  L.push("state: equity="+equity().toFixed(0)+" cash="+S.pf.cash.toFixed(0)+" open="+Object.keys(S.pf.positions).length+" shutdown="+S.pf.shutdown+(S.pf.why?" ("+S.pf.why+")":"")+" paused="+paused+" regime="+regime+" kill="+LS.get("pt_kill_"+MODE));
+  if(MODE==="live")L.push("data: ok="+health.ok+" fail="+health.fail+" last="+health.lastErr+" hosts="+JSON.stringify(health.byHost));
+  L.push("counts: tokens="+(stats.uniq||0)+" checks="+stats.scanned+" setupOK="+stats.strat+" secure="+stats.sec+" vetoed="+stats.vetoed+" bought="+stats.bought+" gated="+(stats.gated||0)+" secNull="+(stats.secNull||0)+" secOk="+(stats.secOk||0));
+  for(const [n,o] of [["setup fails",stats.rejWhy],["security fails",stats.secWhy],["risk says no",stats.vwhy]])L.push(n+": "+JSON.stringify(topList(o,8)));
+  L.push("diagnosis: "+diagnose().map(d=>d[1]).join(" | "));
+  L.push("recent events:");for(const j of S.journal.slice(0,15))L.push("  "+j.kind+" "+j.tok+" "+j.msg);
+  L.push("recent candidates:");for(const f of S.feed.slice(0,10))L.push("  "+f.outcome+" "+f.sym+" "+f.chain+" "+f.detail);return L.join("\n")}
 function rScan(){
-  $("diag").innerHTML=diagnose().map(([c,t])=>`<div class="row" style="align-items:flex-start;margin:8px 0"><span class="tag ${c==="bad"?"bad":c==="warn"?"warn":c==="ok"?"ok":""}">${c==="ok"?"OK":c==="info"?"INFO":c==="warn"?"CHECK":"BLOCKED"}</span><span style="flex:1;font-size:13.5px">${esc(t)}</span></div>`).join("")+rows3("Why tokens fail the setup rules",stats.rejWhy,6)+rows3("Security checks that fail most",stats.secWhy,6)+rows3("Why the risk manager says no",stats.vwhy,5);const t=now(),next=(k,e)=>Math.max(0,Math.ceil((last[k]||0)+e-t));
+  $("diag").innerHTML=diagnose().map(([c,t])=>`<div class="row" style="align-items:flex-start;margin:8px 0"><span class="tag ${c==="bad"?"bad":c==="warn"?"warn":c==="ok"?"ok":""}">${c==="ok"?"OK":c==="info"?"INFO":c==="warn"?"CHECK":"BLOCKED"}</span><span style="flex:1;font-size:13.5px">${esc(t)}</span></div>`).join("")+rows3("Why tokens fail the setup rules",stats.rejWhy,6)+rows3("Security checks that fail most",stats.secWhy,6)+rows3("Why the risk manager says no",stats.vwhy,5)+`<button class="btn" id="copyrep" style="margin-top:14px">Copy diagnostic report</button>`;$("copyrep").onclick=()=>copyText(reportText());const t=now(),next=(k,e)=>Math.max(0,Math.ceil((last[k]||0)+e-t));
   const R=(a,b)=>`<div class="row" style="margin:7px 0"><span class="mut">${a}</span><b>${b}</b></div>`;
   $("status").innerHTML=R("New-token scan",CFG.turbo?"continuous":scanning?"scanning…":"next in "+next("new",CFG.newEvery)+"s")+R("Trending scan",CFG.turbo?"continuous":scanning?"scanning…":"next in "+next("trend",CFG.trendEvery)+"s")+R("Scan rate",`${Math.round(scanRate()).toLocaleString()} tokens/s`)+R("Price updates",`every ${CFG.monitorEvery}s · last ${last.monitor?ago(last.monitor):"…"} ago`)+R("Security rechecks","4 positions every 30s")
     +(MODE==="live"?R("Data requests",`${health.ok} ok · ${health.fail} failed`)+(health.lastErr?`<div class="sub r">${esc(health.lastErr)}</div>`:""):R("Data source","synthetic demo market"));
@@ -984,6 +995,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   h+=`<h2>Strategies</h2><div class="panel"><label class="tg"><span><b>New tokens</b><small>Fresh pools after security checks. Around break-even in testing; profit depends on assumptions nobody can verify.</small></span><input type="checkbox" id="f_nw" ${CFG.nw.enabled?"checked":""}></label><label class="tg"><span><b>Established tokens (experimental)</b><small>Momentum on older tokens. No edge after costs in testing, so it is off by default. Scanning continues either way.</small></span><input type="checkbox" id="f_tr" ${CFG.tr.enabled?"checked":""}></label></div>`;
   h+=`<h2>Risk limits</h2><div class="panel">`+RK.map(([k,l,lo,hi,st])=>`<div class="sl"><div class="ml"><span>${l}</span><b id="v_${k}">${R[k]}</b></div><input type="range" id="s_${k}" min="${lo}" max="${hi}" step="${st}" value="${R[k]}" aria-label="${l}"></div>`).join("")+`<div class="sub">Sliders stop at safe maximums. Changes apply to future decisions.</div></div>`;
   h+=`<h2>Account</h2><div class="sub">Starting capital (used on reset)</div><input type="number" id="cap" inputmode="numeric" value="${LS.get("pt_cap")||10000}" aria-label="Starting capital" style="margin-top:6px"><button class="btn pri" id="toggle">${paused?"Resume new entries":"Pause new entries"}</button><button class="btn" id="exp">Copy account data (JSON)</button><button class="btn red" id="kill">Emergency stop: flatten everything</button><button class="btn" id="rearm">Re-arm after shutdown</button><button class="btn" id="reset">Reset paper account</button>`;
+  h+=`<div class="sub" style="margin:14px 0">Build ${BUILD}</div>`;
   h+=`<div class="sub" style="margin:14px 0">${MODE==="mock"?"Demo mode runs entirely in this page and starts fresh each time.":"iPhone: iOS freezes web pages when the screen locks, so the bot only trades while this app is open (a screen wake lock is requested). For 24/7 use the Python version in paper_trader/."} Pausing entries keeps managing open positions. Paper results do not predict live results; new-token trading is extremely high risk.</div>`;
   $("setcard").innerHTML=h;
   $("prof").onclick=e=>{const p=PROFILES[e.target.dataset&&e.target.dataset.p];if(!p)return;Object.assign(CFG.risk,{maxPos:p.maxPos,perHour:p.perHour,totalExp:p.totalExp,chainExp:p.chainExp,newExp:p.newExp});syncRisk();saveRisk();buildSettings()};
