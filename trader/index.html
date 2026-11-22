@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper Trader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paper Trader">
+<meta name="theme-color" content="#0b0f17">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<style>
+:root{--bg:#0b0f17;--card:#141b29;--line:#243049;--tx:#e8edf6;--mut:#8b97ad;--g:#2ecc8f;--r:#ff5d6c;--y:#f5b942;--b:#5aa2ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 16px calc(70px + env(safe-area-inset-bottom))}
+.banner{background:#1d2a44;color:var(--b);font-size:12px;text-align:center;padding:6px;margin:0 -16px 12px;letter-spacing:.04em}
+h1{font-size:13px;color:var(--mut);font-weight:600;margin:0;text-transform:uppercase;letter-spacing:.08em}
+.eq{font-size:36px;font-weight:700;margin:2px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 90px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
+.k{color:var(--mut);font-size:12px}.v{font-size:17px;font-weight:600}
+.g{color:var(--g)}.r{color:var(--r)}.y{color:var(--y)}
+.chip{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#1f3b2f;color:var(--g)}
+.chip.bad{background:#47202a;color:var(--r)}.chip.warn{background:#46381a;color:var(--y)}
+.pos{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}.pos:first-child{border-top:0}
+.sm{font-size:12px;color:var(--mut)}
+.log{font:12px/1.35 ui-monospace,Menlo,monospace;border-top:1px solid var(--line);padding:6px 0;word-break:break-word}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0e1420;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--mut);padding:14px 0;font-size:14px;font-weight:600}
+nav button.on{color:var(--tx);box-shadow:inset 0 2px 0 var(--b)}
+.btn{background:#22304d;color:var(--tx);border:0;border-radius:10px;padding:12px 14px;font-size:15px;font-weight:600;width:100%;margin:5px 0}
+.btn.red{background:#5a2330}.btn.grn{background:#1f4a39}
+select,input{background:#0e1420;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px;width:100%}
+.tab{display:none}.tab.on{display:block}
+</style>
+</head>
+<body>
+<div class="banner">PAPER TRADING · SIMULATED MONEY ONLY · NO WALLET · NOT FINANCIAL ADVICE</div>
+<div class="row" style="align-items:center"><h1>Equity</h1><div style="text-align:right"><span id="chip" class="chip">…</span></div></div>
+<div class="eq" id="eq">$0</div>
+<div id="ret" class="sm"></div>
+
+<div id="t-over" class="tab on">
+  <div class="card"><div class="row">
+    <div><div class="k">Cash</div><div class="v" id="cash"></div></div>
+    <div><div class="k">Exposure</div><div class="v" id="expo"></div></div>
+    <div><div class="k">Realized</div><div class="v" id="real"></div></div>
+    <div><div class="k">Win rate</div><div class="v" id="wr"></div></div>
+    <div><div class="k">Max DD</div><div class="v" id="dd"></div></div>
+    <div><div class="k">Market</div><div class="v" id="reg"></div></div>
+  </div></div>
+  <div class="card"><h1>Open positions</h1><div id="pos"><div class="sm">None</div></div></div>
+  <div class="card"><h1>Scanner</h1><div class="sm" id="scan"></div></div>
+</div>
+<div id="t-log" class="tab"><div class="card" id="log"></div></div>
+<div id="t-trades" class="tab"><div class="card" id="trades"></div></div>
+<div id="t-set" class="tab">
+  <div class="card">
+    <div class="k">Data source</div>
+    <select id="mode"><option value="live">Live market data (DexScreener / GeckoTerminal / GoPlus / CoinGecko)</option><option value="mock">Demo: synthetic market, fast-forward</option></select>
+    <div class="sm" style="margin-top:6px">Each source keeps its own separate paper account.</div>
+    <div class="k" style="margin-top:12px">Starting capital (applies on reset)</div>
+    <input id="cap" type="number" inputmode="numeric" value="10000">
+    <button class="btn grn" id="toggle">Pause scanning</button>
+    <button class="btn red" id="kill">EMERGENCY STOP (flatten + halt entries)</button>
+    <button class="btn" id="rearm">Re-arm after shutdown</button>
+    <button class="btn" id="reset">Reset paper account</button>
+  </div>
+  <div class="card sm">iPhone: iOS freezes web pages when the screen locks or the app is closed, so the bot only scans and manages positions while this app is open and the screen is on (a screen wake lock is requested). Open it from time to time: it also shows you what happened. For 24/7 running use the Python version in <code>paper_trader/</code> on a computer or server.</div>
+</div>
+<nav><button data-t="over" class="on">Overview</button><button data-t="log">Log</button><button data-t="trades">Trades</button><button data-t="set">Settings</button></nav>
+
+<script>
+"use strict";
+/* ============================ config (mirrors paper_trader/config.py) ============================ */
+const CFG = {
+  chains:["solana","base","ethereum","bsc"],
+  tick:5, monitorEvery:15, newEvery:30, trendEvery:120, recheckEvery:300, regimeEvery:120, equityEvery:60,
+  maxCands:10, rejectMin:45,
+  risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:30, newExp:10, chainExp:15, cashReserve:20, maxPos:8,
+        liqFrac:0.02, minTrade:25, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
+        perHour:4, perDay:20, cooldownH:12, maxRisk:45, minRR:1.5},
+  sec:{buyTax:5, sellTax:8, liqNew:15000, liqTrend:100000, holdersNew:100, holdersTrend:500, top10:45, creator:8, owner:8, lpLocked:70, volLiq:40},
+  nw:{minAgeMin:10, maxAgeH:24, minTx:50, minBP:0.55, maxChg1h:300, maxFdvLiq:60, minScore:60, stop:18, tp1:40, tp2:100, trail:15, maxHoldH:12},
+  tr:{minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
+  tp1Frac:0.5, tp2Frac:0.25,
+  em:{liqTotal:0.5, liqStep:0.3, priceStep:0.3, staleCycles:8, staleHaircut:0.5, maxAttempts:12, danger:-3, crash:-8, regimeUnknownMin:15},
+  ex:{fee:0.30, gas:{ethereum:6,base:0.05,bsc:0.15,solana:0.02,arbitrum:0.1}, fail:0.03, newFail:0.05, partial:0.10, maxBuySlip:4, maxSellSlip:8, maxEmSlip:30}
+};
+const $ = id => document.getElementById(id);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const fmt=(n,d=2)=>(n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=(n)=>(n>=0?"+":"")+n.toFixed(2)+"%";
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng=mulberry(7);
+const gauss=()=>{let u=0,v=0;while(!u)u=rng();v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+
+/* ============================ state ============================ */
+let MODE = localStorage.getItem("pt_mode")||"live";
+let paused=false, vnow=1.76e9, last={}, regime="unknown", regimeOk=0, rejected={}, stats={scanned:0,rejected:0,bought:0};
+let S; // {pf, journal[], trades[]}
+const key=()=>"pt_state_"+MODE;
+function newState(cap){return{pf:{start:cap,cash:cap,positions:{},realized:0,peak:cap,day:"",dayStart:cap,streak:0,pauseUntil:0,entries:[],cool:{},shutdown:false,why:"",closed:[]},journal:[],trades:[],curve:[]}}
+function load(){try{S=JSON.parse(localStorage.getItem(key()))}catch(e){S=null}if(!S)S=newState(+localStorage.getItem("pt_cap")||10000)}
+function save(){try{localStorage.setItem(key(),JSON.stringify(S))}catch(e){}}
+const now=()=>MODE==="mock"?vnow:Date.now()/1000;
+function ev(level,kind,tok,msg){S.journal.unshift({t:now(),level,kind,tok,msg});if(S.journal.length>400)S.journal.length=400}
+
+/* ============================ portfolio helpers ============================ */
+const pv=p=>p.qty*p.last*(1-p.sellTax/100);
+const exposure=()=>Object.values(S.pf.positions).reduce((a,p)=>a+pv(p),0);
+const equity=()=>S.pf.cash+exposure();
+const expBy=fn=>{const o={};for(const p of Object.values(S.pf.positions))o[fn(p)]=(o[fn(p)]||0)+pv(p);return o};
+
+/* ============================ security (mirrors security.py) ============================ */
+function evalSecurity(sec,snap,cat,t){
+  const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);
+  if(!sec)return{pass:false,risk:100,fails:["security_data_available"]};
+  const isNew=cat==="new",c=CFG.sec,f=(n,v)=>add(n,v===false);
+  if(!sec.sol){f("not_honeypot",sec.honeypot);f("no_hidden_owner",sec.hiddenOwner);f("no_ownership_takeback",sec.takeBack);
+    f("owner_cannot_change_balance",sec.ownerBal);f("transfers_not_pausable",sec.pausable);f("can_sell_all",sec.cannotSellAll);
+    f("no_slippage_modification",sec.slipMod);f("no_selfdestruct",sec.selfdestruct);f("not_mintable",sec.mintable);
+    f("no_blacklist",sec.blacklist);f("creator_no_honeypot_history",sec.creatorHP);add("contract_verified",sec.openSource===true);add("tradable_on_dex",sec.inDex===true)}
+  else{f("not_mintable",sec.mintable);f("not_freezable",sec.freezable);f("not_closable",sec.closable);f("transferable",sec.nonTransferable);f("owner_cannot_change_balance",sec.ownerBal)}
+  add("buy_tax",sec.buyTax!=null&&sec.buyTax<=c.buyTax);add("sell_tax",sec.sellTax!=null&&sec.sellTax<=c.sellTax);
+  add("holders",sec.holders!=null&&sec.holders>=(isNew?c.holdersNew:c.holdersTrend));
+  add("top10",sec.top10!=null&&sec.top10<=c.top10);
+  for(const [n,v,l] of [["creator",sec.creator,c.creator],["owner",sec.owner,c.owner]]){if(v==null&&sec.sol)continue;add(n,v!=null&&v<=l)}
+  add("liquidity",snap.liq>=(isNew?c.liqNew:c.liqTrend));
+  const lp=sec.lpLocked;add("lp_locked",isNew?(lp!=null&&lp>=c.lpLocked):(lp==null||lp>=20||snap.liq>=1e6));
+  add("sells_exist",!(snap.buys1h>=20&&snap.sells1h===0));
+  add("no_wash",(snap.liq>0?snap.vol24/snap.liq:1e9)<=c.volLiq);
+  add("no_vertical_pump",snap.chg1h<=1000&&snap.chg5m<=150);
+  let r=Math.min(25,(sec.top10??50)*0.5)+Math.min(10,sec.creator??5)+Math.min(10,(sec.buyTax||0)+(sec.sellTax||0));
+  r+=(sec.proxy?6:0)+(sec.extCall?4:0)+(sec.cooldown?5:0)+(sec.sol&&sec.creator==null?5:0)+(isNew?15:0);
+  r+=snap.liq<30000?12:snap.liq<100000?6:0;r+=(sec.lpLocked||0)<90?5:0;r+=(sec.holders!=null&&sec.holders<300)?5:0;
+  const age=snap.created?(t-snap.created)/3600:null;if(age!=null&&age<1)r+=8;
+  const fails=checks.filter(x=>!x[1]).map(x=>x[0]);
+  return{pass:!fails.length,risk:Math.min(100,r),fails};
+}
+
+/* ============================ strategy (mirrors strategy.py) ============================ */
+const bp=s=>{const n=s.buys1h+s.sells1h;return n?s.buys1h/n:0};
+const ageH=(s,t)=>s.created?Math.max(0,(t-s.created)/3600):null;
+function mkPlan(s,cat,score,reason){const c=cat==="new"?CFG.nw:CFG.tr;
+  const stop=clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=Math.max(c.tp1,stop*2),tp2=Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
+  return{stop,tp1,tp2,trail:c.trail,score,rr:tp1/stop,reason}}
+function analyzeNew(s,t){const c=CFG.nw,rej=[],age=ageH(s,t);if(age==null)return[null,["unknown age"]];
+  if(age*60<c.minAgeMin)rej.push("too young");if(age>c.maxAgeH)rej.push("not new");if(s.liq<CFG.sec.liqNew)rej.push("liquidity low");
+  const tx=s.buys1h+s.sells1h;if(tx<c.minTx)rej.push("thin activity ("+tx+"/1h)");const b=bp(s);if(b<c.minBP)rej.push("weak buy pressure "+b.toFixed(2));
+  if(s.chg1h>c.maxChg1h)rej.push("already pumped "+s.chg1h.toFixed(0)+"%");if(s.chg5m<-5)rej.push("dumping now");
+  if(s.fdv>0&&s.liq>0&&s.fdv/s.liq>c.maxFdvLiq)rej.push("FDV/liq high");if(rej.length)return[null,rej];
+  const vlr=s.vol1h/s.liq;let sc=clamp(Math.log10(s.liq/CFG.sec.liqNew+1)*25,0,25)+clamp((b-0.5)*120,0,20)+(vlr>=0.3&&vlr<=10?15:vlr<=25?5:0)
+   +(s.chg6h>=0?clamp(s.chg1h*0.5,0,15):0)+(age>=0.5&&age<=8?10:5)+clamp(Math.log10(Math.max(tx,1)/c.minTx+1)*15,0,15);
+  if(sc<c.minScore)return[null,["score "+sc.toFixed(0)+" < "+c.minScore]];
+  return[mkPlan(s,"new",sc,`age=${age.toFixed(1)}h liq=${s.liq.toFixed(0)} bp=${b.toFixed(2)}`),[]]}
+function analyzeTrend(s,t,breakout){const c=CFG.tr,rej=[],age=ageH(s,t);
+  if(age==null||age<c.minAgeH)rej.push("insufficient history");if(s.liq<CFG.sec.liqTrend)rej.push("liquidity low");if(s.vol24<c.minVol)rej.push("volume low");
+  const acc=s.vol24>0?s.vol1h*24/s.vol24:0;if(acc<c.minAccel)rej.push("no volume acceleration");const b=bp(s);if(b<c.minBP)rej.push("weak buy pressure");
+  if(!(s.chg1h>=1&&s.chg1h<=25))rej.push("1h move outside 1..25%");if(s.chg6h<2)rej.push("6h trend weak");if(s.chg24>c.maxChg24)rej.push("overextended");
+  if(s.chg5m<-1)rej.push("short-term weakness");if(rej.length)return[null,rej];
+  const sc=clamp((acc-1)*20,0,25)+clamp((b-0.5)*150,0,20)+clamp(s.chg1h*1.2,0,15)+clamp(s.chg6h*0.6,0,10)+clamp(Math.log10(s.liq/CFG.sec.liqTrend+1)*20,0,15)+(breakout?15:breakout==null?0:-10);
+  if(sc<c.minScore)return[null,["score "+sc.toFixed(0)+" < "+c.minScore]];
+  return[mkPlan(s,"trending",sc,`accel=${acc.toFixed(1)}x bp=${b.toFixed(2)} breakout=${breakout}`),[]]}
+
+/* ============================ risk manager (mirrors risk.py) ============================ */
+function riskMult(){const pf=S.pf,eq=equity(),dd=Math.max(0,(pf.peak-eq)/pf.peak*100);let m=1-0.6*Math.min(1,dd/CFG.risk.maxDD);if(pf.streak>=2)m*=0.5;return clamp(m,0.1,1)}
+function shutdownReason(){const pf=S.pf;if(pf.shutdown)return pf.why;const eq=equity();pf.peak=Math.max(pf.peak,eq);
+  const dd=(pf.peak-eq)/pf.peak*100;if(dd>=CFG.risk.maxDD)return`max drawdown ${dd.toFixed(1)}%`;
+  const loss=(pf.start-eq)/pf.start*100;if(loss>=CFG.risk.maxTotalLoss)return`total loss ${loss.toFixed(1)}%`;return""}
+function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
+  if(pf.shutdown)return no("shutdown");if(!marketOk(t))return no("market regime");
+  if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return no("daily loss limit");
+  if(t<pf.pauseUntil)return no("paused after losses");const k=snap.chain+":"+snap.addr.toLowerCase();
+  if(pf.positions[k])return no("already held");if(t<(pf.cool[k]||0))return no("re-entry cooldown");
+  if(pf.entries.filter(x=>t-x<3600).length>=R.perHour)return no("hourly entry limit");if(pf.entries.filter(x=>t-x<86400).length>=R.perDay)return no("daily entry limit");
+  if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
+  const eq=equity(),ex=exposure(),caps={risk:eq*R.perTradePct/100/(plan.stop/100)*riskMult(),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
+    liq:snap.liq*R.liqFrac,total:eq*R.totalExp/100-ex,cash:pf.cash-eq*R.cashReserve/100,chain:eq*R.chainExp/100-(expBy(p=>p.chain)[snap.chain]||0)};
+  if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
+  let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
+  if(usd<R.minTrade)return no(`size ${usd.toFixed(0)} below min (${name})`);return{ok:true,usd,why:`size ${usd.toFixed(0)} (${name})`}}
+function regimeOf(m){if(!m)return"unknown";const v=Object.values(m),w=Math.min(...v),a=v.reduce((x,y)=>x+y,0)/v.length;
+  if(w<=CFG.em.crash||a<=CFG.em.crash/1.5)return"crash";if(w<=CFG.em.danger||a<=CFG.em.danger/1.5)return"danger";return"ok"}
+const marketOk=t=>regime==="ok"&&(t-regimeOk)/60<=CFG.em.regimeUnknownMin;
+
+/* ============================ execution simulator (mirrors execution.py) ============================ */
+const gas=ch=>CFG.ex.gas[ch]??0.5;
+const drift=(s,adv)=>{const v=Math.abs(s.chg5m)/100*0.25+0.002;return adv?Math.abs(gauss()*v):gauss()*v*0.5};
+function simBuy(s,usd,tax,isNew){const x=CFG.ex,g=gas(s.chain);
+  if(rng()<x.fail+(isNew?x.newFail:0))return{ok:false,why:"tx failed (dropped/reverted), gas burned",gas:g,fee:0,slip:0};
+  const res=s.liq/2,lim=0.7*x.maxBuySlip/100,maxIn=res*lim/(1-lim);let partial=false,want=usd;
+  if(usd>maxIn){usd=maxIn;partial=true}if(isNew&&rng()<x.partial){usd*=0.5+rng()*0.45;partial=true}
+  if(usd<1)return{ok:false,why:"no executable size",gas:g,fee:0,slip:0};
+  const slip=usd/(res+usd)+drift(s,true);if(slip*100>x.maxBuySlip)return{ok:false,why:`slippage ${(slip*100).toFixed(1)}% > limit`,gas:g,fee:0,slip:slip*100};
+  const px=s.price*(1+slip),fee=usd*x.fee/100;
+  return{ok:true,why:partial?"filled (partial)":"filled",qty:(usd-fee)/px*(1-tax/100),px,usd,fee,gas:g,slip:slip*100,partial}}
+function simSell(s,qty,tax,urgent,attempt,blocked){const x=CFG.ex,g=gas(s.chain);
+  if(blocked)return{ok:false,why:"sell reverted in pre-flight (token restricts selling); no gas",gas:0,fee:0,slip:0};
+  if(rng()<x.fail*(urgent?2:1))return{ok:false,why:"tx failed (dropped/reverted), gas burned",gas:g,fee:0,slip:0};
+  if(s.price<=0||s.liq<=0)return{ok:false,why:"no liquidity",gas:g,fee:0,slip:0};
+  const res=s.liq/2,limit=Math.min((urgent?x.maxEmSlip:x.maxSellSlip)+attempt*2,60)/100,lim=0.7*limit,val=qty*s.price,maxVal=res*lim/(1-lim);let partial=false;
+  let v=val;if(val>maxVal){qty*=maxVal/val;v=maxVal;partial=true}
+  const slip=v/(res+v)+drift(s,true);if(slip>limit)return{ok:false,why:`slippage ${(slip*100).toFixed(1)}% > limit`,gas:g,fee:0,slip:slip*100};
+  const px=s.price*(1-slip),gross=qty*px,fee=gross*x.fee/100;
+  return{ok:true,why:partial?"filled (partial)":"filled",qty,px,usd:(gross-fee)*(1-tax/100),fee,gas:g,slip:slip*100,partial}}
+
+/* ============================ data providers ============================ */
+const GT_NET={solana:"solana",ethereum:"eth",base:"base",bsc:"bsc",arbitrum:"arbitrum"},GP_CHAIN={ethereum:"1",bsc:"56",base:"8453",arbitrum:"42161"};
+const MIN_GAP={"api.dexscreener.com":350,"api.geckoterminal.com":2200,"api.gopluslabs.io":2200,"api.coingecko.com":3000};
+const nextAt={};let health={ok:0,fail:0,lastErr:""};
+async function getJSON(url){const host=new URL(url).host,gap=MIN_GAP[host]||1000;
+  const wait=Math.max(0,(nextAt[host]||0)-Date.now());nextAt[host]=Math.max(Date.now(),nextAt[host]||0)+gap;if(wait)await new Promise(r=>setTimeout(r,wait));
+  try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),12000);const r=await fetch(url,{signal:ctl.signal,headers:{accept:"application/json"}});clearTimeout(to);
+    if(!r.ok)throw new Error("HTTP "+r.status);health.ok++;return await r.json()}catch(e){health.fail++;health.lastErr=host+": "+e.message;return null}}
+const num=(x,d=0)=>{const n=parseFloat(x);return isFinite(n)?n:d};
+function geckoPool(chain,pool){try{const a=pool.attributes,addr=pool.relationships.base_token.data.id.split("_").slice(1).join("_"),tx=a.transactions||{},v=a.volume_usd||{},c=a.price_change_percentage||{};
+  return{chain,addr,sym:String(a.name||"?").split(" / ")[0],price:num(a.base_token_price_usd),liq:num(a.reserve_in_usd),fdv:num(a.fdv_usd),
+   vol5:num(v.m5),vol1h:num(v.h1),vol6:num(v.h6),vol24:num(v.h24),chg5m:num(c.m5),chg1h:num(c.h1),chg6h:num(c.h6),chg24:num(c.h24),
+   buys1h:(tx.h1||{}).buys||0,sells1h:(tx.h1||{}).sells||0,pair:a.address,created:a.pool_created_at?Date.parse(a.pool_created_at)/1000:null}}catch(e){return null}}
+const LIVE={
+  async pools(chain,path,source){const net=GT_NET[chain];if(!net)return[];const d=await getJSON(`https://api.geckoterminal.com/api/v2/networks/${net}/${path}`);
+    return((d&&d.data)||[]).map(p=>geckoPool(chain,p)).filter(Boolean).map(s=>({chain,addr:s.addr,source,snap:s}))},
+  async discoverNew(){let o=[];for(const c of CFG.chains)o=o.concat(await this.pools(c,"new_pools?page=1","new"));
+    const pr=await getJSON("https://api.dexscreener.com/token-profiles/latest/v1");
+    for(const p of Array.isArray(pr)?pr:[])if(CFG.chains.includes(p.chainId)&&p.tokenAddress)o.push({chain:p.chainId,addr:p.tokenAddress,source:"new"});return o},
+  async discoverTrending(){let o=[];for(const c of CFG.chains){o=o.concat(await this.pools(c,"trending_pools?page=1","trending"));o=o.concat(await this.pools(c,"pools?page=1&sort=h24_volume_usd_desc","trending"))}return o},
+  async snapshots(chain,addrs){const out={};for(let i=0;i<addrs.length;i+=30){const d=await getJSON(`https://api.dexscreener.com/tokens/v1/${chain}/${addrs.slice(i,i+30).join(",")}`);
+    for(const p of Array.isArray(d)?d:[]){try{const a=p.baseToken.address,liq=num((p.liquidity||{}).usd),cur=out[a.toLowerCase()];if(cur&&cur.liq>=liq)continue;
+      const tx=p.txns||{},v=p.volume||{},c=p.priceChange||{};
+      out[a.toLowerCase()]={chain,addr:a,sym:p.baseToken.symbol||"?",price:num(p.priceUsd),liq,fdv:num(p.fdv),vol5:num(v.m5),vol1h:num(v.h1),vol6:num(v.h6),vol24:num(v.h24),
+       chg5m:num(c.m5),chg1h:num(c.h1),chg6h:num(c.h6),chg24:num(c.h24),buys1h:(tx.h1||{}).buys||0,sells1h:(tx.h1||{}).sells||0,pair:p.pairAddress||"",created:p.pairCreatedAt?p.pairCreatedAt/1000:null}}catch(e){}}}return out},
+  async breakout(s){const net=GT_NET[s.chain];if(!net||!s.pair)return null;const d=await getJSON(`https://api.geckoterminal.com/api/v2/networks/${net}/pools/${s.pair}/ohlcv/hour?aggregate=1&limit=26&currency=usd`);
+    try{const rows=d.data.attributes.ohlcv_list,prior=rows.slice(1,25);if(prior.length<12)return null;
+      return s.price>Math.max(...prior.map(r=>r[2]))&&rows[0][5]>prior.reduce((a,r)=>a+r[5],0)/prior.length}catch(e){return null}},
+  async majors(){const d=await getJSON("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,solana&price_change_percentage=1h");
+    try{const o={};for(const x of d)o[x.id]=+x.price_change_percentage_1h_in_currency;return Object.values(o).every(isFinite)&&Object.keys(o).length?o:null}catch(e){return null}},
+  async security(chain,addr){
+    const b=v=>v==null||v===""?null:String(v)==="1",p=v=>{const n=parseFloat(v);return isFinite(n)?n*100:null};
+    if(chain==="solana"){const d=await getJSON(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${addr}`);const r=d&&d.result&&d.result[addr];if(!r)return null;
+      const st=k=>r[k]==null?null:String((r[k]||{}).status||"0")==="1",fee=r.transfer_fee&&Object.keys(r.transfer_fee).length>0,hs=r.holders||[],burn=(r.dex||[]).map(x=>num(x.burn_percent));
+      return{sol:true,honeypot:false,buyTax:fee?100:0,sellTax:fee?100:0,mintable:st("mintable"),freezable:st("freezable"),closable:st("closable"),nonTransferable:b(r.non_transferable),
+        ownerBal:st("balance_mutable_authority"),holders:/^\d+$/.test(String(r.holder_count))?+r.holder_count:null,top10:hs.length?hs.slice(0,10).reduce((a,h)=>a+num(h.percent),0)*100:null,lpLocked:burn.length?Math.max(...burn):null}}
+    const cid=GP_CHAIN[chain];if(!cid)return null;const lc=addr.toLowerCase(),d=await getJSON(`https://api.gopluslabs.io/api/v1/token_security/${cid}?contract_addresses=${lc}`);const r=d&&d.result&&d.result[lc];if(!r)return null;
+    const DEAD=["0x000000000000000000000000000000000000dead","0x0000000000000000000000000000000000000000"],lp=r.lp_holders||[],lpA=new Set(lp.map(h=>(h.address||"").toLowerCase()));
+    const locked=lp.filter(h=>String(h.is_locked)==="1"||DEAD.includes((h.address||"").toLowerCase())).reduce((a,h)=>a+num(h.percent),0);
+    const hs=(r.holders||[]).filter(h=>!lpA.has((h.address||"").toLowerCase())&&!DEAD.includes((h.address||"").toLowerCase()));
+    return{honeypot:b(r.is_honeypot),buyTax:p(r.buy_tax),sellTax:p(r.sell_tax),openSource:b(r.is_open_source),proxy:b(r.is_proxy),mintable:b(r.is_mintable),hiddenOwner:b(r.hidden_owner),
+      takeBack:b(r.can_take_back_ownership),ownerBal:b(r.owner_change_balance),pausable:b(r.transfer_pausable),cannotSellAll:b(r.cannot_sell_all),cooldown:b(r.trading_cooldown),
+      blacklist:b(r.is_blacklisted),slipMod:b(r.slippage_modifiable),selfdestruct:b(r.selfdestruct),extCall:b(r.external_call),creatorHP:b(r.honeypot_with_same_creator),inDex:b(r.is_in_dex),
+      holders:/^\d+$/.test(String(r.holder_count))?+r.holder_count:null,top10:r.holders?hs.slice(0,10).reduce((a,h)=>a+num(h.percent),0)*100:null,creator:p(r.creator_percent),owner:p(r.owner_percent),lpLocked:lp.length?locked*100:null}},
+  blocked(){return false}
+};
+
+/* ---- synthetic market for the demo mode (hidden ground truth: legit, pump&dump, rug, honeypots) ---- */
+const MOCK={toks:{},n:0,lastStep:0,crashUntil:0,major:{bitcoin:0,ethereum:0,solana:0},
+  init(){this.toks={};this.n=0;this.lastStep=vnow;rng=mulberry(11);for(let i=0;i<40;i++)this.spawn(true);for(const t of Object.values(this.toks)){const n=Math.min(Math.floor((vnow-t.created)/60),1400);for(let i=0;i<n;i++)this.step(t,vnow-(n-i)*60)}},
+  spawn(est){const chain=CFG.chains[Math.floor(rng()*CFG.chains.length)],n=++this.n,addr=chain==="solana"?"MOCK"+n:"0x"+n.toString(16).padStart(40,"0");let kind,age,liq;
+    if(est){kind=["trend","trend","good","good","pumpdump"][Math.floor(rng()*5)];age=(100+rng()*800)*3600;liq=Math.exp(Math.log(150e3)+rng()*(Math.log(4e6)-Math.log(150e3)))}
+    else{const r=rng();kind=r<0.3?"good":r<0.5?"pumpdump":r<0.62?"rug":r<0.72?"honeypot":r<0.78?"stealth":"dead";age=0;liq=Math.exp(Math.log(4e3)+rng()*(Math.log(2.5e5)-Math.log(4e3)))}
+    const t={chain,addr,sym:"T"+n,kind,created:vnow-age,price:Math.pow(10,-6+rng()*6),liq,bv:liq*(0.15+rng()*1.05)/24,sigma:est?0.004:0.009,ev:(kind==="rug"||kind==="pumpdump")?(1.5+rng()*7.5)*3600:0,
+      drift:0,until:0,boost:0,hist:[],rugged:false,est};if(est&&kind==="pumpdump")t.ev=(1+rng()*39)*3600+age;this.toks[addr.toLowerCase()]=t},
+  step(t,ts){const age=ts-t.created;if(ts>=t.until){t.until=ts+(0.5+rng()*3.5)*3600;t.drift=(t.kind==="trend"||t.kind==="good")?[-0.0004,0,0.0003,0.001,0.0016][Math.floor(rng()*5)]:0;t.boost=Math.max(0,t.drift)*900+rng()*0.6-0.2}
+    let ret=t.drift+gauss()*t.sigma;if(t.kind==="pumpdump"&&t.ev)ret=(age<t.ev?0.008:-0.012)+gauss()*t.sigma;if(t.kind==="dead")ret=-0.0004+gauss()*t.sigma*1.5;if(this.crashUntil>ts)ret-=0.0004;
+    t.price=Math.max(t.price*(1+ret),1e-12);if(t.kind==="rug"&&!t.rugged&&age>=t.ev){t.rugged=true;t.liq*=0.03;t.price*=0.08}else if(!t.rugged)t.liq=Math.max(t.liq*(1+0.3*ret+gauss()*0.0005),1000);
+    t.hist.push(t.price);if(t.hist.length>1500)t.hist.shift()},
+  advance(){const steps=Math.min(Math.floor((vnow-this.lastStep)/60),30);if(steps<=0)return;for(let i=0;i<steps;i++){const ts=this.lastStep+(i+1)*60;for(const t of Object.values(this.toks))this.step(t,ts);
+      if(rng()<0.25)this.spawn(false);if(rng()<1/6000)this.crashUntil=ts+3*3600}this.lastStep+=steps*60;
+    for(const k of Object.keys(this.toks)){const t=this.toks[k];if(!t.est&&vnow-t.created>30*3600)delete this.toks[k]}
+    const base=this.crashUntil>vnow?-9:0;for(const k in this.major)this.major[k]=base+gauss()*0.6},
+  chg(t,secs){const k=Math.floor(secs/60);return t.hist.length<=k?0:(t.price/t.hist[t.hist.length-1-k]-1)*100},
+  snap(t){const c1=this.chg(t,3600),c5=this.chg(t,300),b=clamp(0.52+c1/150+gauss()*0.03,0.2,0.85),v1=t.bv*(1+Math.max(0,t.boost)+Math.abs(c1)/20)*(t.rugged?0.4:1),tx=Math.max(5,Math.floor(v1/90));
+    const buys=Math.floor(tx*b);let sells=tx-buys;if(t.kind==="honeypot")sells=Math.floor(sells*0.2);
+    return{chain:t.chain,addr:t.addr,sym:t.sym,price:t.price,liq:t.liq,fdv:t.liq*12,vol5:v1/12,vol1h:v1,vol6:t.bv*7.2,vol24:t.bv*27.6,chg5m:c5,chg1h:c1,chg6h:this.chg(t,21600),chg24:this.chg(t,86400),buys1h:buys,sells1h:sells,pair:"pair-"+t.addr,created:t.created}},
+  async discoverNew(){this.advance();return Object.values(this.toks).filter(t=>vnow-t.created<86400).sort((a,b)=>b.created-a.created).slice(0,40).map(t=>({chain:t.chain,addr:t.addr,source:"new",snap:this.snap(t)}))},
+  async discoverTrending(){this.advance();return Object.values(this.toks).filter(t=>!t.rugged).map(t=>this.snap(t)).sort((a,b)=>b.vol1h/b.vol24-a.vol1h/a.vol24).slice(0,25).map(s=>({chain:s.chain,addr:s.addr,source:"trending",snap:s}))},
+  async snapshots(chain,addrs){this.advance();const o={};for(const a of addrs){const t=this.toks[a.toLowerCase()];if(t)o[a.toLowerCase()]=this.snap(t)}return o},
+  async breakout(s){const t=this.toks[s.addr.toLowerCase()];if(!t||t.hist.length<300)return null;return t.price>Math.max(...t.hist.slice(-1440,-60))},
+  async majors(){this.advance();return{...this.major}},
+  async security(chain,addr){const t=this.toks[addr.toLowerCase()];if(!t||rng()<0.02)return null;const bad=t.kind==="honeypot",ch=a=>a[Math.floor(rng()*a.length)];
+    const sd={sol:chain==="solana",honeypot:bad,buyTax:ch([0,0,1,3]),sellTax:ch([0,0,1,3])+(bad?60:0),openSource:true,proxy:rng()<0.1,mintable:t.kind==="dead"&&rng()<0.5,hiddenOwner:false,takeBack:false,ownerBal:false,pausable:false,
+      cannotSellAll:false,cooldown:rng()<0.05,blacklist:false,slipMod:false,selfdestruct:false,extCall:rng()<0.1,freezable:false,closable:false,nonTransferable:false,creatorHP:false,inDex:true,
+      holders:Math.floor(t.kind==="dead"?10+rng()*110:60+rng()*2940),top10:t.kind==="rug"?30+rng()*40:12+rng()*26,creator:t.kind==="rug"?2+rng()*18:rng()*4,owner:rng()*3,lpLocked:t.kind==="rug"?ch([0,100,100]):85+rng()*15};
+    if(t.rugged){sd.creator=40;sd.top10=80}if(t.kind==="good"&&rng()<0.15)sd.top10=46+rng()*24;return sd},
+  blocked(chain,addr){const t=this.toks[addr.toLowerCase()];return!!(t&&t.kind==="stealth"&&vnow-t.created>1800)}
+};
+const P=()=>MODE==="mock"?MOCK:LIVE;
+
+/* ============================ engine ============================ */
+const due=(n,every,t)=>{if(t-(last[n]||0)>=every){last[n]=t;return true}return false};
+function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}}
+async function updateRegime(t){const m=await P().majors(),r=regimeOf(m);
+  if(r!=="unknown"){regimeOk=t;if(r!==regime)ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);regime=r}
+  if(regime==="crash")for(const p of Object.values(S.pf.positions))p.emergency=p.emergency||"market crash"}
+function safety(t){const pf=S.pf;let why="";if(localStorage.getItem("pt_kill_"+MODE)==="1")why="manual emergency stop";if(!why)why=shutdownReason();
+  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions")}
+  if(pf.shutdown)for(const p of Object.values(pf.positions))p.emergency=p.emergency||"shutdown: "+pf.why}
+async function scan(source,t){const prov=P(),cands=source==="new"?await prov.discoverNew():await prov.discoverTrending(),seen=new Set(),todo=[];
+  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);todo.push(c)}
+  if(source==="new")todo.sort((a,b)=>((b.snap&&b.snap.created)||0)-((a.snap&&a.snap.created)||0));todo.length=Math.min(todo.length,CFG.maxCands);
+  const byChain={};for(const c of todo)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
+  for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
+  for(const c of todo){if(S.pf.shutdown)break;const k=c.chain+":"+c.addr.toLowerCase(),snap=fresh[k]||c.snap;stats.scanned++;if(!snap||snap.price<=0)continue;await evaluate(k,snap,source,t)}}
+function reject(k,snap,src,why,min){stats.rejected++;rejected[k]=now()+60*(min||CFG.rejectMin);if(src&&why)ev("info","reject",snap.sym,"["+src+"] "+why)}
+async function evaluate(k,snap,src,t){let plan,rej;
+  [plan,rej]=src==="new"?analyzeNew(snap,t):analyzeTrend(snap,t,true);
+  if(!plan)return reject(k,snap,src,rej.join("; "),rej.some(r=>r==="too young")?3:null);
+  if(src==="trending"){const bo=await P().breakout(snap);[plan,rej]=analyzeTrend(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
+  const sec=await P().security(snap.chain,snap.addr),v=evalSecurity(sec,snap,src,t);
+  if(!v.pass)return reject(k,snap,src,"SECURITY FAIL: "+v.fails.join(","),CFG.rejectMin*4);
+  const d=approve(snap,src,v.risk,plan,t);if(!d.ok){ev("info","veto",snap.sym,d.why);if(d.why!=="re-entry cooldown")rejected[k]=t+300;return}
+  open(snap,src,plan,v.risk,sec,d.usd,t)}
+function open(snap,cat,plan,risk,sec,usd,t){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
+  const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
+  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.cool[k]=t+900;S.trades.unshift(tr);ev("warn","buy_failed",snap.sym,f.why);return save()}
+  pf.cash-=f.usd+f.gas;pf.entries.push(t);pf.entries=pf.entries.filter(x=>t-x<86400);
+  pf.positions[k]={id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
+    stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
+    sellTax:sec.sellTax||0,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
+  stats.bought++;S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
+function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
+  const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
+  const tr={t,side:"sell",sym:p.sym,chain:p.chain,cat:p.cat,ok:f.ok,note:reason+" · "+f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas,pnl:null};
+  if(!f.ok){p.attempts++;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);
+    if(p.attempts>=3&&!p.emergency){p.emergency="sell failing repeatedly (possible hidden restriction)";ev("crit","emergency",p.sym,p.emergency)}return false}
+  const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;p.attempts=0;
+  tr.pnl=pnl;S.trades.unshift(tr);ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
+  if(p.qty<=1e-12||p.qty*snap.price<1)closePos(p,reason,0,t);return true}
+function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
+  if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l}delete pf.positions[k];pf.cool[k]=t+CFG.risk.cooldownH*3600;
+  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
+  const r=p.risk0?p.real/p.risk0:0;pf.closed.push({sym:p.sym,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600});if(pf.closed.length>500)pf.closed.shift();
+  ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
+function emergencyReason(p,s,pp,pl){const e=CFG.em;
+  if(s.liq<p.entryLiq*(1-e.liqTotal))return`liquidity down ${(100*(1-s.liq/p.entryLiq)).toFixed(0)}% vs entry`;
+  if(pl>0&&s.liq<pl*(1-e.liqStep))return"liquidity pulled";if(pp>0&&s.price<pp*(1-e.priceStep))return`flash crash ${(100*(1-s.price/pp)).toFixed(0)}% in one interval`;
+  if(s.buys1h>=20&&s.sells1h===0)return"buys-only flow (honeypot signature)";if(s.sells1h>=40&&s.buys1h*4<s.sells1h&&s.chg5m<-10)return"heavy one-sided selling";return""}
+function adjustStop(p,s){const old=p.stop,be=p.entry*1.01;
+  if(p.tp1Done)p.stop=Math.max(p.stop,be,p.peak*(1-p.trail/100));else if(s.price>=p.entry*(1+(p.tp1/p.entry-1)/2))p.stop=Math.max(p.stop,be);
+  if(regime==="danger"&&s.price>p.entry)p.stop=Math.max(p.stop,s.price*0.96);if(p.stop>old*1.0001)ev("info","stop_raised",p.sym,`${old.toPrecision(4)} → ${p.stop.toPrecision(4)}`)}
+async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions);if(!ps.length)return;const byChain={},snaps={};for(const p of ps)(byChain[p.chain]=byChain[p.chain]||[]).push(p.addr);
+  for(const ch in byChain){const r=await P().snapshots(ch,byChain[ch]);for(const a in r)snaps[ch+":"+a]=r[a]}
+  for(const p of ps){const s=snaps[p.chain+":"+p.addr.toLowerCase()];
+    if(!s||s.price<=0){if(++p.stale>=CFG.em.staleCycles){ev("crit","stale_writeoff",p.sym,"no price data: closing at haircut");const rec=pv(p)*CFG.em.staleHaircut;p.qty=0;closePos(p,"stale_data",rec,t)}continue}
+    p.stale=0;const pp=p.last,pl=p.lastLiq;p.last=s.price;p.lastLiq=s.liq;p.peak=Math.max(p.peak,s.price);
+    if(!p.emergency){p.emergency=emergencyReason(p,s,pp,pl);if(p.emergency)ev("crit","emergency",p.sym,p.emergency)}
+    if(p.emergency){if(p.attempts>=CFG.em.maxAttempts){ev("crit","writeoff",p.sym,"cannot sell after "+p.attempts+" attempts: written off");p.qty=0;closePos(p,"writeoff_unsellable",0,t)}
+      else sellPos(p,s,1,"EMERGENCY: "+p.emergency,true,t);continue}
+    adjustStop(p,s);const px=s.price,held=(t-p.opened)/3600,maxHold=p.cat==="new"?CFG.nw.maxHoldH:CFG.tr.maxHoldH;
+    if(px<=p.stop)sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
+    else if(!p.tp1Done&&px>=p.tp1){if(sellPos(p,s,CFG.tp1Frac,"take_profit_1",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp1Done=true}
+    else if(p.tp1Done&&!p.tp2Done&&px>=p.tp2){if(sellPos(p,s,CFG.tp2Frac,"take_profit_2",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp2Done=true}
+    else if(held>=maxHold&&!p.tp1Done)sellPos(p,s,1,"time_stop",false,t)}
+  save()}
+async function recheck(t){for(const p of Object.values(S.pf.positions)){if(p.emergency)continue;const sec=await P().security(p.chain,p.addr);if(!sec)continue;
+  const snap={chain:p.chain,addr:p.addr,liq:p.lastLiq,price:p.last,buys1h:0,sells1h:0,vol24:0,chg1h:0,chg5m:0,created:t-86400*30},v=evalSecurity(sec,snap,"trending",t);
+  const soft=["holders","liquidity","no_wash","top10","lp_locked"],bad=v.fails.filter(f=>!soft.includes(f));if(bad.length){p.emergency="security recheck failed: "+bad.join(",");ev("crit","emergency",p.sym,p.emergency)}p.sellTax=sec.sellTax??p.sellTax}}
+
+let busy=false;
+async function tick(){if(busy||paused)return;busy=true;try{const t=now();roll(t);safety(t);
+  if(due("regime",CFG.regimeEvery,t))await updateRegime(t);
+  if(due("monitor",CFG.monitorEvery,t))await monitor(t);
+  if(Object.keys(S.pf.positions).length&&due("recheck",CFG.recheckEvery,t))await recheck(t);
+  if(!S.pf.shutdown){if(due("new",CFG.newEvery,t))await scan("new",t);if(due("trend",CFG.trendEvery,t))await scan("trending",t)}
+  if(due("equity",CFG.equityEvery,t)){S.curve.push([t,equity()]);if(S.curve.length>2000)S.curve.shift();save()}
+ }catch(e){ev("warn","error","",String(e&&e.message||e))}finally{busy=false}}
+
+/* ============================ UI ============================ */
+const ago=t=>{const s=Math.max(0,now()-t);return s<90?Math.round(s)+"s":s<5400?Math.round(s/60)+"m":(s/3600).toFixed(1)+"h"};
+function render(){const pf=S.pf,eq=equity(),cl=pf.closed,w=cl.filter(c=>c.pnl>0).length;let peak=0,mdd=0;for(const [,e] of S.curve){peak=Math.max(peak,e);mdd=Math.max(mdd,peak?(peak-e)/peak*100:0)}
+  $("eq").textContent=fmt(eq);const rt=(eq/pf.start-1)*100;$("ret").innerHTML=`<span class="${rt>=0?"g":"r"}">${pct(rt)}</span> since start (${fmt(pf.start,0)}) · ${MODE==="mock"?"DEMO synthetic market":"live data"}`;
+  const chip=$("chip");if(pf.shutdown){chip.className="chip bad";chip.textContent="SHUTDOWN"}else if(paused){chip.className="chip warn";chip.textContent="PAUSED"}
+  else if(now()<pf.pauseUntil){chip.className="chip warn";chip.textContent="COOLING"}else{chip.className="chip";chip.textContent="RUNNING"}
+  $("cash").textContent=fmt(pf.cash,0);$("expo").textContent=fmt(exposure(),0);$("real").innerHTML=`<span class="${pf.realized>=0?"g":"r"}">${fmt(pf.realized,2)}</span>`;
+  $("wr").textContent=cl.length?Math.round(100*w/cl.length)+"% ("+cl.length+")":"–";$("dd").textContent=mdd.toFixed(1)+"%";
+  $("reg").innerHTML=`<span class="${regime==="ok"?"g":regime==="unknown"?"y":"r"}">${regime}</span>`;
+  const ps=Object.values(pf.positions);$("pos").innerHTML=ps.length?ps.map(p=>{const g=(p.last/p.entry-1)*100;return`<div class="pos"><div><b>${p.sym}</b> <span class="sm">${p.chain} · ${p.cat}${p.emergency?' · <span class="r">EXITING</span>':""}</span><div class="sm">stop ${p.stop.toPrecision(4)} · tp1 ${p.tp1Done?"✓":p.tp1.toPrecision(4)}</div></div><div style="text-align:right"><div class="${g>=0?"g":"r"}">${pct(g)}</div><div class="sm">${fmt(pv(p),0)}</div></div></div>`}).join(""):'<div class="sm">None</div>';
+  $("scan").innerHTML=`Scanned ${stats.scanned} · rejected ${stats.rejected} · bought ${stats.bought}${MODE==="live"?`<br>API ok ${health.ok} / failed ${health.fail}${health.lastErr?"<br>last error: "+health.lastErr:""}`:""}${pf.shutdown?`<br><span class="r">Shutdown: ${pf.why}</span>`:""}`;
+  $("log").innerHTML=S.journal.slice(0,120).map(j=>`<div class="log ${j.level==="crit"?"r":j.level==="warn"?"y":""}">${ago(j.t)} · ${j.kind} ${j.tok} ${j.msg}</div>`).join("")||'<div class="sm">Nothing yet</div>';
+  $("trades").innerHTML=S.trades.slice(0,80).map(x=>`<div class="log">${ago(x.t)} · <b class="${x.side==="buy"?"g":"r"}">${x.side}</b> ${x.sym} ${x.ok?fmt(x.usd):"FAILED"}${x.pnl!=null?` · pnl <span class="${x.pnl>=0?"g":"r"}">${x.pnl.toFixed(2)}</span>`:""}<div class="sm">${x.note}</div></div>`).join("")||'<div class="sm">No trades yet</div>'}
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.id==="t-"+b.dataset.t))});
+$("mode").value=MODE;$("cap").value=localStorage.getItem("pt_cap")||10000;
+$("mode").onchange=e=>{MODE=e.target.value;localStorage.setItem("pt_mode",MODE);boot()};
+$("toggle").onclick=()=>{paused=!paused;$("toggle").textContent=paused?"Resume scanning":"Pause scanning";render()};
+$("kill").onclick=()=>{if(confirm("Flatten all simulated positions and halt new entries?")){localStorage.setItem("pt_kill_"+MODE,"1");tick()}};
+$("rearm").onclick=()=>{localStorage.removeItem("pt_kill_"+MODE);S.pf.shutdown=false;S.pf.why="";S.pf.peak=equity();S.pf.streak=0;save();render()};
+$("reset").onclick=()=>{if(confirm("Delete this paper account and start over?")){const c=Math.max(100,+$("cap").value||10000);localStorage.setItem("pt_cap",c);localStorage.removeItem("pt_kill_"+MODE);S=newState(c);rejected={};stats={scanned:0,rejected:0,bought:0};regime="unknown";last={};save();render()}};
+async function wake(){try{if(navigator.wakeLock)await navigator.wakeLock.request("screen")}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){wake();tick()}});
+let timer=null;
+function boot(){clearInterval(timer);load();last={};rejected={};regime="unknown";regimeOk=now();
+  if(MODE==="mock"){vnow=1.76e9;MOCK.init();regimeOk=vnow;timer=setInterval(async()=>{for(let i=0;i<6;i++){vnow+=CFG.tick;await tick()}render()},200)}
+  else timer=setInterval(async()=>{await tick();render()},CFG.tick*1000);
+  render();wake();if(MODE==="live")tick().then(render)}
+boot();
+window.__pt={S:()=>S,tick,stats:()=>stats,MOCK,CFG};
+</script>
+</body>
+</html>

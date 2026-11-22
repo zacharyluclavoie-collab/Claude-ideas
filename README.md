@@ -73,3 +73,7 @@ GitHub Pages with the included workflow:
 4. Open `https://<user>.github.io/<repo>/`.
 
 Private repos need a plan that allows Pages. The workflow has not been run yet.
+
+## Paper Trader (iPhone web app)
+
+`trader/` is a standalone, installable web version of the autonomous paper-trading bot (simulated money only, no wallet). Open `/trader/` on the deployed site, then Share > Add to Home Screen. It runs entirely in the browser on live DexScreener / GeckoTerminal / GoPlus / CoinGecko data, or on a built-in demo market. Python version with the same logic: `paper_trader/`.
