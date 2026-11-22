@@ -12,7 +12,7 @@ const CFG = {
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
-  tp1Frac:0.5, tp2Frac:0.25,
+  scalp:false, tp1Frac:0.5, tp2Frac:0.25,
   em:{liqTotal:0.5, liqStep:0.3, priceStep:0.3, staleMin:20, staleHaircut:0.5, maxAttempts:12, danger:-3, crash:-8, regimeUnknownMin:15},
   ex:{fee:0.30, gas:{ethereum:5,base:0.04,bsc:0.12,solana:0.01,arbitrum:0.08}, fail:0.04, newFail:0.05, partial:0.10, buyTolNew:4, buyTolTrend:1.5, maxSellSlip:8, maxEmSlip:30}
 };
@@ -58,3 +58,5 @@ function applyActivity(k) { if (!ACTIVITY[k]) k = "active"; ACT = k; Object.assi
 function applyScan() { const turbo = (typeof LS !== "undefined" ? LS.get("pt_turbo") : null) !== "0"; CFG.newEvery = turbo ? 1 : 30; CFG.trendEvery = turbo ? 2 : 120; CFG.turbo = turbo }
 
 let FILL=false;   // true while the portfolio is below its keep-open target
+
+function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.risk.minRR = 0.2; Object.assign(CFG.nw, { stop: 20, tp1: 10, tp2: 30, trail: 6 }); Object.assign(CFG.tr, { stop: 12, tp1: 6, tp2: 15, trail: 4 }); CFG.tp1Frac = 0.8 } else { CFG.risk.minRR = 1.5; Object.assign(CFG.nw, { stop: 18, tp1: 40, tp2: 100, trail: 15 }); Object.assign(CFG.tr, { stop: 10, tp1: 20, tp2: 45, trail: 8 }); CFG.tp1Frac = 0.5 } }

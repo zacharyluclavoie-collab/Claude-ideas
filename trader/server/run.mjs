@@ -23,7 +23,7 @@ const E = code => vm.runInContext(code, ctx);
 
 E(`MODE=${JSON.stringify(DEMO ? "mock" : "live")};SEED=${DEMO ? 7 : Date.now() & 0xffffff};rng=mulberry(SEED);load();last={};stats=freshStats();regime="unknown";regimeOk=now();
   (function(){let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of Object.keys(sv))if(typeof sv[k]==="number"&&k in CFG.risk)CFG.risk[k]=sv[k];CFG.risk.perDay=CFG.risk.perHour*5;
-   applyActivity(LS.get("pt_activity")||"active");try{const k=JSON.parse(LS.get("pt_keep")||"{}");if(typeof k.on==="boolean")CFG.keep.on=k.on;if(typeof k.target==="number")CFG.keep.target=k.target}catch(e){}let f={};try{f=JSON.parse(LS.get("pt_flags")||"{}")}catch(e){}if(typeof f.nw==="boolean")CFG.nw.enabled=f.nw;if(typeof f.tr==="boolean")CFG.tr.enabled=f.tr})();
+   applyActivity(LS.get("pt_activity")||"active");applyExit(LS.get("pt_exit")||"big");try{const k=JSON.parse(LS.get("pt_keep")||"{}");if(typeof k.on==="boolean")CFG.keep.on=k.on;if(typeof k.target==="number")CFG.keep.target=k.target}catch(e){}let f={};try{f=JSON.parse(LS.get("pt_flags")||"{}")}catch(e){}if(typeof f.nw==="boolean")CFG.nw.enabled=f.nw;if(typeof f.tr==="boolean")CFG.tr.enabled=f.tr})();
   if(!S.curve.length)S.curve=[[now(),equity()]];`);
 if (DEMO) { E(`vnow=1.76e9;MOCK.init();regimeOk=vnow;S.curve=[[vnow,equity()]]`); let acc = 0; setInterval(async () => { acc += SPEED * 0.25; while (acc >= 5) { acc -= 5; E("vnow+=5"); await E("tick()") } }, 250) }
 else { setInterval(() => E("stepFast(now())"), 2000); setInterval(() => E("stepSlow(now())"), 5000); setInterval(() => E("stepScan(now())"), 3000) }

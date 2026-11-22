@@ -177,7 +177,7 @@ const CFG = {
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
-  tp1Frac:0.5, tp2Frac:0.25,
+  scalp:false, tp1Frac:0.5, tp2Frac:0.25,
   em:{liqTotal:0.5, liqStep:0.3, priceStep:0.3, staleMin:20, staleHaircut:0.5, maxAttempts:12, danger:-3, crash:-8, regimeUnknownMin:15},
   ex:{fee:0.30, gas:{ethereum:5,base:0.04,bsc:0.12,solana:0.01,arbitrum:0.08}, fail:0.04, newFail:0.05, partial:0.10, buyTolNew:4, buyTolTrend:1.5, maxSellSlip:8, maxEmSlip:30}
 };
@@ -224,6 +224,8 @@ function applyScan() { const turbo = (typeof LS !== "undefined" ? LS.get("pt_tur
 
 let FILL=false;   // true while the portfolio is below its keep-open target
 
+function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.risk.minRR = 0.2; Object.assign(CFG.nw, { stop: 20, tp1: 10, tp2: 30, trail: 6 }); Object.assign(CFG.tr, { stop: 12, tp1: 6, tp2: 15, trail: 4 }); CFG.tp1Frac = 0.8 } else { CFG.risk.minRR = 1.5; Object.assign(CFG.nw, { stop: 18, tp1: 40, tp2: 100, trail: 15 }); Object.assign(CFG.tr, { stop: 10, tp1: 20, tp2: 45, trail: 8 }); CFG.tp1Frac = 0.5 } }
+
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
   const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);
@@ -256,7 +258,7 @@ function evalSecurity(sec,snap,cat,t){
 const bp=s=>{const n=s.buys1h+s.sells1h;return n?s.buys1h/n:0};
 const ageH=(s,t)=>s.created?Math.max(0,(t-s.created)/3600):null;
 function mkPlan(s,cat,score,reason){const c=cat==="new"?CFG.nw:CFG.tr;
-  const stop=clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=Math.max(c.tp1,stop*2),tp2=Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
+  const stop=CFG.scalp?c.stop:clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=CFG.scalp?c.tp1:Math.max(c.tp1,stop*2),tp2=CFG.scalp?c.tp2:Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
   return{stop,tp1,tp2,trail:c.trail,score,rr:tp1/stop,reason}}
 function analyzeNew(s,t){const c=FILL?Object.assign({},CFG.nw,CFG.nwFill):CFG.nw,rej=[],age=ageH(s,t);if(!c.enabled)return[null,["new-token entries are switched off"]];if(age==null)return[null,["unknown age"]];
   if(age*60<c.minAgeMin)rej.push("too young");if(age>c.maxAgeH)rej.push("not new");if(s.liq<CFG.sec.liqNew)rej.push("liquidity low");
@@ -803,6 +805,7 @@ if(!LS.get("pt_wide_v5")){LS.del("pt_risk");LS.set("pt_wide_v5","1")}   // one-t
 applyActivity(LS.get("pt_activity")||"active");
 (function applyKeep(){let k={};try{k=JSON.parse(LS.get("pt_keep")||"{}")}catch(e){}if(typeof k.on==="boolean")CFG.keep.on=k.on;if(typeof k.target==="number")CFG.keep.target=clamp(k.target,1,100)})();
 const saveKeep=()=>LS.set("pt_keep",JSON.stringify({on:CFG.keep.on,target:CFG.keep.target}));
+applyExit(LS.get("pt_exit")||"big");
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
 const pnlTot=p=>p.real+pv(p)-p.cost,pnlPct=p=>pnlTot(p)/(p.size0||p.cost||1)*100;
@@ -922,6 +925,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   if(MODE==="mock")h+=`<h2>Skip ahead</h2><div class="chips" id="ff"><button class="chip" data-s="86400">1 day</button><button class="chip" data-s="259200">3 days</button><button class="chip" data-s="604800">1 week</button></div><div class="sub" style="margin-top:8px">Runs the market fast so you can see how the bot behaves over days. Every outcome in the demo is random; run it a few times (Reset) to see the spread.</div><h2>Demo speed</h2><div class="chips" id="segspeed">${[1,15,60,300].map(s=>`<button class="chip ${s===SPEED?"on":""}" data-v="${s}">${s}x</button>`).join("")}</div>`;
   h+=`<!--LIVEONLY--><h2>Data source</h2><div class="chips" id="segmode"><button class="chip ${MODE==="live"?"on":""}" data-v="live">Live market</button><button class="chip ${MODE==="mock"?"on":""}" data-v="mock">Demo market</button></div><div class="sub" style="margin-top:8px">Each source keeps its own paper account.</div><button class="btn" id="selftest">Test data connections</button><div id="testres"></div><!--/LIVEONLY-->`;
   h+=`<h2>Always trading</h2><div class="panel"><label class="tg"><span><b>Keep positions open</b><small>When fewer than the target are open, the bot fills the gap with small scout positions from the best available tokens. No cooldowns, pauses or hourly limits. Security checks, size caps, the daily loss limit and the drawdown shutdown still apply.</small></span><input type="checkbox" id="k_on" ${CFG.keep.on?"checked":""}></label><div class="sl"><div class="ml"><span>Target open positions</span><b id="v_kt">${CFG.keep.target}</b></div><input type="range" id="k_t" min="1" max="100" step="1" value="${CFG.keep.target}" aria-label="Target open positions"></div><div class="sub">Forcing trades means buying weaker setups. In testing, keeping about 10 open lost roughly 2% a day in the demo market, against about 0.2% without it. Turn it off to trade only the best setups.</div></div>`;
+  h+=`<h2>Exit style</h2><div class="chips" id="exitst"><button class="chip ${CFG.scalp?"":"on"}" data-e="big">Big winners</button><button class="chip ${CFG.scalp?"on":""}" data-e="scalp">Frequent small wins</button></div><div class="sub" style="margin-top:8px">Small wins takes profit early, which lifts the win rate from about 22% to about 34% in testing. It did not improve the result: wins get smaller, so the loss per day stayed about the same. Win rate is not profit.</div>`;
   h+=`<h2>Trading activity</h2><div class="chips" id="act">${Object.entries(ACTIVITY).map(([k,a])=>`<button class="chip ${k===ACT?"on":""}" data-a="${k}">${a.name}</button>`).join("")}</div><div class="sub" style="margin-top:8px">${esc(ACTIVITY[ACT].note)}. More trades means looking at weaker setups, and every extra trade pays fees and slippage. Security checks stay mandatory at every level.</div>`;
   h+=`<h2>Scan speed</h2><div class="chips" id="turbo"><button class="chip ${CFG.turbo?"on":""}" data-v="1">Turbo</button><button class="chip ${CFG.turbo?"":"on"}" data-v="0">Standard</button></div><div class="sub" style="margin-top:8px">Turbo re-judges every known token about every second using only data already in hand, then fetches fresh prices and security reports just for the few that survive. Real data providers cap how fast new tokens can be fetched, so live mode finds tokens at a few dozen per second at best; the demo universe has no such cap.</div>`;
   h+=`<h2>Strategies</h2><div class="panel"><label class="tg"><span><b>New tokens</b><small>Fresh pools after security checks. Around break-even in testing; profit depends on assumptions nobody can verify.</small></span><input type="checkbox" id="f_nw" ${CFG.nw.enabled?"checked":""}></label><label class="tg"><span><b>Established tokens (experimental)</b><small>Momentum on older tokens. No edge after costs in testing, so it is off by default. Scanning continues either way.</small></span><input type="checkbox" id="f_tr" ${CFG.tr.enabled?"checked":""}></label></div>`;
@@ -935,6 +939,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   const sp=$("segspeed");if(sp)sp.onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;SPEED=+v;LS.set("pt_speed",SPEED);sp.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v))};
   const sm=$("segmode");if(sm)sm.onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v||v===MODE)return;MODE=v;LS.set("pt_mode",MODE);boot()};
   $("k_on").onchange=e=>{CFG.keep.on=e.target.checked;saveKeep()};$("k_t").oninput=e=>{CFG.keep.target=+e.target.value;$("v_kt").textContent=e.target.value;saveKeep()};
+  $("exitst").onclick=e=>{const k=e.target.dataset&&e.target.dataset.e;if(!k)return;applyExit(k);LS.set("pt_exit",k);buildSettings()};
   $("act").onclick=e=>{const k=e.target.dataset&&e.target.dataset.a;if(!k)return;applyActivity(k);LS.set("pt_activity",k);buildSettings()};
   $("turbo").onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;LS.set("pt_turbo",v);applyScan();buildSettings()};
   $("f_nw").onchange=e=>{CFG.nw.enabled=e.target.checked;saveFlags()};$("f_tr").onchange=e=>{CFG.tr.enabled=e.target.checked;saveFlags()};

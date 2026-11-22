@@ -12,7 +12,7 @@ const CFG = {
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
-  tp1Frac:0.5, tp2Frac:0.25,
+  scalp:false, tp1Frac:0.5, tp2Frac:0.25,
   em:{liqTotal:0.5, liqStep:0.3, priceStep:0.3, staleMin:20, staleHaircut:0.5, maxAttempts:12, danger:-3, crash:-8, regimeUnknownMin:15},
   ex:{fee:0.30, gas:{ethereum:5,base:0.04,bsc:0.12,solana:0.01,arbitrum:0.08}, fail:0.04, newFail:0.05, partial:0.10, buyTolNew:4, buyTolTrend:1.5, maxSellSlip:8, maxEmSlip:30}
 };
@@ -59,6 +59,8 @@ function applyScan() { const turbo = (typeof LS !== "undefined" ? LS.get("pt_tur
 
 let FILL=false;   // true while the portfolio is below its keep-open target
 
+function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.risk.minRR = 0.2; Object.assign(CFG.nw, { stop: 20, tp1: 10, tp2: 30, trail: 6 }); Object.assign(CFG.tr, { stop: 12, tp1: 6, tp2: 15, trail: 4 }); CFG.tp1Frac = 0.8 } else { CFG.risk.minRR = 1.5; Object.assign(CFG.nw, { stop: 18, tp1: 40, tp2: 100, trail: 15 }); Object.assign(CFG.tr, { stop: 10, tp1: 20, tp2: 45, trail: 8 }); CFG.tp1Frac = 0.5 } }
+
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
   const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);
@@ -91,7 +93,7 @@ function evalSecurity(sec,snap,cat,t){
 const bp=s=>{const n=s.buys1h+s.sells1h;return n?s.buys1h/n:0};
 const ageH=(s,t)=>s.created?Math.max(0,(t-s.created)/3600):null;
 function mkPlan(s,cat,score,reason){const c=cat==="new"?CFG.nw:CFG.tr;
-  const stop=clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=Math.max(c.tp1,stop*2),tp2=Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
+  const stop=CFG.scalp?c.stop:clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=CFG.scalp?c.tp1:Math.max(c.tp1,stop*2),tp2=CFG.scalp?c.tp2:Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
   return{stop,tp1,tp2,trail:c.trail,score,rr:tp1/stop,reason}}
 function analyzeNew(s,t){const c=FILL?Object.assign({},CFG.nw,CFG.nwFill):CFG.nw,rej=[],age=ageH(s,t);if(!c.enabled)return[null,["new-token entries are switched off"]];if(age==null)return[null,["unknown age"]];
   if(age*60<c.minAgeMin)rej.push("too young");if(age>c.maxAgeH)rej.push("not new");if(s.liq<CFG.sec.liqNew)rej.push("liquidity low");

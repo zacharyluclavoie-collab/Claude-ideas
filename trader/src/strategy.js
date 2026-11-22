@@ -2,7 +2,7 @@
 const bp=s=>{const n=s.buys1h+s.sells1h;return n?s.buys1h/n:0};
 const ageH=(s,t)=>s.created?Math.max(0,(t-s.created)/3600):null;
 function mkPlan(s,cat,score,reason){const c=cat==="new"?CFG.nw:CFG.tr;
-  const stop=clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=Math.max(c.tp1,stop*2),tp2=Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
+  const stop=CFG.scalp?c.stop:clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=CFG.scalp?c.tp1:Math.max(c.tp1,stop*2),tp2=CFG.scalp?c.tp2:Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
   return{stop,tp1,tp2,trail:c.trail,score,rr:tp1/stop,reason}}
 function analyzeNew(s,t){const c=FILL?Object.assign({},CFG.nw,CFG.nwFill):CFG.nw,rej=[],age=ageH(s,t);if(!c.enabled)return[null,["new-token entries are switched off"]];if(age==null)return[null,["unknown age"]];
   if(age*60<c.minAgeMin)rej.push("too young");if(age>c.maxAgeH)rej.push("not new");if(s.liq<CFG.sec.liqNew)rej.push("liquidity low");
