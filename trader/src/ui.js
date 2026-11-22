@@ -10,6 +10,7 @@ const RK=[["perTradePct","Risk per trade (% of equity)",0.1,1,0.1],["maxPos","Ma
 const KEYS=RK.map(r=>r[0]).concat(["chainExp","newExp"]);
 const PROFILES={cons:{name:"Careful",maxPos:8,perHour:4,totalExp:30,chainExp:15,newExp:10},bal:{name:"Balanced",maxPos:25,perHour:12,totalExp:30,chainExp:15,newExp:10},wide:{name:"Wide (100)",maxPos:100,perHour:30,totalExp:40,chainExp:20,newExp:20}};
 const syncRisk=()=>{CFG.risk.perDay=CFG.risk.perHour*5};
+if(!LS.get("pt_wide_v5")){LS.del("pt_risk");LS.set("pt_wide_v5","1")}   // one-time move to the 100-slot default
 (function applyRisk(){let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS){if(typeof sv[k]!=="number")continue;const r=RK.find(x=>x[0]===k);CFG.risk[k]=r?clamp(sv[k],r[2],r[3]):sv[k]}syncRisk()})();
 (function applyFlags(){let f={};try{f=JSON.parse(LS.get("pt_flags")||"{}")}catch(e){}if(typeof f.nw==="boolean")CFG.nw.enabled=f.nw;if(typeof f.tr==="boolean")CFG.tr.enabled=f.tr})();
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));

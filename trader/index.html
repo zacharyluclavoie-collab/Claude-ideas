@@ -168,9 +168,9 @@ const CFG = {
   chains:["solana","base","ethereum","bsc"],
   tick:5, monitorEvery:10, newEvery:30, trendEvery:120, recheckEvery:300, regimeEvery:120, equityEvery:300,
   maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
-  risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:30, newExp:10, chainExp:15, cashReserve:20, maxPos:25,
+  risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
-        perHour:12, perDay:60, cooldownH:12, maxRisk:45, minRR:1.5, maxCostPct:3},
+        perHour:30, perDay:150, cooldownH:12, maxRisk:45, minRR:1.5, maxCostPct:3},
   sec:{buyTax:5, sellTax:8, liqNew:15000, liqTrend:100000, holdersNew:100, holdersTrend:500, top10:45, creator:8, owner:8, lpLocked:70, volLiq:40},
   nw:{enabled:true, minAgeMin:10, maxAgeH:24, minTx:50, minBP:0.55, maxChg1h:300, maxFdvLiq:60, minScore:60, minVlr:0, minUniq:0.5, minChg1h:-1000, stop:18, tp1:40, tp2:100, trail:15, maxHoldH:12},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
@@ -774,6 +774,7 @@ const RK=[["perTradePct","Risk per trade (% of equity)",0.1,1,0.1],["maxPos","Ma
 const KEYS=RK.map(r=>r[0]).concat(["chainExp","newExp"]);
 const PROFILES={cons:{name:"Careful",maxPos:8,perHour:4,totalExp:30,chainExp:15,newExp:10},bal:{name:"Balanced",maxPos:25,perHour:12,totalExp:30,chainExp:15,newExp:10},wide:{name:"Wide (100)",maxPos:100,perHour:30,totalExp:40,chainExp:20,newExp:20}};
 const syncRisk=()=>{CFG.risk.perDay=CFG.risk.perHour*5};
+if(!LS.get("pt_wide_v5")){LS.del("pt_risk");LS.set("pt_wide_v5","1")}   // one-time move to the 100-slot default
 (function applyRisk(){let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS){if(typeof sv[k]!=="number")continue;const r=RK.find(x=>x[0]===k);CFG.risk[k]=r?clamp(sv[k],r[2],r[3]):sv[k]}syncRisk()})();
 (function applyFlags(){let f={};try{f=JSON.parse(LS.get("pt_flags")||"{}")}catch(e){}if(typeof f.nw==="boolean")CFG.nw.enabled=f.nw;if(typeof f.tr==="boolean")CFG.tr.enabled=f.tr})();
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
