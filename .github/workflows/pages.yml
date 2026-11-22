@@ -26,7 +26,8 @@ jobs:
         run: |
           mkdir site
           cp index.html manifest.webmanifest icon-180.png icon-192.png icon-512.png site/
-          cp -r trader site/trader
+          mkdir site/trader
+          cp trader/index.html trader/manifest.webmanifest trader/sw.js trader/icon-180.png trader/icon-192.png trader/icon-512.png site/trader/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

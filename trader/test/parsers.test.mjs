@@ -70,3 +70,11 @@ test("malformed or missing responses never throw and fail closed", async () => {
   assert.equal(await run(ctx, `LIVE.majors()`), null);
   assert.equal(await run(ctx, `LIVE.breakout({chain:"base",pair:"0xp",price:1})`), null);
 });
+
+test("majors fall back to DexScreener when CoinGecko is unreachable", async () => {
+  const pool = (chg, liq) => JSON.stringify([{ chainId: "x", pairAddress: "p", baseToken: { address: "0xa", symbol: "W" }, priceUsd: "1", liquidity: { usd: liq }, priceChange: { h1: chg } }]);
+  const ctx = ctxWith({ "tokens/v1/base": pool(-0.4, 5e7), "tokens/v1/solana": pool(-1.1, 2e7) });
+  const m = await run(ctx, `LIVE.majors()`);
+  assert.equal(m.ethereum, -0.4); assert.equal(m.solana, -1.1); assert.equal(await run(ctx, `regimeOf(${JSON.stringify(m)})`), "ok");
+  const none = await run(ctxWith({}), `LIVE.majors()`); assert.equal(none, null);
+});

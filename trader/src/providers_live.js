@@ -105,7 +105,12 @@ const LIVE = {
   },
   async majors() {
     const d = await getJSON("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,solana&price_change_percentage=1h");
-    try { const o = {}; for (const x of d) o[x.id] = +x.price_change_percentage_1h_in_currency; return Object.keys(o).length && Object.values(o).every(isFinite) ? o : null } catch (e) { return null }
+    try { const o = {}; for (const x of d) o[x.id] = +x.price_change_percentage_1h_in_currency; if (Object.keys(o).length && Object.values(o).every(isFinite)) return o } catch (e) { /* fall through to the backup source */ }
+    // backup: 1h change of ETH, SOL and BTC from the deepest DexScreener pools
+    const q = async (chain, addr, name) => { const r = await getJSON(`https://api.dexscreener.com/tokens/v1/${chain}/${addr}`); const ps = (Array.isArray(r) ? r : []).map(p => dexPair(chain, p)).filter(Boolean).sort((a, b) => b.liq - a.liq); return ps[0] && isFinite(ps[0].chg1h) && ps[0].liq > 1e6 ? [name, ps[0].chg1h] : null };
+    const rs = await Promise.all([q("base", "0x4200000000000000000000000000000000000006", "ethereum"), q("solana", "So11111111111111111111111111111111111111112", "solana"), q("base", "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", "bitcoin")]);
+    const o = {}; for (const x of rs) if (x) o[x[0]] = x[1];
+    return Object.keys(o).length >= 2 ? o : null;
   },
   async security(chain, addr) {
     if (chain === "solana") {

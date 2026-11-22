@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const rd = f => fs.readFileSync(path.join(dir, "src", f), "utf8");
-const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "execution.js", "providers_live.js", "sim_market.js", "engine.js"];
+const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "execution.js", "providers_live.js", "sim_market.js", "backtest_summary.js", "engine.js"];
 const engine = ENGINE_FILES.map(rd).join("\n");
 const ui = rd("ui.js");
 const distDir = process.env.BUILD_DIST || path.join(dir, "dist");
@@ -24,7 +24,7 @@ const html = `<!doctype html>
 <meta name="apple-mobile-web-app-title" content="Paper Trader">
 <meta name="theme-color" content="#0b0f17">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>
 ${rd("style.css")}
 </style>
@@ -48,6 +48,13 @@ art = art.replace(/<meta name="(apple-mobile-web-app-[a-z-]+|mobile-web-app-capa
   .replace('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n', "")
   .replace("</head>\n<body>\n", "").replace("\n</body>\n</html>\n", "\n")
   .replace(/<!--LIVEONLY-->[\s\S]*?<!--\/LIVEONLY-->/g, "");
+// offline shell: network first (so updates arrive), cached copy when offline
+fs.writeFileSync(path.join(dir, "sw.js"), `const V = "pt-${Date.now()}";
+self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"]))); self.skipWaiting() });
+self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())) });
+self.addEventListener("fetch", e => { const u = new URL(e.request.url); if (e.request.method !== "GET" || u.origin !== location.origin) return;
+  e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(V).then(x => x.put(e.request, c)); return r }).catch(() => caches.match(e.request).then(r => r || caches.match("index.html")))) });
+`);
 const out = process.argv[2];
 if (out) fs.writeFileSync(out, art);
 console.log("built", html.length, "bytes", out ? "artifact " + art.length : "");
