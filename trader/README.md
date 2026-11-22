@@ -59,3 +59,12 @@ Offline: with no internet the runner keeps its account and simply sees no market
 
 ## Scan speed
 Scanning is two-stage. Stage 1 judges every discovered token locally from numbers already in hand (about 80,000 tokens per second headless, no network). Stage 2 fetches a fresh price and the security report only for survivors. Turbo (default) repeats stage 1 about every second. In live mode the real limit is the data providers (DexScreener allows about 5 requests/s of 30 tokens; GeckoTerminal and GoPlus about 30/min), so new tokens arrive at a few dozen per second at most, not 1,000.
+
+## Recorder and replay (test on real data)
+```
+node recorder/record.mjs --out data              # live: records every new pool at birth and follows it until it dies (JSON lines per day)
+node recorder/record.mjs --demo --hours 30       # same format from the synthetic market (pipeline test)
+node recorder/replay.mjs data/                   # replays the real engine on the recording, no look-ahead; train/test split + bootstrap interval
+node recorder/replay.mjs data/ --setup "CFG.keep.on=false;"
+```
+Record for several weeks first. Replay fills come from recorded liquidity (no flow data), so they are cruder than the demo market's pool model; use replay to compare strategies on the same real tokens, and judge only after hundreds of trades. Research behind these tools: `../reports/Memecoin bot evidence review.md`.
