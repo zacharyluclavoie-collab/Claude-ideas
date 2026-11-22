@@ -15,6 +15,10 @@ class Decision:
     reasons: list = field(default_factory=list)
 
 
+NOT_TRADABLE = {"usdt", "usdc", "dai", "weth", "wbtc", "wsol", "sol", "eth", "btc", "bnb", "wbnb", "usde", "fdusd", "tusd", "usdd",
+                "busd", "steth", "wsteth", "cbbtc", "cbeth", "usds", "pyusd"}
+
+
 class RiskManager:
     def __init__(self, cfg: Config):
         self.cfg = cfg
@@ -61,6 +65,10 @@ class RiskManager:
             return no("daily loss limit reached")
         if now < pf.pause_until:
             return no("paused after loss streak")
+        if snap.symbol.lower() in NOT_TRADABLE:
+            return no("base asset or stablecoin")
+        if any(p.symbol.lower() == snap.symbol.lower() for p in pf.positions.values()):
+            return no("same symbol already held (clone risk)")
         if snap.key in pf.positions:
             return no("already holding this token")
         if now < pf.cooldowns.get(snap.key, 0):
@@ -93,6 +101,12 @@ class RiskManager:
         name, usd = min(caps.items(), key=lambda kv: kv[1])
         if usd < c.min_trade_usd:
             return no(f"size {usd:.0f} below minimum (binding limit: {name})")
+        # round-trip cost gate: network fees + DEX fees + price impact must stay small relative to the trade
+        gas_rt = 2 * c.gas_usd.get(snap.chain, 0.5) * 1.2 + (0.15 if snap.chain == "solana" and category == "new" else 0.0)
+        reserve = max(snap.liquidity_usd / 2, 1.0)
+        cost = gas_rt / usd + 2 * c.dex_fee_pct / 100 + 2 * usd / reserve
+        if cost > c.max_round_trip_cost_pct / 100:
+            return no(f"round-trip cost {cost*100:.1f}% of size too high ({gas_rt/usd*100:.1f}% network fees)")
         return Decision(True, usd, [f"size ${usd:,.0f} (binding limit: {name}, mult {self.risk_multiplier(pf):.2f})"])
 
     # ---- market regime ----

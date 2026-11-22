@@ -71,6 +71,8 @@ def analyze_new(s: Snapshot, now: float, cfg: Config) -> tuple[Optional[Plan], l
 
 
 def analyze_trending(s: Snapshot, now: float, cfg: Config, breakout: Optional[bool]) -> tuple[Optional[Plan], list]:
+    if not cfg.trending_entries_enabled:
+        return None, ["established-token entries are switched off"]
     rej: list = []
     age = s.age_hours(now)
     if age is None or age < cfg.trend_min_age_hours:

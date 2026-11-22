@@ -1,0 +1,39 @@
+# Paper Trader (web app)
+
+Autonomous crypto **paper** trading in the browser. Simulated money only: there is no wallet, key, signing or transaction code anywhere. Works as an installable iPhone web app (Share > Add to Home Screen) or as a page in a Claude artifact (demo market only).
+
+## Structure
+```
+src/            source (edit these)
+  core.js         config, state, helpers
+  security.js     mandatory token checks (fail closed)
+  strategy.js     new-token and established-token analysis
+  risk.js         risk manager: sizing, caps, cost gate, shutdown, regime
+  execution.js    fill simulator: pool impact, fees, latency, sandwiching, failures, taxes
+  providers_live.js  DexScreener / GeckoTerminal / GoPlus / CoinGecko (read-only GET) + parsers + connection self-test
+  sim_market.js   realistic synthetic market with constant-product pools (demo mode, tests)
+  engine.js       three independent loops: fast (safety + prices), slow (regime + rechecks), scan (new / trending)
+  ui.js, style.css, body.html
+build.mjs       node build.mjs [artifactOut]  ->  index.html (+ dist/engine_bundle.js for tests)
+test/           node --test test/*.test.mjs   (parsers, invariants)   |  sweep.mjs / calib*.mjs for backtests
+```
+
+## Run the tests and backtests
+```
+node build.mjs
+node --test test/*.test.mjs                                   # parser fixtures + safety invariants
+node test/sweep.mjs 1 12 4 "" label                 # seeds 1-12, 4 simulated days each, in parallel
+BYKIND=1 node test/sweep.mjs 101 124 7 "CFG.tr.enabled=true;" trending-on
+node test/calib.mjs 4 1                             # how do tokens that pass the liquidity filter behave after launch
+```
+
+## What is realistic and what is not
+* **Real in live mode:** prices, liquidity, volumes, new pools and security reports. Rate limits and CORS are handled; the Settings page has a one-tap connection test.
+* **Simulated in both modes:** every fill. Price impact comes from the pool's own reserves (constant product), plus DEX fee, per-chain network fees (priority tips on new Solana tokens), latency drift that goes against momentum entries, sandwiching of larger buys, dropped or reverted transactions, slippage limits, partial fills, token taxes, sell restrictions.
+* **Costs are enforced before every buy:** round-trip fees + impact must stay under 3% of the trade, so small trades on high-fee chains are skipped.
+* Positions are valued at what selling into the pool would return, not at the mid price.
+* **Demo market:** every token owns a pool; organic flow, whales, insiders and your own orders move it. Most launches fade (about half are duds, about a fifth are rugs or honeypots), insiders sell into rallies, scam tokens fake activity, and the security feed misses some scams and flags some good tokens. Established tokens have no built-in edge.
+* **Not simulated:** insider access, bot speed advantages, real mempool dynamics, DEX routing quirks, tokens that change behaviour after your buy in ways GoPlus cannot see. Treat any profit as an upper bound.
+
+## Findings from the realistic simulator
+See `RESULTS.md`.

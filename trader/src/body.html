@@ -1,0 +1,59 @@
+<div class="hd">
+  <div><div class="eq" id="eq">$0</div><div class="sub" id="sub"></div></div>
+  <div style="text-align:right"><span id="chip" class="st dim">…</span><div class="sub" id="clock"></div></div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<main>
+<section id="t-home" class="tab on">
+  <div class="stats" id="stats"></div>
+  <h2>Equity <span class="chips" id="ranges"><button class="chip" data-r="3600">1H</button><button class="chip" data-r="21600">6H</button><button class="chip" data-r="86400">1D</button><button class="chip on" data-r="0">All</button></span></h2>
+  <div class="panel"><div class="chartwrap" id="chartwrap"><div class="scrub" id="scrub"></div><div id="chart"></div></div><div class="sub" id="chartnote"></div></div>
+  <h2>Portfolio <small id="slots"></small></h2>
+  <div class="panel"><div class="hm" id="hm"></div><div id="expo"></div></div>
+  <h2>Risk limits <small>hard-coded</small></h2>
+  <div class="panel" id="meters"></div>
+  <h2>Live activity</h2>
+  <div class="list" id="act"></div>
+</section>
+
+<section id="t-pos" class="tab">
+  <div class="tools"><input type="search" id="q" placeholder="Search symbol" aria-label="Search symbol"><select id="sort" aria-label="Sort"><option value="pct">P&amp;L %</option><option value="usd">P&amp;L $</option><option value="size">Size</option><option value="age">Newest</option><option value="sym">Symbol</option></select></div>
+  <div class="chips" id="filters"><button class="chip on" data-f="all">All</button><button class="chip" data-f="win">Winning</button><button class="chip" data-f="lose">Losing</button><button class="chip" data-f="new">New tokens</button><button class="chip" data-f="trending">Trending</button><button class="chip" data-f="exit">Exiting</button></div>
+  <h2 id="poscount">Open positions</h2>
+  <div class="list" id="plist"></div>
+  <h2>Closed <small><button class="chip" id="csv">Copy CSV</button></small></h2>
+  <div class="list" id="hist"></div>
+</section>
+
+<section id="t-scan" class="tab">
+  <h2>Scanner status</h2>
+  <div class="panel" id="status"></div>
+  <h2>Pipeline</h2>
+  <div class="panel"><div class="funnel" id="funnel"></div><div class="sub" id="funnelnote" style="margin-top:10px"></div></div>
+  <h2>Candidates <span class="chips" id="ffilter"><button class="chip on" data-f="all">All</button><button class="chip" data-f="bought">Bought</button><button class="chip" data-f="security">Blocked</button><button class="chip" data-f="vetoed">Vetoed</button><button class="chip" data-f="log">Log</button></span></h2>
+  <div class="list" id="feed"></div>
+</section>
+
+<section id="t-stats" class="tab">
+  <div class="grid2" id="stiles" style="margin-top:16px"></div>
+  <h2>Daily P&amp;L</h2><div class="panel" id="daily"></div>
+  <h2>Return per trade <small>in R (risk units)</small></h2><div class="panel" id="rhist"></div>
+  <h2>Exits</h2><div class="panel" id="exits"></div>
+  <h2>By strategy and chain</h2><div class="panel" id="bycat"></div>
+  <div id="exec"></div>
+  <div id="protect"></div>
+  <div id="realism"></div>
+</section>
+
+<section id="t-set" class="tab"><div id="setcard"></div></section>
+</main>
+
+<nav id="nav">
+  <button data-t="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Home</button>
+  <button data-t="pos"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Positions</button>
+  <button data-t="scan"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Scanner</button>
+  <button data-t="stats"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Stats</button>
+  <button data-t="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Settings</button>
+</nav>
+

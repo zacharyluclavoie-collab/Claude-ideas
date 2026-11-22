@@ -1,0 +1,2 @@
+{"code":1,"message":"ok","result":{"MintAddr111":{"mintable":{"status":"0"},"freezable":{"status":"0"},"closable":{"status":"0"},"non_transferable":"0","balance_mutable_authority":{"status":"0"},"transfer_fee":{},"holder_count":"2100","holders":[{"account":"a","percent":"0.05"},{"account":"b","percent":"0.04"}],"dex":[{"type":"raydium","burn_percent":99.5}]},
+ "RiskyMint":{"mintable":{"status":"1"},"freezable":{"status":"1"},"closable":{"status":"0"},"non_transferable":"0","transfer_fee":{"current_fee_rate":{"fee_rate":500}},"holder_count":"30","holders":[]}}}

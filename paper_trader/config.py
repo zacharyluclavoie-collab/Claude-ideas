@@ -31,7 +31,9 @@ class Config:
     max_chain_exposure_pct: float = 15.0
     min_cash_reserve_pct: float = 20.0
     max_open_positions: int = 8
-    max_liquidity_fraction: float = 0.02   # position <= 2% of pool liquidity
+    max_liquidity_fraction: float = 0.006  # position <= 0.6% of pool liquidity (keeps round-trip impact small)
+    max_round_trip_cost_pct: float = 3.0   # veto trades whose fees + impact exceed this share of size
+    trending_entries_enabled: bool = False  # established-token momentum showed no edge after costs in testing
     min_trade_usd: float = 25.0
     daily_loss_limit_pct: float = 3.0      # halts new entries for the UTC day
     max_drawdown_pct: float = 12.0         # from peak equity -> emergency shutdown
