@@ -49,5 +49,6 @@ http.createServer((req, res) => {
   if (TOKEN && u.searchParams.get("token") !== TOKEN) { res.writeHead(401); return res.end("token required") }
   if (u.pathname === "/state.json") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); return res.end(JSON.stringify(snapshot())) }
   if (u.pathname === "/stop" && req.method === "POST") { E(`LS.set("pt_kill_${DEMO ? "mock" : "live"}","1")`); res.writeHead(200); return res.end("emergency stop set") }
+  if (u.pathname === "/app") { const f = [path.join(dir, "..", "index.html")].find(p => fs.existsSync(p)); if (f) { res.writeHead(200, { "content-type": "text/html" }); return res.end(fs.readFileSync(f)) } }
   res.writeHead(200, { "content-type": "text/html" }); res.end(PAGE);
 }).listen(PORT, () => console.log(`Paper Trader runner (${DEMO ? "demo" : "live"}, paper money only) · status page http://localhost:${PORT}/ · state ${file}`));

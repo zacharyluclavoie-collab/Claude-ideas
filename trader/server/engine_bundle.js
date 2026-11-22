@@ -18,7 +18,7 @@ const CFG = {
 };
 const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const DEMO_ONLY=false;
-const freshStats=()=>({scanned:0,strat:0,sec:0,vetoed:0,bought:0,scamSeen:0,scamBought:0,junkSeen:0,seen:{}});
+const freshStats=()=>({uniq:0,scanned:0,strat:0,sec:0,vetoed:0,bought:0,scamSeen:0,scamBought:0,junkSeen:0,seen:{}});
 const $ = id => document.getElementById(id);
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const fmt=(n,d=2)=>(n<0?"-":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -124,6 +124,7 @@ function riskMult(){const pf=S.pf,eq=equity(),dd=Math.max(0,(pf.peak-eq)/pf.peak
 function shutdownReason(){const pf=S.pf;if(pf.shutdown)return pf.why;const eq=equity();pf.peak=Math.max(pf.peak,eq);
   const dd=(pf.peak-eq)/pf.peak*100;if(dd>=CFG.risk.maxDD)return`max drawdown ${dd.toFixed(1)}%`;
   const loss=(pf.start-eq)/pf.start*100;if(loss>=CFG.risk.maxTotalLoss)return`total loss ${loss.toFixed(1)}%`;return""}
+function globalBlock(t){const pf=S.pf,R=CFG.risk;if(pf.shutdown)return"emergency shutdown active";if(!marketOk(t))return regime==="unknown"?"market data missing (entries blocked)":"market regime "+regime;if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return"daily loss limit reached";if(!CFG.keep.on&&t<pf.pauseUntil)return"paused after losses";return""}
 function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
   if(pf.shutdown)return no("shutdown");if(!marketOk(t))return no("market regime");
   if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return no("daily loss limit");
@@ -275,10 +276,14 @@ function parseGoPlusEvm(r) {
 }
 function parseGoPlusSol(r) {
   const st = k => r[k] == null ? null : String((r[k] || {}).status || "0") === "1";
-  const fee = r.transfer_fee && Object.keys(r.transfer_fee).length > 0, hs = r.holders || [], burn = (r.dex || []).map(x => num(x.burn_percent));
+  // pool vaults and locked accounts are not real holders: drop them, and treat a single >25% account as the AMM vault
+  const POOL = /pool|raydium|orca|meteora|vault|amm|liquidity|bonding|pump/i;
+  let hs0 = (r.holders || []).filter(h => !(String(h.is_locked) === "1" || POOL.test(String(h.tag || "") + String(h.name || ""))));
+  if (hs0.length && num(hs0[0].percent) > 0.25) hs0 = hs0.slice(1);
+  const fee = r.transfer_fee && Object.keys(r.transfer_fee).length > 0, hs = hs0, burn = (r.dex || []).map(x => num(x.burn_percent));
   return { sol: true, honeypot: false, buyTax: fee ? 100 : 0, sellTax: fee ? 100 : 0, mintable: st("mintable"), freezable: st("freezable"), closable: st("closable"),
     nonTransferable: r.non_transferable == null ? null : String(r.non_transferable) === "1", ownerBal: st("balance_mutable_authority"),
-    holders: /^\d+$/.test(String(r.holder_count)) ? +r.holder_count : null, top10: hs.length ? hs.slice(0, 10).reduce((a, h) => a + num(h.percent), 0) * 100 : null,
+    holders: /^\d+$/.test(String(r.holder_count)) ? +r.holder_count : null, top10: (r.holders || []).length ? hs.slice(0, 10).reduce((a, h) => a + num(h.percent), 0) * 100 : null,
     lpLocked: burn.length ? Math.max(...burn) : null };
 }
 
@@ -531,10 +536,11 @@ function safety(t){const pf=S.pf;let why="";if(LS.get("pt_kill_"+MODE)==="1")why
 /* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
-  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;
+  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
     const s=c.snap;if(s&&s.price>0){const [plan,rej]=source==="new"?analyzeNew(s,t):analyzeTrend(s,t,true);
-      if(!plan){const y=rej[0].replace(/[0-9.]+/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
+      if(!plan){const y=rej[0].replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
     pass.push(c)}
+  if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   pass.length=Math.min(pass.length,CFG.deepPerScan);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
@@ -553,8 +559,10 @@ async function evaluate(k,snap,src,t){let plan,rej;
   if(src==="trending"){const bo=await P().breakout(snap);[plan,rej]=analyzeTrend(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
   stats.strat++;
   const sec=await P().security(snap.chain,snap.addr);
+  if(!sec)stats.secNull=(stats.secNull||0)+1;
   if(!sec)return reject(k,snap,src,"security report not available yet (retrying soon, fail closed)",2,"security",{checks:[["security_data_available",false]],score:plan.score});
   const v=evalSecurity(sec,snap,src,t);
+  if(!v.pass){const W=stats.secWhy||(stats.secWhy={});for(const f of v.fails)W[f]=(W[f]||0)+1}
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   const d=approve(snap,src,v.risk,plan,t);

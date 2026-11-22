@@ -67,4 +67,4 @@ node recorder/record.mjs --demo --hours 30       # same format from the syntheti
 node recorder/replay.mjs data/                   # replays the real engine on the recording, no look-ahead; train/test split + bootstrap interval
 node recorder/replay.mjs data/ --setup "CFG.keep.on=false;"
 ```
-Record for several weeks first. Replay fills come from recorded liquidity (no flow data), so they are cruder than the demo market's pool model; use replay to compare strategies on the same real tokens, and judge only after hundreds of trades. Research behind these tools: `Memecoin bot evidence review.md`.
+Record for several weeks first. Replay fills come from recorded liquidity (no flow data), so they are cruder than the demo market's pool model; use replay to compare strategies on the same real tokens, and judge only after hundreds of trades. Research behind these tools: `../reports/Memecoin bot evidence review.md`.

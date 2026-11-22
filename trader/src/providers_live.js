@@ -61,10 +61,14 @@ function parseGoPlusEvm(r) {
 }
 function parseGoPlusSol(r) {
   const st = k => r[k] == null ? null : String((r[k] || {}).status || "0") === "1";
-  const fee = r.transfer_fee && Object.keys(r.transfer_fee).length > 0, hs = r.holders || [], burn = (r.dex || []).map(x => num(x.burn_percent));
+  // pool vaults and locked accounts are not real holders: drop them, and treat a single >25% account as the AMM vault
+  const POOL = /pool|raydium|orca|meteora|vault|amm|liquidity|bonding|pump/i;
+  let hs0 = (r.holders || []).filter(h => !(String(h.is_locked) === "1" || POOL.test(String(h.tag || "") + String(h.name || ""))));
+  if (hs0.length && num(hs0[0].percent) > 0.25) hs0 = hs0.slice(1);
+  const fee = r.transfer_fee && Object.keys(r.transfer_fee).length > 0, hs = hs0, burn = (r.dex || []).map(x => num(x.burn_percent));
   return { sol: true, honeypot: false, buyTax: fee ? 100 : 0, sellTax: fee ? 100 : 0, mintable: st("mintable"), freezable: st("freezable"), closable: st("closable"),
     nonTransferable: r.non_transferable == null ? null : String(r.non_transferable) === "1", ownerBal: st("balance_mutable_authority"),
-    holders: /^\d+$/.test(String(r.holder_count)) ? +r.holder_count : null, top10: hs.length ? hs.slice(0, 10).reduce((a, h) => a + num(h.percent), 0) * 100 : null,
+    holders: /^\d+$/.test(String(r.holder_count)) ? +r.holder_count : null, top10: (r.holders || []).length ? hs.slice(0, 10).reduce((a, h) => a + num(h.percent), 0) * 100 : null,
     lpLocked: burn.length ? Math.max(...burn) : null };
 }
 

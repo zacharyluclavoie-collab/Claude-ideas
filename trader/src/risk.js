@@ -4,6 +4,7 @@ function riskMult(){const pf=S.pf,eq=equity(),dd=Math.max(0,(pf.peak-eq)/pf.peak
 function shutdownReason(){const pf=S.pf;if(pf.shutdown)return pf.why;const eq=equity();pf.peak=Math.max(pf.peak,eq);
   const dd=(pf.peak-eq)/pf.peak*100;if(dd>=CFG.risk.maxDD)return`max drawdown ${dd.toFixed(1)}%`;
   const loss=(pf.start-eq)/pf.start*100;if(loss>=CFG.risk.maxTotalLoss)return`total loss ${loss.toFixed(1)}%`;return""}
+function globalBlock(t){const pf=S.pf,R=CFG.risk;if(pf.shutdown)return"emergency shutdown active";if(!marketOk(t))return regime==="unknown"?"market data missing (entries blocked)":"market regime "+regime;if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return"daily loss limit reached";if(!CFG.keep.on&&t<pf.pauseUntil)return"paused after losses";return""}
 function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
   if(pf.shutdown)return no("shutdown");if(!marketOk(t))return no("market regime");
   if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return no("daily loss limit");

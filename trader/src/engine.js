@@ -11,10 +11,11 @@ function safety(t){const pf=S.pf;let why="";if(LS.get("pt_kill_"+MODE)==="1")why
 /* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
-  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;
+  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
     const s=c.snap;if(s&&s.price>0){const [plan,rej]=source==="new"?analyzeNew(s,t):analyzeTrend(s,t,true);
-      if(!plan){const y=rej[0].replace(/[0-9.]+/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
+      if(!plan){const y=rej[0].replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
     pass.push(c)}
+  if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   pass.length=Math.min(pass.length,CFG.deepPerScan);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
@@ -33,8 +34,10 @@ async function evaluate(k,snap,src,t){let plan,rej;
   if(src==="trending"){const bo=await P().breakout(snap);[plan,rej]=analyzeTrend(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
   stats.strat++;
   const sec=await P().security(snap.chain,snap.addr);
+  if(!sec)stats.secNull=(stats.secNull||0)+1;
   if(!sec)return reject(k,snap,src,"security report not available yet (retrying soon, fail closed)",2,"security",{checks:[["security_data_available",false]],score:plan.score});
   const v=evalSecurity(sec,snap,src,t);
+  if(!v.pass){const W=stats.secWhy||(stats.secWhy={});for(const f of v.fails)W[f]=(W[f]||0)+1}
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   const d=approve(snap,src,v.risk,plan,t);

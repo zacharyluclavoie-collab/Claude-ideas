@@ -52,7 +52,8 @@ function chartSVG(){let pts=S.curve;if(range)pts=pts.filter(p=>p[0]>=now()-range
 function meter(label,val,lim,txt){const f=clamp(val/lim,0,1),c=f>0.8?"r":f>0.5?"y":"";return`<div class="m"><div class="ml"><span>${label}</span><b>${txt}</b></div><div class="mb"><i class="${c}" style="width:${(f*100).toFixed(0)}%"></i></div></div>`}
 function stack(items,total){const t=total||sum(items.map(i=>i.v))||1;return`<div class="stack">${items.filter(i=>i.v>0).map(i=>`<i style="width:${(i.v/t*100).toFixed(2)}%;background:${i.c}"></i>`).join("")}</div><div class="leg">${items.filter(i=>i.v>0).map(i=>`<span><i style="background:${i.c}"></i>${esc(i.n)} <b>${(i.v/t*100).toFixed(0)}%</b></span>`).join("")}</div>`}
 const IMPORTANT=new Set(["buy","sell","closed","emergency","shutdown","pause","regime","buy_failed","sell_failed","writeoff","stale_writeoff","error"]);
-function rHome(){const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
+function rHome(){{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
+const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
   const dd=Math.max(0,(pf.peak-eq)/pf.peak*100),day=Math.max(0,(pf.dayStart-eq)/pf.dayStart*100),ex=exposure()/eq*100;
   $("stats").innerHTML=[["Cash",fmt(pf.cash,0)],["Invested",fmt(exposure(),0)],["Realized",sgn(pf.realized,0),pf.realized>=0?"g":"r"],["Win rate",cl.length?Math.round(100*cl.filter(c=>c.pnl>0).length/cl.length)+"%":"–"]].map(x=>`<div class="stat"><span>${x[0]}</span><b class="${x[2]||""}">${x[1]}</b></div>`).join("");
   document.querySelectorAll("#ranges .chip").forEach(b=>b.classList.toggle("on",+b.dataset.r===range));
@@ -96,12 +97,25 @@ function rPos(){const pf=S.pf;let ps=Object.values(pf.positions);const total=ps.
 
 /* ---------- scanner ---------- */
 const OUT={bought:["tag ok","BOUGHT"],vetoed:["tag warn","RISK VETO"],security:["tag bad","BLOCKED"],strategy:["tag","NO SETUP"],failed:["tag warn","TX FAILED"]};
-function rScan(){const t=now(),next=(k,e)=>Math.max(0,Math.ceil((last[k]||0)+e-t));
+function topList(o,n){return Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).slice(0,n)}
+function diagnose(){const L=[],sb=stats.secNull||0;
+  if(S.pf.shutdown)L.push(["bad","Emergency shutdown is active ("+S.pf.why+"). Open Settings and tap Re-arm after shutdown."]);
+  if(paused)L.push(["warn","New entries are paused in Settings."]);
+  if(MODE==="live"){if(health.ok===0&&health.fail>0)L.push(["bad","No market data is arriving ("+(health.lastErr||"requests failing")+"). Open Settings and tap Test data connections."]);else if(health.fail>health.ok)L.push(["warn","Most data requests are failing: "+(health.lastErr||"")+". Run Settings > Test data connections."])}
+  if(regime==="unknown")L.push(["warn","Market-condition data is missing, so entries are blocked on purpose (both CoinGecko and the DexScreener backup failed)."]);else if(regime!=="ok")L.push(["warn","Market regime is "+regime+": new entries are paused to protect capital."]);
+  if((stats.uniq||0)>0&&stats.strat===0)L.push(["info","None of the "+stats.uniq.toLocaleString()+" tokens seen matched the setup rules yet. The top reasons are listed below."]);
+  if(stats.strat>0&&stats.sec===0)L.push(["bad",stats.strat.toLocaleString()+" setup matches, but none passed security. "+(sb?sb.toLocaleString()+" had no security report (the security source is blocked or has not indexed them). ":"")+"Top failed checks: "+(topList(stats.secWhy,3).map(x=>x[0]).join(", ")||"none recorded")+"."]);
+  if(stats.sec>0&&stats.bought===0)L.push(["bad",stats.sec.toLocaleString()+" tokens passed security but the risk manager blocked every one: "+(topList(stats.vwhy,3).map(x=>x[0]).join("; ")||"see Events")+"."]);
+  if(!L.length)L.push(["ok","Nothing is blocking trades. It buys when a token passes the setup rules, the security checks and the risk checks."]);
+  return L}
+function rows3(title,o,n){const t=topList(o,n);if(!t.length)return"";const mx=t[0][1];return`<div class="sub" style="margin:14px 0 4px">${title}</div>`+t.map(([k,v])=>`<div class="hbar"><span style="width:150px">${esc(k)}</span><i style="width:${(v/mx*40).toFixed(0)}%"></i><span>${v.toLocaleString()}</span></div>`).join("")}
+function rScan(){
+  $("diag").innerHTML=diagnose().map(([c,t])=>`<div class="row" style="align-items:flex-start;margin:8px 0"><span class="tag ${c==="bad"?"bad":c==="warn"?"warn":c==="ok"?"ok":""}">${c==="ok"?"OK":c==="info"?"INFO":c==="warn"?"CHECK":"BLOCKED"}</span><span style="flex:1;font-size:13.5px">${esc(t)}</span></div>`).join("")+rows3("Why tokens fail the setup rules",stats.rejWhy,6)+rows3("Security checks that fail most",stats.secWhy,6)+rows3("Why the risk manager says no",stats.vwhy,5);const t=now(),next=(k,e)=>Math.max(0,Math.ceil((last[k]||0)+e-t));
   const R=(a,b)=>`<div class="row" style="margin:7px 0"><span class="mut">${a}</span><b>${b}</b></div>`;
   $("status").innerHTML=R("New-token scan",CFG.turbo?"continuous":scanning?"scanning…":"next in "+next("new",CFG.newEvery)+"s")+R("Trending scan",CFG.turbo?"continuous":scanning?"scanning…":"next in "+next("trend",CFG.trendEvery)+"s")+R("Scan rate",`${Math.round(scanRate()).toLocaleString()} tokens/s`)+R("Price updates",`every ${CFG.monitorEvery}s · last ${last.monitor?ago(last.monitor):"…"} ago`)+R("Security rechecks","4 positions every 30s")
     +(MODE==="live"?R("Data requests",`${health.ok} ok · ${health.fail} failed`)+(health.lastErr?`<div class="sub r">${esc(health.lastErr)}</div>`:""):R("Data source","synthetic demo market"));
-  $("funnel").innerHTML=[["Scanned",stats.scanned],["Setup ok",stats.strat],["Secure",stats.sec],["Bought",stats.bought]].map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
-  $("funnelnote").textContent=`${stats.scanned?(100-stats.bought/stats.scanned*100).toFixed(1):"0"}% rejected · ${stats.vetoed} vetoed by the risk manager. Trending alone never triggers a buy.`;
+  $("funnel").innerHTML=[["Tokens seen",stats.uniq||0],["Checks run",stats.scanned],["Setup ok",stats.strat],["Secure",stats.sec]].map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
+  $("funnelnote").textContent=`${(stats.uniq||0).toLocaleString()} different tokens, checked ${stats.scanned.toLocaleString()} times (Turbo re-checks the same tokens every second). ${stats.bought} bought, ${stats.vetoed} blocked by risk rules${stats.gated?", "+stats.gated.toLocaleString()+" held back because trading is paused or market data is missing":""}.`;
   document.querySelectorAll("#ffilter .chip").forEach(b=>b.classList.toggle("on",b.dataset.f===ffilt));let h="";
   if(ffilt==="log")h=S.journal.slice(0,120).map(j=>`<div class="log ${j.level==="crit"?"r":j.level==="warn"?"y":""}">${ago(j.t)} · ${esc(j.kind)} ${esc(j.tok)} ${esc(j.msg)}</div>`).join("");
   else h=S.feed.filter(f=>ffilt==="all"||f.outcome===ffilt).slice(0,50).map(f=>{const id=f.t+f.sym,o=OUT[f.outcome]||OUT.strategy,op=openFeed.has(id);
