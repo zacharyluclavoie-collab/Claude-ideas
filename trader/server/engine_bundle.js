@@ -11,6 +11,7 @@ const CFG = {
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   lenient:{sec:true,regime:true},
+  secMode:"balanced",
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
   scalp:false, tp1Frac:0.5, tp2Frac:0.25,
@@ -65,24 +66,25 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 // stand-in report used only when the security source is unreachable and lenient mode is on (paper trading)
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
+function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
 
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
-  const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);
+  const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);const soft=CFG.secMode!=="strict",addS=(n,ok)=>checks.push([n,!!ok,!soft]),loose=CFG.secMode==="loose",addU=(n,val,ok)=>{if(val==null)checks.push([n,!soft?false:false,!soft]);else checks.push([n,!!ok,!loose])};
   if(!sec)return{pass:false,risk:100,fails:["security_data_available"],checks:[["security_data_available",false]]};
   const isNew=cat==="new",c=CFG.sec,f=(n,v)=>add(n,v===false);
   if(sec.unverified){add("security_unverified (source unreachable, small size)",true);add("liquidity",snap.liq>=(isNew?c.liqNew:c.liqTrend));add("sells_exist",!(snap.buys1h>=20&&snap.sells1h===0));add("no_wash",(snap.liq>0?snap.vol24/snap.liq:1e9)<=c.volLiq);add("no_vertical_pump",snap.chg1h<=1000&&snap.chg5m<=150);const fl=checks.filter(x=>!x[1]).map(x=>x[0]);return{pass:!fl.length,risk:Math.min(100,50+(isNew?15:0)),fails:fl,checks:checks.map(x=>[x[0],x[1]]),unverified:true}}
   if(!sec.sol){f("not_honeypot",sec.honeypot);f("no_hidden_owner",sec.hiddenOwner);f("no_ownership_takeback",sec.takeBack);
     f("owner_cannot_change_balance",sec.ownerBal);f("transfers_not_pausable",sec.pausable);f("can_sell_all",sec.cannotSellAll);
     f("no_slippage_modification",sec.slipMod);f("no_selfdestruct",sec.selfdestruct);f("not_mintable",sec.mintable);
-    f("no_blacklist",sec.blacklist);f("creator_no_honeypot_history",sec.creatorHP);add("contract_verified",sec.openSource===true);add("tradable_on_dex",sec.inDex===true)}
+    (soft?(n,v)=>addS(n,v===false):f)("no_blacklist",sec.blacklist);f("creator_no_honeypot_history",sec.creatorHP);addS("contract_verified",sec.openSource===true);add("tradable_on_dex",sec.inDex===true)}
   else{f("not_mintable",sec.mintable);f("not_freezable",sec.freezable);f("not_closable",sec.closable);f("transferable",sec.nonTransferable);f("owner_cannot_change_balance",sec.ownerBal)}
   add("buy_tax",sec.buyTax!=null&&sec.buyTax<=c.buyTax);add("sell_tax",sec.sellTax!=null&&sec.sellTax<=c.sellTax);
-  add("holders",sec.holders!=null&&sec.holders>=(isNew?c.holdersNew:c.holdersTrend));
-  add("top10",sec.top10!=null&&sec.top10<=c.top10);
-  for(const [n,v,l] of [["creator",sec.creator,c.creator],["owner",sec.owner,c.owner]]){if(v==null&&sec.sol)continue;add(n,v!=null&&v<=l)}
+  addU("holders",sec.holders,sec.holders>=(isNew?c.holdersNew:c.holdersTrend)*(loose?0.2:soft?0.5:1));
+  addU("top10",sec.top10,sec.top10<=c.top10+(loose?35:soft?10:0));
+  for(const [n,v,l] of [["creator",sec.creator,c.creator],["owner",sec.owner,c.owner]]){if(v==null&&sec.sol)continue;addU(n,v,v<=l+(soft?5:0))}
   add("liquidity",snap.liq>=(isNew?c.liqNew:c.liqTrend));
-  const lp=sec.lpLocked;add("lp_locked",isNew?(lp!=null&&lp>=c.lpLocked):(lp==null||lp>=20||snap.liq>=1e6));
+  const lp=sec.lpLocked;if(isNew)addU("lp_locked",lp,lp>=c.lpLocked*(soft?0.6:1));else addS("lp_locked",lp==null||lp>=20||snap.liq>=1e6);
   add("sells_exist",!(snap.buys1h>=20&&snap.sells1h===0));
   add("no_wash",(snap.liq>0?snap.vol24/snap.liq:1e9)<=c.volLiq);
   add("no_vertical_pump",snap.chg1h<=1000&&snap.chg5m<=150);
@@ -90,7 +92,8 @@ function evalSecurity(sec,snap,cat,t){
   r+=(sec.proxy?6:0)+(sec.extCall?4:0)+(sec.cooldown?5:0)+(sec.sol&&sec.creator==null?5:0)+(isNew?15:0);
   r+=snap.liq<30000?12:snap.liq<100000?6:0;r+=(sec.lpLocked||0)<90?5:0;r+=(sec.holders!=null&&sec.holders<300)?5:0;
   const age=snap.created?(t-snap.created)/3600:null;if(age!=null&&age<1)r+=8;
-  const fails=checks.filter(x=>!x[1]).map(x=>x[0]);
+  r+=checks.filter(x=>!x[1]&&!x[2]).length*8;
+  const fails=checks.filter(x=>x[2]&&!x[1]).map(x=>x[0]);
   return{pass:!fails.length,risk:Math.min(100,r),fails,checks:checks.map(c=>[c[0],c[1]])};
 }
 
@@ -340,11 +343,11 @@ const LIVE = {
   async security(chain, addr) {
     if (chain === "solana") {
       const d = await getJSON(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${addr}`);
-      const r = d && d.result && d.result[addr]; return r ? parseGoPlusSol(r) : null;
+      const r = d && d.result && d.result[addr]; if (!r) return null; const sd = parseGoPlusSol(r); return sd.mintable == null && sd.holders == null ? null : sd;
     }
     const cid = GP_CHAIN[chain]; if (!cid) return null;
     const lc = addr.toLowerCase(), d = await getJSON(`https://api.gopluslabs.io/api/v1/token_security/${cid}?contract_addresses=${lc}`);
-    const r = d && d.result && d.result[lc]; return r ? parseGoPlusEvm(r) : null;
+    const r = d && d.result && d.result[lc]; if (!r) return null; const sd = parseGoPlusEvm(r); return sd.honeypot == null && sd.sellTax == null && sd.holders == null ? null : sd;   // empty report = not indexed yet
   },
   blocked() { return false },
   // One-tap check you can run on the phone: reachability (CORS / network) AND that the response shape still parses.

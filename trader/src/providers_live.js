@@ -119,11 +119,11 @@ const LIVE = {
   async security(chain, addr) {
     if (chain === "solana") {
       const d = await getJSON(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${addr}`);
-      const r = d && d.result && d.result[addr]; return r ? parseGoPlusSol(r) : null;
+      const r = d && d.result && d.result[addr]; if (!r) return null; const sd = parseGoPlusSol(r); return sd.mintable == null && sd.holders == null ? null : sd;
     }
     const cid = GP_CHAIN[chain]; if (!cid) return null;
     const lc = addr.toLowerCase(), d = await getJSON(`https://api.gopluslabs.io/api/v1/token_security/${cid}?contract_addresses=${lc}`);
-    const r = d && d.result && d.result[lc]; return r ? parseGoPlusEvm(r) : null;
+    const r = d && d.result && d.result[lc]; if (!r) return null; const sd = parseGoPlusEvm(r); return sd.honeypot == null && sd.sellTax == null && sd.holders == null ? null : sd;   // empty report = not indexed yet
   },
   blocked() { return false },
   // One-tap check you can run on the phone: reachability (CORS / network) AND that the response shape still parses.

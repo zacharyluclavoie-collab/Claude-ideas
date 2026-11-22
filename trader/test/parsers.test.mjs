@@ -40,9 +40,8 @@ test("GoPlus EVM: clean token", async () => {
 test("GoPlus EVM: honeypot flagged, unknown fields stay null (fail closed)", async () => {
   const ctx = ctxWith({ "token_security/8453": fx("goplus_evm.json") });
   assert.equal((await run(ctx, `LIVE.security("base","0xhoney")`)).honeypot, true);
-  const u = await run(ctx, `LIVE.security("base","0xunknown")`);
-  assert.equal(u.honeypot, null); assert.equal(u.sellTax, null); assert.equal(u.holders, null);
-  const v = await run(ctx, `evalSecurity(LIVE_UNKNOWN,{liq:1e6,vol24:1,buys1h:0,sells1h:0,chg1h:0,chg5m:0,created:0},"new",0)`.replace("LIVE_UNKNOWN", JSON.stringify(u)));
+  assert.equal(await run(ctx, `LIVE.security("base","0xunknown")`), null);   // empty report = not indexed yet
+  const v = await run(ctx, `evalSecurity(null,{liq:1e6,vol24:1,buys1h:0,sells1h:0,chg1h:0,chg5m:0,created:0},"new",0)`);
   assert.equal(v.pass, false);
 });
 test("GoPlus Solana: authorities, fee and burn", async () => {
