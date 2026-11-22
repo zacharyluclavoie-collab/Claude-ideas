@@ -32,7 +32,7 @@ test("position count never exceeds the limit", async () => {
   for (let i = 0; i < 30; i++) { await run(ctx, 200); assert.ok(J(ctx, `Object.keys(S.pf.positions).length`) <= 3) }
 });
 test("security data missing => no trades (fail closed)", async () => {
-  const ctx = start(7, loosen + "MOCK.security=async()=>null;");
+  const ctx = start(7, loosen + "CFG.lenient.sec=false;MOCK.security=async()=>null;");
   await run(ctx, 4000);
   assert.equal(J(ctx, `stats.bought`), 0);
   assert.ok(J(ctx, `stats.scanned`) > 50);
