@@ -192,7 +192,16 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   twoTap($("reset"),"Tap again to delete this account",()=>{const c=Math.max(100,+$("cap").value||10000);LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),equity()]];render()}})}
 
 /* ---------- wiring ---------- */
-function render(){header();drainToasts();({home:rHome,pos:rPos,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
+function rAgents(){const rows=AGENTS.map(a=>{const st=agentStat(a.id),w=agentWeight(a.id),open=Object.values(S.pf.positions).filter(p=>p.agent===a.id).length,e=st.n?st.r/st.n:0;return{a,st,w,open,e}}).sort((x,y)=>y.st.pnl-x.st.pnl);
+  const tot=rows.reduce((s,r)=>s+r.st.pnl,0),on=AGENTS.filter(a=>agentOn(a.id)).length;
+  $("agsum").innerHTML=`${on} of 10 agents on · combined ${sgn(tot)} · every coin is shown to every agent and the best match trades. An agent with a losing record gets a smaller share and fewer trades; a winning one gets more. Safety and risk rules are shared.`;
+  $("aglist").innerHTML=rows.map(({a,st,w,open,e},i)=>{const tag=!agentOn(a.id)?["dim","OFF"]:st.n<8?["","LEARNING"]:(st.n>=20&&w<=0.1)?["bad","BENCHED"]:w<0.5?["warn","THROTTLED"]:(e>0.1&&st.n>=15)?["ok","PROVEN"]:["","ACTIVE"];
+    return`<div class="panel" style="margin:10px 0"><div class="row"><div class="pn"><b>${i+1}. ${esc(a.name)}</b><i class="tag ${tag[0]}">${tag[1]}</i></div><label class="tg" style="padding:0;border:0"><input type="checkbox" data-ag="${a.id}" ${agentOn(a.id)?"checked":""} aria-label="Turn ${esc(a.name)} on or off"></label></div>
+    <div class="sub" style="margin:2px 0 8px">${esc(a.desc)}</div>
+    <div class="kv"><div><span>Open now</span><b>${open}</b></div><div><span>Trades</span><b>${st.n}</b></div><div><span>Profit</span><b class="${st.pnl>=0?"g":"r"}">${sgn(st.pnl)}</b></div><div><span>Win rate</span><b>${st.n?Math.round(100*st.w/st.n)+"%":"–"}</b></div><div><span>Avg return</span><b class="${e>=0?"g":"r"}">${st.n?e.toFixed(2)+"R":"–"}</b></div><div><span>Share of portfolio</span><b>${(agentShare(a.id)*100).toFixed(0)}%</b></div></div></div>`}).join("")}
+document.addEventListener("change",e=>{const id=e.target&&e.target.dataset&&e.target.dataset.ag;if(!id)return;CFG.agentsOff=CFG.agentsOff||{};if(e.target.checked)delete CFG.agentsOff[id];else CFG.agentsOff[id]=1;LS.set("pt_agents",JSON.stringify(CFG.agentsOff));render()});
+try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){CFG.agentsOff={}}
+function render(){header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
 $("ranges").onclick=e=>{if(e.target.dataset.r!=null){range=+e.target.dataset.r;render()}};

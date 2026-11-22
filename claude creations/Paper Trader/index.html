@@ -152,12 +152,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div id="realism"></div>
 </section>
 
+<section id="t-agents" class="tab">
+  <h2>Your 10 agents <small>each judges every coin</small></h2>
+  <div class="sub" id="agsum" style="margin-bottom:10px"></div>
+  <div id="aglist"></div>
+</section>
+
 <section id="t-set" class="tab"><div id="setcard"></div></section>
 </main>
 
 <nav id="nav">
   <button data-t="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Home</button>
   <button data-t="pos"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Positions</button>
+  <button data-t="agents"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><circle cx="12" cy="17" r="3"/><path d="M10.5 9.5l2 5M15 11l-1.5 4"/></svg>Agents</button>
   <button data-t="scan"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Scanner</button>
   <button data-t="stats"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Stats</button>
   <button data-t="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Settings</button>
@@ -203,8 +210,8 @@ let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")|
 let paused=false, vnow=1.76e9, last={}, regime="unknown", regimeOk=0, rejected={}, stats=freshStats();
 let S; // {pf, journal[], trades[]}
 const key=()=>"pt_state_"+MODE;
-function newState(cap){return{feed:[],pf:{exec:{buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0},feesPaid:0,start:cap,cash:cap,positions:{},realized:0,peak:cap,day:"",dayStart:cap,streak:0,pauseUntil:0,entries:[],cool:{},shutdown:false,why:"",closed:[]},journal:[],trades:[],curve:[]}}
-function load(){S=null;if(MODE!=="mock"){try{S=JSON.parse(LS.get(key()))}catch(e){S=null}}if(!S)S=newState(+LS.get("pt_cap")||10000);if(!S.feed)S.feed=[];if(S.pf.feesPaid==null)S.pf.feesPaid=0;if(!S.pf.exec)S.pf.exec={buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0}}
+function newState(cap){return{feed:[],pf:{ag:{},exec:{buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0},feesPaid:0,start:cap,cash:cap,positions:{},realized:0,peak:cap,day:"",dayStart:cap,streak:0,pauseUntil:0,entries:[],cool:{},shutdown:false,why:"",closed:[]},journal:[],trades:[],curve:[]}}
+function load(){S=null;if(MODE!=="mock"){try{S=JSON.parse(LS.get(key()))}catch(e){S=null}}if(!S)S=newState(+LS.get("pt_cap")||10000);if(!S.feed)S.feed=[];if(S.pf.feesPaid==null)S.pf.feesPaid=0;if(!S.pf.ag)S.pf.ag={};if(!S.pf.exec)S.pf.exec={buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0}}
 function dayAdd(v,t){const d=new Date(t*1000).toISOString().slice(0,10),m=S.pf.daily||(S.pf.daily={});m[d]=(m[d]||0)+v}
 function save(){if(S.trades.length>600)S.trades.length=600;if(MODE!=="mock")LS.set(key(),JSON.stringify(S))}
 const now=()=>MODE==="mock"?vnow:Date.now()/1000;
@@ -236,7 +243,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-22 22:46";
+const BUILD = "2026-11-22 23:10";
 
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
@@ -304,7 +311,7 @@ function shutdownReason(){const pf=S.pf;if(pf.shutdown)return pf.why;const eq=eq
   const dd=(pf.peak-eq)/pf.peak*100;if(dd>=CFG.risk.maxDD)return`max drawdown ${dd.toFixed(1)}%`;
   const loss=(pf.start-eq)/pf.start*100;if(loss>=CFG.risk.maxTotalLoss)return`total loss ${loss.toFixed(1)}%`;return""}
 function globalBlock(t){const pf=S.pf,R=CFG.risk;if(pf.shutdown)return"emergency shutdown active";if(!marketOk(t))return regime==="unknown"?"market data missing (entries blocked)":"market regime "+regime;if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return"daily loss limit reached";if(!CFG.keep.on&&t<pf.pauseUntil)return"paused after losses";return""}
-function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
+function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
   if(pf.shutdown)return no("shutdown");if(!marketOk(t))return no("market regime");
   if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return no("daily loss limit");
   const K=CFG.keep.on;if(!K&&t<pf.pauseUntil)return no("paused after losses");const k=snap.chain+":"+snap.addr.toLowerCase();
@@ -313,6 +320,8 @@ function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false
   if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(!FILL&&risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
   const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100/(R.worstCase&&cat==="new"?1:plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1)*(FILL?CFG.keep.sizeMult:1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
     liq:snap.liq*R.liqFrac,total:eq*R.totalExp/100-ex,cash:pf.cash-eq*R.cashReserve/100,chain:eq*R.chainExp/100-(expBy(p=>p.chain)[snap.chain]||0)};
+  {const lim=agentId?agentLimit(agentId,t):"";if(lim)return no(lim)}
+  if(agentId)caps.agent=eq*R.totalExp/100*agentShare(agentId)*1.6-agentExposure(agentId);
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
   if(usd<R.minTrade)return no(`size ${usd.toFixed(0)} below min (${name})`);
@@ -327,6 +336,77 @@ function regimeOf(m){if(!m)return"unknown";const v=Object.values(m),w=Math.min(.
   if(w<=CFG.em.crash||a<=CFG.em.crash/1.5)return"crash";if(w<=CFG.em.danger||a<=CFG.em.danger/1.5)return"danger";return"ok"}
 const marketOk=t=>regime==="ok"&&(t-regimeOk)/60<=CFG.em.regimeUnknownMin;
 
+
+/* ============================ the 10 agents ============================
+ * Each agent is a specialist with its own entry rule, exits and share of the portfolio. Every discovered token is shown to every
+ * enabled agent; the best-scoring match (weighted by that agent's track record) gets the trade. Each agent keeps its own results,
+ * and agents that keep losing get a smaller share until they prove themselves again. Security checks and risk rules are shared and
+ * cannot be bypassed by any agent.
+ */
+const _p = (stop, tp1, tp2, trail, score, reason) => ({ stop, tp1, tp2, trail, score, rr: tp1 / stop, reason });
+const _vlr = s => s.liq > 0 ? s.vol1h / s.liq : 0;
+const _avgTrade = s => { const n = s.buys1h + s.sells1h; return n ? s.vol1h / n : 0 };
+const _acc = s => s.vol24 > 0 ? s.vol1h * 24 / s.vol24 : 0;
+const _uniq = s => s.buyers1h != null && s.buys1h >= 20 ? s.buyers1h / s.buys1h : null;
+const _no = r => [null, [r]];
+const AGENTS = [
+  { id: "launch", name: "Launch Scout", cat: "new", scope: "new", desc: "Fresh pools with real two-sided activity and organic buyers.", run: (s, t) => analyzeNew(s, t) },
+  { id: "trend", name: "Trend Follower", cat: "trending", scope: "est", desc: "Older tokens with rising volume, steady buying and a breakout.", run: (s, t, bo) => analyzeTrend(s, t, bo === undefined ? true : bo) },
+  { id: "rider", name: "Momentum Rider", cat: "new", scope: "new", desc: "New tokens in a steady climb, 1 to 8 hours old.", run(s, t) {
+    const age = ageH(s, t); if (age == null || age < 0.75 || age > 8) return _no("age outside 0.75-8h");
+    if (s.liq < CFG.sec.liqNew) return _no("liquidity low"); if (s.chg1h < 8 || s.chg1h > 60) return _no("1h move outside 8-60%");
+    if (s.chg6h < s.chg1h * 0.8) return _no("climb not steady"); if (bp(s) < 0.56) return _no("weak buy pressure"); const v = _vlr(s); if (v < 0.4 || v > 12) return _no("turnover off");
+    return [_p(15, 35, 90, 12, 55 + Math.min(25, s.chg1h / 3) + (bp(s) - 0.5) * 60, `climb ${s.chg1h.toFixed(0)}%/1h bp ${bp(s).toFixed(2)}`), []] } },
+  { id: "dip", name: "Pullback Buyer", cat: "new", scope: "any", desc: "A strong token that dipped and is stabilising.", run(s, t) {
+    if (s.liq < CFG.sec.liqNew) return _no("liquidity low"); if (s.chg6h < 15) return _no("no prior strength");
+    if (s.chg1h > -6 || s.chg1h < -25) return _no("no pullback of 6-25%"); if (s.chg5m < 0) return _no("still falling"); if (bp(s) < 0.5) return _no("sellers in control");
+    return [_p(12, 20, 45, 8, 50 + Math.min(20, s.chg6h / 3) + (s.chg5m) * 4, `dip ${s.chg1h.toFixed(0)}% after +${s.chg6h.toFixed(0)}%/6h`), []] } },
+  { id: "breakout", name: "Volume Breakout", cat: "new", scope: "any", desc: "Volume jumps well above normal while price starts to rise.", run(s, t) {
+    if (s.liq < CFG.sec.liqNew) return _no("liquidity low"); const a = Math.max(_acc(s), s.vol1h > 0 ? s.vol5 * 12 / s.vol1h : 0);
+    if (a < 2.5) return _no("no volume surge"); if (s.chg1h < 3 || s.chg1h > 30) return _no("1h move outside 3-30%"); if (s.chg5m <= 0) return _no("5m not rising"); if (bp(s) < 0.55) return _no("weak buy pressure");
+    return [_p(13, 28, 70, 10, 52 + Math.min(25, a * 5) + (bp(s) - 0.5) * 50, `volume x${a.toFixed(1)} 1h ${s.chg1h.toFixed(0)}%`), []] } },
+  { id: "quality", name: "Quality Buyers", cat: "new", scope: "new", desc: "Many different real buyers and healthy selling too.", run(s, t) {
+    const age = ageH(s, t); if (age == null || age < 0.3 || age > 12) return _no("age outside 0.3-12h"); if (s.liq < Math.max(20000, CFG.sec.liqNew)) return _no("liquidity low");
+    const u = _uniq(s); if (u == null) return _no("no unique-buyer data"); if (u < 0.7) return _no("few unique buyers"); if (s.sells1h < s.buys1h * 0.25) return _no("one-sided flow"); if (s.chg1h < 0 || s.chg1h > 80) return _no("1h move outside 0-80%");
+    return [_p(16, 36, 90, 12, 58 + (u - 0.7) * 60 + Math.min(15, s.chg1h / 4), `unique buyers ${(u * 100).toFixed(0)}%`), []] } },
+  { id: "whale", name: "Whale Flow", cat: "new", scope: "any", desc: "Big average trade size with buyers in control.", run(s, t) {
+    if (s.liq < Math.max(30000, CFG.sec.liqNew)) return _no("liquidity low"); const a = _avgTrade(s); if (a < 250) return _no("small trades only"); if (bp(s) < 0.58) return _no("weak buy pressure"); if (s.chg1h < 2 || s.chg1h > 40) return _no("1h move outside 2-40%");
+    return [_p(14, 30, 75, 10, 54 + Math.min(20, a / 40) + (bp(s) - 0.5) * 50, `avg trade $${a.toFixed(0)} bp ${bp(s).toFixed(2)}`), []] } },
+  { id: "gem", name: "Gem Hunter", cat: "new", scope: "new", desc: "Small pools with very high turnover and a strong buy majority.", run(s, t) {
+    const age = ageH(s, t); if (age == null || age < 0.3 || age > 6) return _no("age outside 0.3-6h"); if (s.liq < 8000 || s.liq > 40000) return _no("liquidity outside 8-40k"); if (_vlr(s) < 2) return _no("turnover below 2x/h");
+    if (bp(s) < 0.6) return _no("weak buy pressure"); if (s.chg1h < 5 || s.chg1h > 120) return _no("1h move outside 5-120%"); if (s.buys1h + s.sells1h < 80) return _no("thin activity");
+    return [_p(20, 50, 120, 15, 50 + Math.min(25, _vlr(s) * 3) + (bp(s) - 0.5) * 50, `turnover ${_vlr(s).toFixed(1)}x/h`), []] } },
+  { id: "reversal", name: "Dip Reversal", cat: "trending", scope: "est", desc: "Established tokens that fell hard and are turning up.", run(s, t) {
+    const age = ageH(s, t); if (age == null || age < CFG.tr.minAgeH) return _no("insufficient history"); if (s.liq < Math.max(60000, CFG.sec.liqTrend)) return _no("liquidity low");
+    if (s.chg24 > -12) return _no("no 24h drop"); if (s.chg1h < 1.5) return _no("no turn yet"); if (s.chg5m < 0) return _no("5m falling"); if (_acc(s) < 1.5) return _no("no volume pickup"); if (bp(s) < 0.54) return _no("weak buy pressure");
+    return [_p(8, 12, 25, 6, 50 + Math.min(20, -s.chg24) + s.chg1h * 3, `24h ${s.chg24.toFixed(0)}% now +${s.chg1h.toFixed(1)}%/1h`), []] } },
+  { id: "range", name: "Range Breaker", cat: "trending", scope: "est", desc: "Big liquid tokens pushing out of a quiet range on rising volume.", run(s, t) {
+    const age = ageH(s, t); if (age == null || age < CFG.tr.minAgeH) return _no("insufficient history"); if (s.liq < Math.max(100000, CFG.sec.liqTrend)) return _no("liquidity low");
+    if (s.chg6h < 6) return _no("6h below 6%"); if (s.chg1h < 2 || s.chg1h > 15) return _no("1h move outside 2-15%"); if (_acc(s) < 2) return _no("no volume surge"); if (bp(s) < 0.55) return _no("weak buy pressure");
+    return [_p(9, 18, 40, 7, 52 + Math.min(20, _acc(s) * 6) + s.chg1h, `6h +${s.chg6h.toFixed(0)}% volume x${_acc(s).toFixed(1)}`), []] } },
+];
+const AG = Object.fromEntries(AGENTS.map(a => [a.id, a]));
+const agentOn = id => !(CFG.agentsOff || {})[id];
+function agentStat(id) { const a = (S && S.pf && S.pf.ag && S.pf.ag[id]) || { n: 0, pnl: 0, w: 0, r: 0 }; return a }
+// share of the portfolio an agent may use: grows with proven expectancy, shrinks after a losing record (needs 8+ trades to judge)
+function agentWeight(id) { const a = agentStat(id); if (a.n < 8) return 0.6; const e = a.r / a.n; return clamp(1 + e * 2.5, 0.1, 2) }
+function agentRecent(id, t, win = 3600) { let n = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id && t - p.opened < win) n++; for (const c of S.pf.closed.slice(-200)) if (c.agent === id && c.t - c.held * 3600 > t - win) n++; return n }
+// proven agents trade freely; struggling agents are throttled; a benched agent only gets one probe trade every 6 hours
+function agentLimit(id, t) { const w = agentWeight(id), a = agentStat(id); if (a.n >= 20 && w <= 0.1) return agentRecent(id, t, 21600) >= 1 ? "benched (probe every 6h)" : ""; const lim = w >= 1 ? 8 : w >= 0.5 ? 4 : 2; return agentRecent(id, t) >= lim ? "agent entry limit (" + lim + "/hour at its current record)" : "" }
+function agentShare(id) { let tot = 0; for (const a of AGENTS) if (agentOn(a.id)) tot += agentWeight(a.id); return tot ? agentWeight(id) / tot : 0 }
+function agentExposure(id) { let v = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id) v += pv(p); return v }
+function ageOK(a, s, t) { const age = ageH(s, t); if (a.scope === "any") return true; if (age == null) return a.scope === "new"; return a.scope === "new" ? age <= 48 : age >= CFG.tr.minAgeH }
+// every enabled agent looks at the token; returns the best match or null, plus the first rejection reason for diagnostics
+function pickAgent(s, t, source) {
+  let best = null, why = null;
+  for (const a of AGENTS) {
+    if (!agentOn(a.id) || !ageOK(a, s, t)) continue;
+    if (source === "trending" && a.scope === "new" && false) continue;
+    const [plan, rej] = a.run(s, t, true);
+    if (plan) { const sc = plan.score * agentWeight(a.id); if (!best || sc > best.sc) best = { agent: a, plan, sc } } else if (!why) why = rej[0];
+  }
+  return { best, why: why || "no agent matched" };
+}
 
 /* ============================ execution simulator ============================
  * Realistic frictions: constant-product price impact from the pool's real reserves, DEX fee, network fees (priority tips on
@@ -721,15 +801,15 @@ function safety(t){const pf=S.pf;let why="";
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
   for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
-    const s=c.snap;if(s&&s.price>0){const [plan,rej]=source==="new"?analyzeNew(s,t):analyzeTrend(s,t,true);
-      if(!plan){const y=rej[0].replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
+    const s=c.snap;if(s&&s.price>0){const pk=pickAgent(s,t,source);
+      if(!pk.best){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.best.agent.id}
     pass.push(c)}
   if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   {const ch=cands.map(c=>c.snap).filter(s=>s&&s.liq>=30000&&isFinite(s.chg1h)).map(s=>s.chg1h).sort((a,b)=>a-b);if(ch.length>=8)uniMedian=ch[ch.length>>1]}
   pass.length=Math.min(pass.length,CFG.deepPerScan);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
-  for(const c of pass){if(S.pf.shutdown)break;const k=c.chain+":"+c.addr.toLowerCase(),snap=fresh[k]||c.snap;if(fresh[k]&&c.snap&&c.snap.buyers1h!=null){fresh[k].buyers1h=c.snap.buyers1h;fresh[k].sellers1h=c.snap.sellers1h}if(!snap||snap.price<=0)continue;await evaluate(k,snap,source,now())}
+  for(const c of pass){if(S.pf.shutdown)break;const k=c.chain+":"+c.addr.toLowerCase(),snap=fresh[k]||c.snap;if(fresh[k]&&c.snap&&c.snap.buyers1h!=null){fresh[k].buyers1h=c.snap.buyers1h;fresh[k].sellers1h=c.snap.sellers1h}if(!snap||snap.price<=0)continue;await evaluate(k,snap,source,now(),c.agent)}
   const h=stats.hist||(stats.hist=[]);const rt=Date.now()/1000;h.push([rt,stats.scanned]);while(h.length>60||(h.length>2&&rt-h[0][0]>20))h.shift()}
 function scanRate(){const h=stats.hist;if(!h||h.length<2)return 0;const a=h[0],b=h[h.length-1];return b[0]>a[0]?(b[1]-a[1])/(b[0]-a[0]):0}
 const SCAM=SCAM_KINDS;
@@ -738,10 +818,12 @@ function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr
   if(tr&&!stats.seen[k]){stats.seen[k]=1;if(SCAM.has(tr))stats.scamSeen++;else if(tr==="dead")stats.junkSeen++}
   S.feed.unshift(Object.assign({t:now(),sym:snap.sym,chain:snap.chain,src,outcome,detail,truth:tr},extra||{}));if(S.feed.length>80)S.feed.length=80}
 function reject(k,snap,src,why,min,stage,extra){rejected[k]=now()+60*(min||(src==="new"?CFG.rejectNewMin:CFG.rejectTrendMin));feedAdd(snap,src,stage||"strategy",why,extra)}
-async function evaluate(k,snap,src,t){let plan,rej;
-  [plan,rej]=src==="new"?analyzeNew(snap,t):analyzeTrend(snap,t,true);
+async function evaluate(k,snap,src,t,agentId){let ag=AG[agentId];
+  if(!ag||!agentOn(ag.id)){const pk=pickAgent(snap,t,src);if(!pk.best)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);ag=pk.best.agent}
+  let [plan,rej]=ag.run(snap,t,true);
   if(!plan)return reject(k,snap,src,rej.join("; "),rej.some(r=>r==="too young")?3:null);
-  if(src==="trending"){const bo=await P().breakout(snap);[plan,rej]=analyzeTrend(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
+  if(ag.id==="trend"){const bo=await P().breakout(snap);[plan,rej]=ag.run(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
+  const cat=ag.cat;
   stats.strat++;
   let sec=await P().security(snap.chain,snap.addr);
   if(!sec)stats.secNull=(stats.secNull||0)+1;else stats.secOk=(stats.secOk||0)+1;
@@ -751,14 +833,14 @@ async function evaluate(k,snap,src,t){let plan,rej;
   if(!v.pass){const W=stats.secWhy||(stats.secWhy={});for(const f of v.fails)W[f]=(W[f]||0)+1}
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
-  const d=approve(snap,src,v.risk,plan,t);
+  const d=approve(snap,cat,v.risk,plan,t,ag.id);
   if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
-  open(snap,src,plan,v.risk,sec,d.usd*(v.unverified?0.5:1),t,v.checks)}
-function open(snap,cat,plan,risk,sec,usd,t,checks){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
+  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1),t,v.checks,ag.id)}
+function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
   if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
-  pf.positions[k]={scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
+  pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
     size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
@@ -772,8 +854,9 @@ function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qt
   if(p.qty<=1e-12||p.qty*snap.price<1)closePos(p,reason,0,t);return true}
 function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
+  {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
   pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
-  const r=p.risk0?p.real/p.risk0:0;pf.closed.push({sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
+  const r=p.risk0?p.real/p.risk0:0;pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
   if(s.liq<p.entryLiq*(1-e.liqTotal))return`liquidity down ${(100*(1-s.liq/p.entryLiq)).toFixed(0)}% vs entry`;
@@ -1018,7 +1101,16 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   twoTap($("reset"),"Tap again to delete this account",()=>{const c=Math.max(100,+$("cap").value||10000);LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),equity()]];render()}})}
 
 /* ---------- wiring ---------- */
-function render(){header();drainToasts();({home:rHome,pos:rPos,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
+function rAgents(){const rows=AGENTS.map(a=>{const st=agentStat(a.id),w=agentWeight(a.id),open=Object.values(S.pf.positions).filter(p=>p.agent===a.id).length,e=st.n?st.r/st.n:0;return{a,st,w,open,e}}).sort((x,y)=>y.st.pnl-x.st.pnl);
+  const tot=rows.reduce((s,r)=>s+r.st.pnl,0),on=AGENTS.filter(a=>agentOn(a.id)).length;
+  $("agsum").innerHTML=`${on} of 10 agents on · combined ${sgn(tot)} · every coin is shown to every agent and the best match trades. An agent with a losing record gets a smaller share and fewer trades; a winning one gets more. Safety and risk rules are shared.`;
+  $("aglist").innerHTML=rows.map(({a,st,w,open,e},i)=>{const tag=!agentOn(a.id)?["dim","OFF"]:st.n<8?["","LEARNING"]:(st.n>=20&&w<=0.1)?["bad","BENCHED"]:w<0.5?["warn","THROTTLED"]:(e>0.1&&st.n>=15)?["ok","PROVEN"]:["","ACTIVE"];
+    return`<div class="panel" style="margin:10px 0"><div class="row"><div class="pn"><b>${i+1}. ${esc(a.name)}</b><i class="tag ${tag[0]}">${tag[1]}</i></div><label class="tg" style="padding:0;border:0"><input type="checkbox" data-ag="${a.id}" ${agentOn(a.id)?"checked":""} aria-label="Turn ${esc(a.name)} on or off"></label></div>
+    <div class="sub" style="margin:2px 0 8px">${esc(a.desc)}</div>
+    <div class="kv"><div><span>Open now</span><b>${open}</b></div><div><span>Trades</span><b>${st.n}</b></div><div><span>Profit</span><b class="${st.pnl>=0?"g":"r"}">${sgn(st.pnl)}</b></div><div><span>Win rate</span><b>${st.n?Math.round(100*st.w/st.n)+"%":"–"}</b></div><div><span>Avg return</span><b class="${e>=0?"g":"r"}">${st.n?e.toFixed(2)+"R":"–"}</b></div><div><span>Share of portfolio</span><b>${(agentShare(a.id)*100).toFixed(0)}%</b></div></div></div>`}).join("")}
+document.addEventListener("change",e=>{const id=e.target&&e.target.dataset&&e.target.dataset.ag;if(!id)return;CFG.agentsOff=CFG.agentsOff||{};if(e.target.checked)delete CFG.agentsOff[id];else CFG.agentsOff[id]=1;LS.set("pt_agents",JSON.stringify(CFG.agentsOff));render()});
+try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){CFG.agentsOff={}}
+function render(){header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
 $("ranges").onclick=e=>{if(e.target.dataset.r!=null){range=+e.target.dataset.r;render()}};
