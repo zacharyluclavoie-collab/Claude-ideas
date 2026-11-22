@@ -98,7 +98,7 @@ function rPos(){const pf=S.pf;let ps=Object.values(pf.positions);const total=ps.
   $("hist").innerHTML=cl.map(c=>`<div class="fe" style="cursor:default"><div class="row"><div class="pn"><b>${esc(c.sym)}</b><i class="tag">${esc(String(c.reason).startsWith("EMERGENCY")?"emergency":String(c.reason).replace(/_/g," "))}</i></div><b class="${c.pnl>=0?"g":"r"}">${sgn(c.pnl)}</b></div><div class="p2"><span>${(c.r||0).toFixed(2)}R · held ${c.held<1?Math.round(c.held*60)+"m":c.held.toFixed(1)+"h"}</span><span>${c.t?tlabel(c.t,true):""}</span></div></div>`).join("")||'<div class="empty">Closed trades show up here.</div>'}
 
 /* ---------- scanner ---------- */
-const OUT={bought:["tag ok","BOUGHT"],vetoed:["tag warn","RISK VETO"],security:["tag bad","BLOCKED"],strategy:["tag","NO SETUP"],failed:["tag warn","TX FAILED"]};
+const OUT={bought:["tag ok","BOUGHT"],vetoed:["tag warn","RISK VETO"],security:["tag bad","SECURITY FAIL"],strategy:["tag","NO SETUP"],failed:["tag warn","TX FAILED"]};
 function topList(o,n){return Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).slice(0,n)}
 function diagnose(){const L=[],sb=stats.secNull||0;
   if(S.pf.shutdown)L.push(["bad","Emergency shutdown is active ("+S.pf.why+"). Open Settings and tap Re-arm after shutdown."]);

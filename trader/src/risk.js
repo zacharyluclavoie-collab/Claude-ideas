@@ -17,8 +17,12 @@ function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
   if(usd<R.minTrade)return no(`size ${usd.toFixed(0)} below min (${name})`);
-  {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),cost=gasRT/usd+2*CFG.ex.fee/100+2*usd/res;
-   if(cost>R.maxCostPct/100)return no(`round-trip cost ${(cost*100).toFixed(1)}% of size is too high (${(gasRT/usd*100).toFixed(1)}% network fees)`)}
+  {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),fee=2*CFG.ex.fee/100,cap=R.maxCostPct/100;
+   const fit=Math.max(0,cap-fee)*res/2*0.9;                      // biggest size whose price impact stays inside the cost limit
+   if(usd>fit){usd=fit;name="pool depth (cost limit)"}
+   if(usd<R.minTrade)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
+   const cost=gasRT/usd+fee+2*usd/res;
+   if(cost>cap)return no(`network fees ${(gasRT/usd*100).toFixed(1)}% of a ${usd.toFixed(0)}$ trade are too high on ${snap.chain}`)}
   if(false)return no(`size ${usd.toFixed(0)} below min (${name})`);return{ok:true,usd,why:`size ${usd.toFixed(0)} (${name})`}}
 function regimeOf(m){if(!m)return"unknown";const v=Object.values(m),w=Math.min(...v),a=v.reduce((x,y)=>x+y,0)/v.length;
   if(w<=CFG.em.crash||a<=CFG.em.crash/1.5)return"crash";if(w<=CFG.em.danger||a<=CFG.em.danger/1.5)return"danger";return"ok"}

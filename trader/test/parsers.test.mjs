@@ -77,3 +77,15 @@ test("majors fall back to DexScreener when CoinGecko is unreachable", async () =
   assert.equal(m.ethereum, -0.4); assert.equal(m.solana, -1.1); assert.equal(await run(ctx, `regimeOf(${JSON.stringify(m)})`), "ok");
   const none = await run(ctxWith({}), `LIVE.majors()`); assert.equal(none, null);
 });
+
+test("Balanced mode: unknown values are risk points, not vetoes; known-bad still blocks; Strict vetoes unknowns", async () => {
+  const ctx = makeCtx();
+  const snap = `{chain:"base",addr:"0x1",sym:"A",price:1,liq:20000,vol24:30000,buys1h:90,sells1h:60,chg1h:10,chg5m:1,created:0}`;
+  const sd = `{honeypot:null,buyTax:null,sellTax:null,openSource:true,proxy:false,mintable:false,hiddenOwner:false,takeBack:false,ownerBal:false,pausable:false,cannotSellAll:false,cooldown:false,blacklist:false,slipMod:false,selfdestruct:false,extCall:false,creatorHP:false,inDex:true,holders:null,top10:null,creator:null,owner:null,lpLocked:null}`;
+  ev(ctx, `applySecMode("balanced")`);
+  assert.equal(await run(ctx, `evalSecurity(${sd},${snap},"new",9999).pass`), true);
+  assert.equal(await run(ctx, `evalSecurity(Object.assign(${sd},{honeypot:true}),${snap},"new",9999).pass`), false);
+  assert.equal(await run(ctx, `evalSecurity(Object.assign(${sd},{sellTax:40}),${snap},"new",9999).pass`), false);
+  ev(ctx, `applySecMode("strict")`);
+  assert.equal(await run(ctx, `evalSecurity(${sd},${snap},"new",9999).pass`), false);
+});

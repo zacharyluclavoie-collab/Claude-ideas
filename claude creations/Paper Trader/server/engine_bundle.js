@@ -5,12 +5,13 @@ const CFG = {
   deepPerScan:16, quickRejectSec:20, quickYoungSec:10, maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
   risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
-        perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:3, worstCase:false},
+        perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:5, worstCase:false},
   sec:{buyTax:5, sellTax:8, liqNew:15000, liqTrend:100000, holdersNew:100, holdersTrend:500, top10:45, creator:8, owner:8, lpLocked:70, volLiq:40},
   nw:{enabled:true, minAgeMin:10, maxAgeH:24, minTx:50, minBP:0.55, maxChg1h:300, maxFdvLiq:60, minScore:60, minVlr:0, minUniq:0.5, minChg1h:-1000, stop:18, tp1:40, tp2:100, trail:15, maxHoldH:12},
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   lenient:{sec:true,regime:true},
+  watchdog:true,
   secMode:"balanced",
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
@@ -72,14 +73,14 @@ function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m
 function evalSecurity(sec,snap,cat,t){
   const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);const soft=CFG.secMode!=="strict",addS=(n,ok)=>checks.push([n,!!ok,!soft]),loose=CFG.secMode==="loose",addU=(n,val,ok)=>{if(val==null)checks.push([n,!soft?false:false,!soft]);else checks.push([n,!!ok,!loose])};
   if(!sec)return{pass:false,risk:100,fails:["security_data_available"],checks:[["security_data_available",false]]};
-  const isNew=cat==="new",c=CFG.sec,f=(n,v)=>add(n,v===false);
+  const isNew=cat==="new",c=CFG.sec,f=(n,v)=>(v==null&&soft)?addS(n,false):add(n,v===false);   // unknown is a risk point in Balanced/Loose, a veto only in Strict
   if(sec.unverified){add("security_unverified (source unreachable, small size)",true);add("liquidity",snap.liq>=(isNew?c.liqNew:c.liqTrend));add("sells_exist",!(snap.buys1h>=20&&snap.sells1h===0));add("no_wash",(snap.liq>0?snap.vol24/snap.liq:1e9)<=c.volLiq);add("no_vertical_pump",snap.chg1h<=1000&&snap.chg5m<=150);const fl=checks.filter(x=>!x[1]).map(x=>x[0]);return{pass:!fl.length,risk:Math.min(100,50+(isNew?15:0)),fails:fl,checks:checks.map(x=>[x[0],x[1]]),unverified:true}}
   if(!sec.sol){f("not_honeypot",sec.honeypot);f("no_hidden_owner",sec.hiddenOwner);f("no_ownership_takeback",sec.takeBack);
     f("owner_cannot_change_balance",sec.ownerBal);f("transfers_not_pausable",sec.pausable);f("can_sell_all",sec.cannotSellAll);
     f("no_slippage_modification",sec.slipMod);f("no_selfdestruct",sec.selfdestruct);f("not_mintable",sec.mintable);
     (soft?(n,v)=>addS(n,v===false):f)("no_blacklist",sec.blacklist);f("creator_no_honeypot_history",sec.creatorHP);addS("contract_verified",sec.openSource===true);add("tradable_on_dex",sec.inDex===true)}
   else{f("not_mintable",sec.mintable);f("not_freezable",sec.freezable);f("not_closable",sec.closable);f("transferable",sec.nonTransferable);f("owner_cannot_change_balance",sec.ownerBal)}
-  add("buy_tax",sec.buyTax!=null&&sec.buyTax<=c.buyTax);add("sell_tax",sec.sellTax!=null&&sec.sellTax<=c.sellTax);
+  (sec.buyTax==null&&soft?addS:add)("buy_tax",sec.buyTax!=null&&sec.buyTax<=c.buyTax);(sec.sellTax==null&&soft?addS:add)("sell_tax",sec.sellTax!=null&&sec.sellTax<=c.sellTax);
   addU("holders",sec.holders,sec.holders>=(isNew?c.holdersNew:c.holdersTrend)*(loose?0.2:soft?0.5:1));
   addU("top10",sec.top10,sec.top10<=c.top10+(loose?35:soft?10:0));
   for(const [n,v,l] of [["creator",sec.creator,c.creator],["owner",sec.owner,c.owner]]){if(v==null&&sec.sol)continue;addU(n,v,v<=l+(soft?5:0))}
@@ -146,8 +147,12 @@ function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
   if(usd<R.minTrade)return no(`size ${usd.toFixed(0)} below min (${name})`);
-  {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),cost=gasRT/usd+2*CFG.ex.fee/100+2*usd/res;
-   if(cost>R.maxCostPct/100)return no(`round-trip cost ${(cost*100).toFixed(1)}% of size is too high (${(gasRT/usd*100).toFixed(1)}% network fees)`)}
+  {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),fee=2*CFG.ex.fee/100,cap=R.maxCostPct/100;
+   const fit=Math.max(0,cap-fee)*res/2*0.9;                      // biggest size whose price impact stays inside the cost limit
+   if(usd>fit){usd=fit;name="pool depth (cost limit)"}
+   if(usd<R.minTrade)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
+   const cost=gasRT/usd+fee+2*usd/res;
+   if(cost>cap)return no(`network fees ${(gasRT/usd*100).toFixed(1)}% of a ${usd.toFixed(0)}$ trade are too high on ${snap.chain}`)}
   if(false)return no(`size ${usd.toFixed(0)} below min (${name})`);return{ok:true,usd,why:`size ${usd.toFixed(0)} (${name})`}}
 function regimeOf(m){if(!m)return"unknown";const v=Object.values(m),w=Math.min(...v),a=v.reduce((x,y)=>x+y,0)/v.length;
   if(w<=CFG.em.crash||a<=CFG.em.crash/1.5)return"crash";if(w<=CFG.em.danger||a<=CFG.em.danger/1.5)return"danger";return"ok"}
@@ -585,7 +590,7 @@ function open(snap,cat,plan,risk,sec,usd,t,checks){const pf=S.pf,k=snap.chain+":
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   pf.positions[k]={scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
-    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax||0,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
+    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
@@ -629,12 +634,20 @@ async function recheck(t){const ps=Object.values(S.pf.positions).filter(p=>!p.em
     const soft=["holders","liquidity","no_wash","top10","lp_locked"],bad=v.fails.filter(f=>!soft.includes(f));
     if(bad.length){p.emergency="security recheck failed: "+bad.join(",");ev("crit","emergency",p.sym,p.emergency)}p.sellTax=sec.sellTax??p.sellTax}}
 
+/* watchdog: if setups keep matching but nothing is ever bought, loosen one notch at a time so the bot cannot sit idle forever */
+let wdStart=0,wdLast=0;
+function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;return}if(S.pf.shutdown||paused)return;if(stats.bought>0||stats.strat<30)return;
+  if(t-wdLast<600)return;wdLast=t;
+  if(CFG.secMode==="strict"){applySecMode("balanced");ev("warn","auto_relax","","No trades after 10 minutes of setup matches: security strictness lowered to Balanced")}
+  else if(!CFG.lenient.sec||!CFG.lenient.regime){CFG.lenient.sec=true;CFG.lenient.regime=true;ev("warn","auto_relax","","No trades yet: now trading on market-structure checks when security or market data is missing")}
+  else if(CFG.secMode==="balanced"){applySecMode("loose");ev("warn","auto_relax","","Still no trades: security strictness lowered to Loose")}
+  else if(CFG.risk.maxRisk<95){CFG.risk.maxRisk=95;CFG.risk.maxCostPct=8;ev("warn","auto_relax","","Still no trades: risk-score and cost limits widened")}}
 /* three independent loops so prices never wait on scanning */
 let busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};
 async function stepFast(t){if(busyF)return;busyF=true;await guard(async()=>{roll(t);safety(t);if(due("monitor",CFG.monitorEvery,t)){await monitor(t);if(MODE==="live")LS.set("pt_last_live",Math.floor(t))}
   if(due("equity",CFG.equityEvery,t)){S.curve.push([t,equity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
-async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
+async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{watchdog(t);if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
   if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t)});busyL=false}
 async function stepScan(t){if(busyS||paused||S.pf.shutdown)return;busyS=true;scanning=true;await guard(async()=>{if(due("new",CFG.newEvery,t))await scan("new",now());if(due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
 async function tick(){if(busy)return;busy=true;try{const t=now();await stepFast(t);await stepSlow(t);await stepScan(t)}finally{busy=false}}

@@ -51,7 +51,7 @@ function open(snap,cat,plan,risk,sec,usd,t,checks){const pf=S.pf,k=snap.chain+":
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   pf.positions[k]={scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
-    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax||0,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
+    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
@@ -95,12 +95,20 @@ async function recheck(t){const ps=Object.values(S.pf.positions).filter(p=>!p.em
     const soft=["holders","liquidity","no_wash","top10","lp_locked"],bad=v.fails.filter(f=>!soft.includes(f));
     if(bad.length){p.emergency="security recheck failed: "+bad.join(",");ev("crit","emergency",p.sym,p.emergency)}p.sellTax=sec.sellTax??p.sellTax}}
 
+/* watchdog: if setups keep matching but nothing is ever bought, loosen one notch at a time so the bot cannot sit idle forever */
+let wdStart=0,wdLast=0;
+function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;return}if(S.pf.shutdown||paused)return;if(stats.bought>0||stats.strat<30)return;
+  if(t-wdLast<600)return;wdLast=t;
+  if(CFG.secMode==="strict"){applySecMode("balanced");ev("warn","auto_relax","","No trades after 10 minutes of setup matches: security strictness lowered to Balanced")}
+  else if(!CFG.lenient.sec||!CFG.lenient.regime){CFG.lenient.sec=true;CFG.lenient.regime=true;ev("warn","auto_relax","","No trades yet: now trading on market-structure checks when security or market data is missing")}
+  else if(CFG.secMode==="balanced"){applySecMode("loose");ev("warn","auto_relax","","Still no trades: security strictness lowered to Loose")}
+  else if(CFG.risk.maxRisk<95){CFG.risk.maxRisk=95;CFG.risk.maxCostPct=8;ev("warn","auto_relax","","Still no trades: risk-score and cost limits widened")}}
 /* three independent loops so prices never wait on scanning */
 let busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};
 async function stepFast(t){if(busyF)return;busyF=true;await guard(async()=>{roll(t);safety(t);if(due("monitor",CFG.monitorEvery,t)){await monitor(t);if(MODE==="live")LS.set("pt_last_live",Math.floor(t))}
   if(due("equity",CFG.equityEvery,t)){S.curve.push([t,equity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
-async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
+async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{watchdog(t);if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
   if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t)});busyL=false}
 async function stepScan(t){if(busyS||paused||S.pf.shutdown)return;busyS=true;scanning=true;await guard(async()=>{if(due("new",CFG.newEvery,t))await scan("new",now());if(due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
 async function tick(){if(busy)return;busy=true;try{const t=now();await stepFast(t);await stepSlow(t);await stepScan(t)}finally{busy=false}}
