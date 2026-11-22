@@ -2,7 +2,7 @@
 const CFG = {
   chains:["solana","base","ethereum","bsc"],
   tick:5, monitorEvery:10, newEvery:30, trendEvery:120, recheckEvery:300, regimeEvery:120, equityEvery:300,
-  maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
+  deepPerScan:16, quickRejectSec:20, quickYoungSec:10, maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
   risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
         perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:3},
@@ -48,10 +48,11 @@ const expBy=fn=>{const o={};for(const p of Object.values(S.pf.positions))o[fn(p)
 const ACTIVITY = {
   selective: { name: "Selective", note: "about 3 trades a day, about -0.1% a day in testing", set() { CFG.risk.maxRisk = 45; CFG.risk.streakPause = 3 } },
   active: { name: "Active", note: "about 12 trades a day, about -0.3% a day in testing", set() { CFG.risk.maxRisk = 65; CFG.risk.streakPause = 4 } },
-  max: { name: "Very active", note: "about 20 trades a day, about -0.6% a day in testing", set() { CFG.risk.maxRisk = 80; CFG.risk.streakPause = 5; Object.assign(CFG.nw, { minScore: 50, minBP: 0.52, minTx: 30, minAgeMin: 5, minUniq: 0.4 }); CFG.rejectNewMin = 4; CFG.newEvery = 20 } },
+  max: { name: "Very active", note: "about 20 trades a day, about -0.6% a day in testing", set() { CFG.risk.maxRisk = 80; CFG.risk.streakPause = 5; Object.assign(CFG.nw, { minScore: 50, minBP: 0.52, minTx: 30, minAgeMin: 5, minUniq: 0.4 }); CFG.rejectNewMin = 4 } },
 };
 let ACT = "active";
-function applyActivity(k) { if (!ACTIVITY[k]) k = "active"; ACT = k; Object.assign(CFG.nw, { minScore: 60, minBP: 0.55, minTx: 50, minAgeMin: 10, minUniq: 0.5 }); CFG.rejectNewMin = 8; CFG.newEvery = 30; ACTIVITY[k].set() }
+function applyActivity(k) { if (!ACTIVITY[k]) k = "active"; ACT = k; Object.assign(CFG.nw, { minScore: 60, minBP: 0.55, minTx: 50, minAgeMin: 10, minUniq: 0.5 }); CFG.rejectNewMin = 8; ACTIVITY[k].set(); applyScan() }
+function applyScan() { const turbo = (typeof LS !== "undefined" ? LS.get("pt_turbo") : null) !== "0"; CFG.newEvery = turbo ? 1 : 30; CFG.trendEvery = turbo ? 2 : 120; CFG.turbo = turbo }
 
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
@@ -482,8 +483,8 @@ const MOCK = {
       chg5m: chg(5), chg1h: chg(60), chg6h: chg(360), chg24: chg(1440), buys1h: Math.round(this.win(t, t.cumB, 60)), sells1h: Math.round(this.win(t, t.cumS, 60)), buyers1h: Math.round(this.win(t, t.cumU, 60)),
       sellers1h: Math.round(this.win(t, t.cumS, 60) * 0.7), pair: "pair-" + t.addr, created: t.created, ageMin }
   },
-  async discoverNew(chains) { this.advance(); const now0 = vnow; return Object.values(this.toks).filter(t => !t.est && !t.dead && now0 - t.created < 86400 && t.visibleAt <= now0 && chains.includes(t.chain)).sort((a, b) => b.created - a.created).slice(0, 60).map(t => ({ chain: t.chain, addr: t.addr, source: "new", snap: this.snap(t) })) },
-  async discoverTrending(chains) { this.advance(); return Object.values(this.toks).filter(t => !t.dead && t.visibleAt <= vnow && chains.includes(t.chain)).map(t => this.snap(t)).filter(s => s.vol1h > 0).sort((a, b) => b.vol1h * (b.chg1h > 0 ? 1 : 0.3) - a.vol1h * (a.chg1h > 0 ? 1 : 0.3)).slice(0, 40).map(s => ({ chain: s.chain, addr: s.addr, source: "trending", snap: s })) },
+  async discoverNew(chains) { this.advance(); const now0 = vnow; return Object.values(this.toks).filter(t => !t.est && !t.dead && now0 - t.created < 86400 && t.visibleAt <= now0 && chains.includes(t.chain)).sort((a, b) => b.created - a.created).map(t => ({ chain: t.chain, addr: t.addr, source: "new", snap: this.snap(t) })) },
+  async discoverTrending(chains) { this.advance(); return Object.values(this.toks).filter(t => !t.dead && t.visibleAt <= vnow && chains.includes(t.chain)).map(t => this.snap(t)).filter(s => s.vol1h > 0).sort((a, b) => b.vol1h * (b.chg1h > 0 ? 1 : 0.3) - a.vol1h * (a.chg1h > 0 ? 1 : 0.3)).map(s => ({ chain: s.chain, addr: s.addr, source: "trending", snap: s })) },
   async snapshots(chain, addrs) { this.advance(); const o = {}; for (const a of addrs) { const t = this.toks[a.toLowerCase()]; if (t) o[a.toLowerCase()] = this.snap(t) } return o },
   async breakout(s) { const t = this.toks[s.addr.toLowerCase()]; if (!t || this.G - t.genG < 300) return null; let hi = 0; for (let m = 60; m < 1440 && m < this.G - t.genG; m += 10) hi = Math.max(hi, this.pxAgo(t, m)); return this.price(t) > hi },
   async majors() { this.advance(); let acc = 1; for (const r of this.majorHist) acc *= 1 + r; const c = (acc - 1) * 100; return { bitcoin: c, ethereum: c * 1.15 + gauss() * 0.1, solana: c * 1.4 + gauss() * 0.15 } },
@@ -520,12 +521,19 @@ async function updateRegime(t){const m=await P().majors(),r=regimeOf(m);
 function safety(t){const pf=S.pf;let why="";if(LS.get("pt_kill_"+MODE)==="1")why="manual emergency stop";if(!why)why=shutdownReason();
   if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions")}
   if(pf.shutdown)for(const p of Object.values(pf.positions))p.emergency=p.emergency||"shutdown: "+pf.why}
-async function scan(source,t){const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),todo=[];
-  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);todo.push(c)}
-  if(source==="new")todo.sort((a,b)=>((b.snap&&b.snap.created)||0)-((a.snap&&a.snap.created)||0));todo.length=Math.min(todo.length,CFG.maxCands);
-  const byChain={};for(const c of todo)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
+/* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
+   Stage 2 (network: fresh price, security report) runs only for the few that survive. */
+async function scan(source,t){const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
+  for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;
+    const s=c.snap;if(s&&s.price>0){const [plan,rej]=source==="new"?analyzeNew(s,t):analyzeTrend(s,t,true);
+      if(!plan){const y=rej[0].replace(/[0-9.]+/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
+    pass.push(c)}
+  pass.length=Math.min(pass.length,CFG.deepPerScan);
+  const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
-  for(const c of todo){if(S.pf.shutdown)break;const k=c.chain+":"+c.addr.toLowerCase(),snap=fresh[k]||c.snap;if(fresh[k]&&c.snap&&c.snap.buyers1h!=null){fresh[k].buyers1h=c.snap.buyers1h;fresh[k].sellers1h=c.snap.sellers1h}stats.scanned++;if(!snap||snap.price<=0)continue;await evaluate(k,snap,source,now())}}
+  for(const c of pass){if(S.pf.shutdown)break;const k=c.chain+":"+c.addr.toLowerCase(),snap=fresh[k]||c.snap;if(fresh[k]&&c.snap&&c.snap.buyers1h!=null){fresh[k].buyers1h=c.snap.buyers1h;fresh[k].sellers1h=c.snap.sellers1h}if(!snap||snap.price<=0)continue;await evaluate(k,snap,source,now())}
+  const h=stats.hist||(stats.hist=[]);const rt=Date.now()/1000;h.push([rt,stats.scanned]);while(h.length>60||(h.length>2&&rt-h[0][0]>20))h.shift()}
+function scanRate(){const h=stats.hist;if(!h||h.length<2)return 0;const a=h[0],b=h[h.length-1];return b[0]>a[0]?(b[1]-a[1])/(b[0]-a[0]):0}
 const SCAM=SCAM_KINDS;
 function truthOf(snap){if(MODE!=="mock")return null;const t=MOCK.toks[snap.addr.toLowerCase()];return t?t.kind:null}
 function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr.toLowerCase(),tr=truthOf(snap);

@@ -56,3 +56,6 @@ WantedBy=multi-user.target
 ```
 Expose the port only through a private network or a reverse proxy with HTTPS; the token is a light guard, not full security. The runner never holds keys or sends transactions.
 Offline: with no internet the runner keeps its account and simply sees no market data (the chip shows "No data", no new trades). The phone app's demo market works fully offline.
+
+## Scan speed
+Scanning is two-stage. Stage 1 judges every discovered token locally from numbers already in hand (about 80,000 tokens per second headless, no network). Stage 2 fetches a fresh price and the security report only for survivors. Turbo (default) repeats stage 1 about every second. In live mode the real limit is the data providers (DexScreener allows about 5 requests/s of 30 tokens; GeckoTerminal and GoPlus about 30/min), so new tokens arrive at a few dozen per second at most, not 1,000.
