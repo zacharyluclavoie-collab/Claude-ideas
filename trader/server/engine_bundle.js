@@ -8,6 +8,9 @@ const CFG = {
         perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:3},
   sec:{buyTax:5, sellTax:8, liqNew:15000, liqTrend:100000, holdersNew:100, holdersTrend:500, top10:45, creator:8, owner:8, lpLocked:70, volLiq:40},
   nw:{enabled:true, minAgeMin:10, maxAgeH:24, minTx:50, minBP:0.55, maxChg1h:300, maxFdvLiq:60, minScore:60, minVlr:0, minUniq:0.5, minChg1h:-1000, stop:18, tp1:40, tp2:100, trail:15, maxHoldH:12},
+  nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
+  trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
+  keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
   tp1Frac:0.5, tp2Frac:0.25,
   em:{liqTotal:0.5, liqStep:0.3, priceStep:0.3, staleMin:20, staleHaircut:0.5, maxAttempts:12, danger:-3, crash:-8, regimeUnknownMin:15},
@@ -54,6 +57,8 @@ let ACT = "active";
 function applyActivity(k) { if (!ACTIVITY[k]) k = "active"; ACT = k; Object.assign(CFG.nw, { minScore: 60, minBP: 0.55, minTx: 50, minAgeMin: 10, minUniq: 0.5 }); CFG.rejectNewMin = 8; ACTIVITY[k].set(); applyScan() }
 function applyScan() { const turbo = (typeof LS !== "undefined" ? LS.get("pt_turbo") : null) !== "0"; CFG.newEvery = turbo ? 1 : 30; CFG.trendEvery = turbo ? 2 : 120; CFG.turbo = turbo }
 
+let FILL=false;   // true while the portfolio is below its keep-open target
+
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
   const checks=[];const add=(n,ok)=>checks.push([n,!!ok,true]);
@@ -88,7 +93,7 @@ const ageH=(s,t)=>s.created?Math.max(0,(t-s.created)/3600):null;
 function mkPlan(s,cat,score,reason){const c=cat==="new"?CFG.nw:CFG.tr;
   const stop=clamp(Math.abs(s.chg1h)*0.4,c.stop,c.stop*2),tp1=Math.max(c.tp1,stop*2),tp2=Math.max(c.tp2,cat==="new"?tp1*2:tp1*2.2);
   return{stop,tp1,tp2,trail:c.trail,score,rr:tp1/stop,reason}}
-function analyzeNew(s,t){const c=CFG.nw,rej=[],age=ageH(s,t);if(!c.enabled)return[null,["new-token entries are switched off"]];if(age==null)return[null,["unknown age"]];
+function analyzeNew(s,t){const c=FILL?Object.assign({},CFG.nw,CFG.nwFill):CFG.nw,rej=[],age=ageH(s,t);if(!c.enabled)return[null,["new-token entries are switched off"]];if(age==null)return[null,["unknown age"]];
   if(age*60<c.minAgeMin)rej.push("too young");if(age>c.maxAgeH)rej.push("not new");if(s.liq<CFG.sec.liqNew)rej.push("liquidity low");
   const tx=s.buys1h+s.sells1h;if(tx<c.minTx)rej.push("thin activity ("+tx+"/1h)");const b=bp(s);if(b<c.minBP)rej.push("weak buy pressure "+b.toFixed(2));
   if(s.chg1h>c.maxChg1h)rej.push("already pumped "+s.chg1h.toFixed(0)+"%");if(s.chg5m<-5)rej.push("dumping now");
@@ -101,11 +106,11 @@ let sc=clamp(Math.log10(s.liq/CFG.sec.liqNew+1)*25,0,25)+clamp((b-0.5)*120,0,20)
    +(s.chg6h>=0?clamp(s.chg1h*0.5,0,15):0)+(age>=0.5&&age<=8?10:5)+clamp(Math.log10(Math.max(tx,1)/c.minTx+1)*15,0,15);
   if(sc<c.minScore)return[null,["score "+sc.toFixed(0)+" < "+c.minScore]];
   return[mkPlan(s,"new",sc,`age=${age.toFixed(1)}h liq=${s.liq.toFixed(0)} bp=${b.toFixed(2)}`),[]]}
-function analyzeTrend(s,t,breakout){const c=CFG.tr,rej=[],age=ageH(s,t);if(!c.enabled)return[null,["established-token entries are switched off"]];
+function analyzeTrend(s,t,breakout){const c=FILL?Object.assign({},CFG.tr,CFG.trFill):CFG.tr,rej=[],age=ageH(s,t);if(!c.enabled&&!FILL)return[null,["established-token entries are switched off"]];
   if(age==null||age<c.minAgeH)rej.push("insufficient history");if(s.liq<CFG.sec.liqTrend)rej.push("liquidity low");if(s.vol24<c.minVol)rej.push("volume low");
-  const acc=s.vol24>0?s.vol1h*24/s.vol24:0;if(acc<c.minAccel)rej.push("no volume acceleration");const b=bp(s);if(b<c.minBP)rej.push("weak buy pressure");
-  if(!(s.chg1h>=1&&s.chg1h<=25))rej.push("1h move outside 1..25%");if(s.chg6h<2)rej.push("6h trend weak");if(s.chg24>c.maxChg24)rej.push("overextended");
-  if(s.chg5m<-1)rej.push("short-term weakness");if(rej.length)return[null,rej];
+  const acc=s.vol24>0?s.vol1h*24/s.vol24:0;if(acc<(c.minAccel))rej.push("no volume acceleration");const b=bp(s);if(b<c.minBP)rej.push("weak buy pressure");
+  if(!(s.chg1h>=(FILL?-3:1)&&s.chg1h<=(FILL?40:25)))rej.push("1h move outside range");if(s.chg6h<(FILL?-5:2))rej.push("6h trend weak");if(s.chg24>c.maxChg24)rej.push("overextended");
+  if(s.chg5m<(FILL?-3:-1))rej.push("short-term weakness");if(rej.length)return[null,rej];
   const sc=clamp((acc-1)*20,0,25)+clamp((b-0.5)*150,0,20)+clamp(s.chg1h*1.2,0,15)+clamp(s.chg6h*0.6,0,10)+clamp(Math.log10(s.liq/CFG.sec.liqTrend+1)*20,0,15)+(breakout?15:breakout==null?0:-10);
   if(sc<c.minScore)return[null,["score "+sc.toFixed(0)+" < "+c.minScore]];
   return[mkPlan(s,"trending",sc,`accel=${acc.toFixed(1)}x bp=${b.toFixed(2)} breakout=${breakout}`),[]]}
@@ -120,11 +125,11 @@ function shutdownReason(){const pf=S.pf;if(pf.shutdown)return pf.why;const eq=eq
 function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
   if(pf.shutdown)return no("shutdown");if(!marketOk(t))return no("market regime");
   if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return no("daily loss limit");
-  if(t<pf.pauseUntil)return no("paused after losses");const k=snap.chain+":"+snap.addr.toLowerCase();
+  const K=CFG.keep.on;if(!K&&t<pf.pauseUntil)return no("paused after losses");const k=snap.chain+":"+snap.addr.toLowerCase();
   if(pf.positions[k])return no("already held");if(NOT_TRADABLE.has(snap.sym.toLowerCase()))return no("base asset or stablecoin");if(Object.values(pf.positions).some(p=>p.sym.toLowerCase()===snap.sym.toLowerCase()))return no("same symbol already held (clone risk)");if(t<(pf.cool[k]||0))return no("re-entry cooldown");
-  if(pf.entries.filter(x=>t-x<3600).length>=R.perHour)return no("hourly entry limit");if(pf.entries.filter(x=>t-x<86400).length>=R.perDay)return no("daily entry limit");
-  if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
-  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100/(plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
+  if(!K&&pf.entries.filter(x=>t-x<3600).length>=R.perHour)return no("hourly entry limit");if(!K&&pf.entries.filter(x=>t-x<86400).length>=R.perDay)return no("daily entry limit");
+  if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(!FILL&&risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
+  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100/(plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1)*(FILL?CFG.keep.sizeMult:1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
     liq:snap.liq*R.liqFrac,total:eq*R.totalExp/100-ex,cash:pf.cash-eq*R.cashReserve/100,chain:eq*R.chainExp/100-(expBy(p=>p.chain)[snap.chain]||0)};
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
@@ -523,7 +528,7 @@ function safety(t){const pf=S.pf;let why="";if(LS.get("pt_kill_"+MODE)==="1")why
   if(pf.shutdown)for(const p of Object.values(pf.positions))p.emergency=p.emergency||"shutdown: "+pf.why}
 /* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
-async function scan(source,t){const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
+async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
   for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;
     const s=c.snap;if(s&&s.price>0){const [plan,rej]=source==="new"?analyzeNew(s,t):analyzeTrend(s,t,true);
       if(!plan){const y=rej[0].replace(/[0-9.]+/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(rej.some(r=>r==="too young")?CFG.quickYoungSec:CFG.quickRejectSec);continue}}
@@ -551,13 +556,13 @@ async function evaluate(k,snap,src,t){let plan,rej;
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   const d=approve(snap,src,v.risk,plan,t);
-  if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+300;return}
+  if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
   open(snap,src,plan,v.risk,sec,d.usd,t,v.checks)}
 function open(snap,cat,plan,risk,sec,usd,t,checks){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
-  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+900;pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
+  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
-  pf.positions[k]={id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
+  pf.positions[k]={scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
     size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax||0,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
@@ -570,8 +575,8 @@ function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qt
   tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
   if(p.qty<=1e-12||p.qty*snap.price<1)closePos(p,reason,0,t);return true}
 function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
-  if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+CFG.risk.cooldownH*3600;
-  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
+  if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
+  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
   const r=p.risk0?p.real/p.risk0:0;pf.closed.push({sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
@@ -594,7 +599,8 @@ async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions);if(!ps.le
     if(px<=p.stop)sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
     else if(!p.tp1Done&&px>=p.tp1){if(sellPos(p,s,CFG.tp1Frac,"take_profit_1",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp1Done=true}
     else if(p.tp1Done&&!p.tp2Done&&px>=p.tp2){if(sellPos(p,s,CFG.tp2Frac,"take_profit_2",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp2Done=true}
-    else if(held>=maxHold&&!p.tp1Done)sellPos(p,s,1,"time_stop",false,t)}
+    else if(held>=maxHold&&!p.tp1Done)sellPos(p,s,1,"time_stop",false,t)
+    else if(CFG.keep.on&&held>=1.5&&!p.tp1Done&&Math.abs(px/p.entry-1)<0.03)sellPos(p,s,1,"stagnant",false,t)}
   save()}
 async function recheck(t){const ps=Object.values(S.pf.positions).filter(p=>!p.emergency).sort((a,b)=>(a.chk||0)-(b.chk||0)).slice(0,4);
   for(const p of ps){p.chk=t;const sec=await P().security(p.chain,p.addr);if(!sec||!S.pf.positions[p.chain+":"+p.addr.toLowerCase()])continue;
