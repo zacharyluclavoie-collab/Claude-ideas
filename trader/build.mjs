@@ -10,6 +10,8 @@ const ui = rd("ui.js");
 const distDir = process.env.BUILD_DIST || path.join(dir, "dist");
 fs.mkdirSync(distDir, { recursive: true });
 fs.writeFileSync(path.join(distDir, "engine_bundle.js"), engine);
+fs.mkdirSync(path.join(dir, "server"), { recursive: true });
+fs.writeFileSync(path.join(dir, "server", "engine_bundle.js"), engine);   // self-contained copy for the always-on runner
 
 const html = `<!doctype html>
 <html lang="en">

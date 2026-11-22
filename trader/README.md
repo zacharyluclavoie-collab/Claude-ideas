@@ -37,3 +37,22 @@ node test/calib.mjs 4 1                             # how do tokens that pass th
 
 ## Findings from the realistic simulator
 See `RESULTS.md`.
+
+## Running 24/7 without your phone (always-on runner)
+An iPhone web app cannot run in the background: iOS freezes it when the screen locks. For continuous paper trading, run the same engine headless on any always-on machine (home computer, Raspberry Pi, cheap VPS, a container). It needs only Node 20+ and internet access to the data providers.
+```
+node server/run.mjs --port 8787 --token CHOOSE_A_SECRET     # live data, state in ./state/state.json
+```
+Open `http://<machine>:8787/?token=CHOOSE_A_SECRET` on your phone to watch equity, positions and events (refreshes every 3 s). State survives restarts and reboots; stops, take-profits and emergency exits run all the time. `POST /stop?token=...` sets the emergency stop. Run `node build.mjs` first if you changed the source (it refreshes `server/engine_bundle.js`).
+
+systemd example (`/etc/systemd/system/papertrader.service`):
+```
+[Service]
+WorkingDirectory=/opt/Claude-ideas/trader
+ExecStart=/usr/bin/node server/run.mjs --port 8787 --token CHOOSE_A_SECRET
+Restart=always
+[Install]
+WantedBy=multi-user.target
+```
+Expose the port only through a private network or a reverse proxy with HTTPS; the token is a light guard, not full security. The runner never holds keys or sends transactions.
+Offline: with no internet the runner keeps its account and simply sees no market data (the chip shows "No data", no new trades). The phone app's demo market works fully offline.
