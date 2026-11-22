@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Paper Trader">
 <meta name="theme-color" content="#0b0f17">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="app-files/manifest.webmanifest">
+<link rel="apple-touch-icon" href="app-files/icon-180.png">
 <style>
 /* Calm, flat, content-first. Hairlines instead of boxes, one accent, green/red only for money and state. Light and dark. */
 :root{--bg:#f5f6f8;--card:#ffffff;--soft:#eef0f3;--line:#e3e6eb;--tx:#0f141b;--mut:#677184;--g:#0b9a68;--r:#d63a4b;--y:#a8710f;--b:#2563eb;--gs:rgba(11,154,104,.12);--rs:rgba(214,58,75,.12);--shadow:0 1px 2px rgba(15,20,27,.04)}
@@ -236,7 +236,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-22 22:30";
+const BUILD = "2026-11-22 22:46";
 
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){

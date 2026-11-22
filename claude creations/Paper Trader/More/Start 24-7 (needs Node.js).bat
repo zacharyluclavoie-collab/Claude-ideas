@@ -7,5 +7,6 @@ if errorlevel 1 (
   exit /b
 )
 start "" cmd /c "timeout /t 3 >nul & start http://localhost:8787/"
+echo Paper Trader runner is starting. Leave this window open.
 node server\run.mjs --port 8787
 pause
