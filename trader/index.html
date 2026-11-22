@@ -170,7 +170,7 @@ const CFG = {
   maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
   risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
-        perHour:30, perDay:150, cooldownH:12, maxRisk:45, minRR:1.5, maxCostPct:3},
+        perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:3},
   sec:{buyTax:5, sellTax:8, liqNew:15000, liqTrend:100000, holdersNew:100, holdersTrend:500, top10:45, creator:8, owner:8, lpLocked:70, volLiq:40},
   nw:{enabled:true, minAgeMin:10, maxAgeH:24, minTx:50, minBP:0.55, maxChg1h:300, maxFdvLiq:60, minScore:60, minVlr:0, minUniq:0.5, minChg1h:-1000, stop:18, tp1:40, tp2:100, trail:15, maxHoldH:12},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
@@ -208,6 +208,15 @@ const exposure=()=>Object.values(S.pf.positions).reduce((a,p)=>a+pv(p),0);
 const equity=()=>S.pf.cash+exposure();
 const expBy=fn=>{const o={};for(const p of Object.values(S.pf.positions))o[fn(p)]=(o[fn(p)]||0)+pv(p);return o};
 
+
+/* activity levels: how much the bot is willing to trade. Measured in the demo market (12 markets x 5 days): trades per market-day and return per day */
+const ACTIVITY = {
+  selective: { name: "Selective", note: "about 3 trades a day, about -0.1% a day in testing", set() { CFG.risk.maxRisk = 45; CFG.risk.streakPause = 3 } },
+  active: { name: "Active", note: "about 12 trades a day, about -0.3% a day in testing", set() { CFG.risk.maxRisk = 65; CFG.risk.streakPause = 4 } },
+  max: { name: "Very active", note: "about 20 trades a day, about -0.6% a day in testing", set() { CFG.risk.maxRisk = 80; CFG.risk.streakPause = 5; Object.assign(CFG.nw, { minScore: 50, minBP: 0.52, minTx: 30, minAgeMin: 5, minUniq: 0.4 }); CFG.rejectNewMin = 4; CFG.newEvery = 20 } },
+};
+let ACT = "active";
+function applyActivity(k) { if (!ACTIVITY[k]) k = "active"; ACT = k; Object.assign(CFG.nw, { minScore: 60, minBP: 0.55, minTx: 50, minAgeMin: 10, minUniq: 0.5 }); CFG.rejectNewMin = 8; CFG.newEvery = 30; ACTIVITY[k].set() }
 
 /* ============================ security (mirrors security.py) ============================ */
 function evalSecurity(sec,snap,cat,t){
@@ -279,7 +288,7 @@ function approve(snap,cat,risk,plan,t){const R=CFG.risk,pf=S.pf,no=r=>({ok:false
   if(pf.positions[k])return no("already held");if(NOT_TRADABLE.has(snap.sym.toLowerCase()))return no("base asset or stablecoin");if(Object.values(pf.positions).some(p=>p.sym.toLowerCase()===snap.sym.toLowerCase()))return no("same symbol already held (clone risk)");if(t<(pf.cool[k]||0))return no("re-entry cooldown");
   if(pf.entries.filter(x=>t-x<3600).length>=R.perHour)return no("hourly entry limit");if(pf.entries.filter(x=>t-x<86400).length>=R.perDay)return no("daily entry limit");
   if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
-  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100/(plan.stop/100)*riskMult(),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
+  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100/(plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
     liq:snap.liq*R.liqFrac,total:eq*R.totalExp/100-ex,cash:pf.cash-eq*R.cashReserve/100,chain:eq*R.chainExp/100-(expBy(p=>p.chain)[snap.chain]||0)};
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
@@ -699,7 +708,7 @@ async function evaluate(k,snap,src,t){let plan,rej;
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   const d=approve(snap,src,v.risk,plan,t);
-  if(!d.ok){stats.vetoed++;feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+300;return}
+  if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+300;return}
   open(snap,src,plan,v.risk,sec,d.usd,t,v.checks)}
 function open(snap,cat,plan,risk,sec,usd,t,checks){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
@@ -777,6 +786,7 @@ const syncRisk=()=>{CFG.risk.perDay=CFG.risk.perHour*5};
 if(!LS.get("pt_wide_v5")){LS.del("pt_risk");LS.set("pt_wide_v5","1")}   // one-time move to the 100-slot default
 (function applyRisk(){let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS){if(typeof sv[k]!=="number")continue;const r=RK.find(x=>x[0]===k);CFG.risk[k]=r?clamp(sv[k],r[2],r[3]):sv[k]}syncRisk()})();
 (function applyFlags(){let f={};try{f=JSON.parse(LS.get("pt_flags")||"{}")}catch(e){}if(typeof f.nw==="boolean")CFG.nw.enabled=f.nw;if(typeof f.tr==="boolean")CFG.tr.enabled=f.tr})();
+applyActivity(LS.get("pt_activity")||"active");
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
 const pnlTot=p=>p.real+pv(p)-p.cost,pnlPct=p=>pnlTot(p)/(p.size0||p.cost||1)*100;
@@ -895,6 +905,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   let h=`<h2>Profile</h2><div class="chips" id="prof">${Object.entries(PROFILES).map(([k,p])=>`<button class="chip ${k===act?"on":""}" data-p="${k}">${p.name}</button>`).join("")}</div><div class="sub" style="margin-top:8px">Wide allows up to 100 open positions. Exposure caps still apply, so each position gets smaller as slots fill.</div>`;
   if(MODE==="mock")h+=`<h2>Skip ahead</h2><div class="chips" id="ff"><button class="chip" data-s="86400">1 day</button><button class="chip" data-s="259200">3 days</button><button class="chip" data-s="604800">1 week</button></div><div class="sub" style="margin-top:8px">Runs the market fast so you can see how the bot behaves over days. Every outcome in the demo is random; run it a few times (Reset) to see the spread.</div><h2>Demo speed</h2><div class="chips" id="segspeed">${[1,15,60,300].map(s=>`<button class="chip ${s===SPEED?"on":""}" data-v="${s}">${s}x</button>`).join("")}</div>`;
   h+=`<!--LIVEONLY--><h2>Data source</h2><div class="chips" id="segmode"><button class="chip ${MODE==="live"?"on":""}" data-v="live">Live market</button><button class="chip ${MODE==="mock"?"on":""}" data-v="mock">Demo market</button></div><div class="sub" style="margin-top:8px">Each source keeps its own paper account.</div><button class="btn" id="selftest">Test data connections</button><div id="testres"></div><!--/LIVEONLY-->`;
+  h+=`<h2>Trading activity</h2><div class="chips" id="act">${Object.entries(ACTIVITY).map(([k,a])=>`<button class="chip ${k===ACT?"on":""}" data-a="${k}">${a.name}</button>`).join("")}</div><div class="sub" style="margin-top:8px">${esc(ACTIVITY[ACT].note)}. More trades means looking at weaker setups, and every extra trade pays fees and slippage. Security checks stay mandatory at every level.</div>`;
   h+=`<h2>Strategies</h2><div class="panel"><label class="tg"><span><b>New tokens</b><small>Fresh pools after security checks. Around break-even in testing; profit depends on assumptions nobody can verify.</small></span><input type="checkbox" id="f_nw" ${CFG.nw.enabled?"checked":""}></label><label class="tg"><span><b>Established tokens (experimental)</b><small>Momentum on older tokens. No edge after costs in testing, so it is off by default. Scanning continues either way.</small></span><input type="checkbox" id="f_tr" ${CFG.tr.enabled?"checked":""}></label></div>`;
   h+=`<h2>Risk limits</h2><div class="panel">`+RK.map(([k,l,lo,hi,st])=>`<div class="sl"><div class="ml"><span>${l}</span><b id="v_${k}">${R[k]}</b></div><input type="range" id="s_${k}" min="${lo}" max="${hi}" step="${st}" value="${R[k]}" aria-label="${l}"></div>`).join("")+`<div class="sub">Sliders stop at safe maximums. Changes apply to future decisions.</div></div>`;
   h+=`<h2>Account</h2><div class="sub">Starting capital (used on reset)</div><input type="number" id="cap" inputmode="numeric" value="${LS.get("pt_cap")||10000}" aria-label="Starting capital" style="margin-top:6px"><button class="btn pri" id="toggle">${paused?"Resume new entries":"Pause new entries"}</button><button class="btn" id="exp">Copy account data (JSON)</button><button class="btn red" id="kill">Emergency stop: flatten everything</button><button class="btn" id="rearm">Re-arm after shutdown</button><button class="btn" id="reset">Reset paper account</button>`;
@@ -905,6 +916,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   const ff=$("ff");if(ff)ff.onclick=e=>{const s=+(e.target.dataset&&e.target.dataset.s);if(s){ffUntil=vnow+s;toast("Skipping ahead…")}};
   const sp=$("segspeed");if(sp)sp.onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v)return;SPEED=+v;LS.set("pt_speed",SPEED);sp.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v))};
   const sm=$("segmode");if(sm)sm.onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(!v||v===MODE)return;MODE=v;LS.set("pt_mode",MODE);boot()};
+  $("act").onclick=e=>{const k=e.target.dataset&&e.target.dataset.a;if(!k)return;applyActivity(k);LS.set("pt_activity",k);buildSettings()};
   $("f_nw").onchange=e=>{CFG.nw.enabled=e.target.checked;saveFlags()};$("f_tr").onchange=e=>{CFG.tr.enabled=e.target.checked;saveFlags()};
   const stb=$("selftest");if(stb)stb.onclick=async()=>{stb.textContent="Testing…";const res=await LIVE.selfTest();stb.textContent="Test data connections";$("testres").innerHTML=res.map(r=>`<div class="row" style="margin:8px 0"><span>${r.ok?"<b class=\"g\">✓</b>":"<b class=\"r\">✗</b>"} ${esc(r.name)}</span><span class="sub">${r.ms} ms</span></div><div class="sub" style="margin:-4px 0 6px 22px">${esc(r.detail||"")}</div>`).join("")};
   $("toggle").onclick=()=>{paused=!paused;buildSettings();render()};
