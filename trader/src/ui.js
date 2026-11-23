@@ -55,9 +55,9 @@ function drainToasts(){const box=$("toasts");let n=0;while(toastQ.length&&n<2){c
   while(box.children.length>2)box.firstChild.remove()}
 
 /* ---------- home ---------- */
-function chartSVG(){let pts=S.curve;if(range)pts=pts.filter(p=>p[0]>=now()-range);if(pts.length<2)return'<div class="sub" style="padding:46px 0;text-align:center">Collecting data…</div>';
+function chartSVG(){let pts=S.curve.concat([[now(),totalEquity()]]);if(range)pts=pts.filter(p=>p[0]>=now()-range);if(pts.length<2)return'<div class="sub" style="padding:46px 0;text-align:center">Collecting data…</div>';
   const w=340,h=118,dh=34,n=pts.length,step=Math.max(1,Math.ceil(n/160)),a=[];for(let i=0;i<n;i+=step)a.push(pts[i]);if(a[a.length-1]!==pts[n-1])a.push(pts[n-1]);
-  const base=S.pf.start,ys=a.map(p=>p[1]).concat([base]),lo=Math.min(...ys),hi=Math.max(...ys),pad=(hi-lo)*0.14||base*0.002,y0=lo-pad,y1=hi+pad,t0=a[0][0],t1=a[a.length-1][0];
+  const base=totalStart(),ys=a.map(p=>p[1]).concat([base]),lo=Math.min(...ys),hi=Math.max(...ys),pad=(hi-lo)*0.14||base*0.002,y0=lo-pad,y1=hi+pad,t0=a[0][0],t1=a[a.length-1][0];
   const X=t=>4+(t-t0)/((t1-t0)||1)*(w-8),Y=v=>h-4-(v-y0)/(y1-y0)*(h-8),d=a.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(""),L=a[a.length-1],c=L[1]>=base?"var(--g)":"var(--r)";
   let pk=0,dds=a.map(p=>{pk=Math.max(pk,p[1]);return[p[0],(pk-p[1])/pk*100]}),mdd=Math.max(...dds.map(x=>x[1]),2),dY=v=>h+6+v/mdd*(dh-8);
   const dd=dds.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+dY(p[1]).toFixed(1)).join("")+`L${X(a[a.length-1][0]).toFixed(1)} ${h+6}L${X(a[0][0]).toFixed(1)} ${h+6}Z`;
