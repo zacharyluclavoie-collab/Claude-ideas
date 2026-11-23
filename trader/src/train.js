@@ -16,6 +16,10 @@ async function trainAgents(days, onProgress) {
   }
   // blend: scale training records so a live record can overrule them quickly (at most 14 trades' worth), keep any existing live record
   const A = S.pf.ag || (S.pf.ag = {});
-  for (const [id, r] of Object.entries(rec)) { const k = Math.min(1, 14 / r.n), cur = ag0[id] || { n: 0, pnl: 0, w: 0, r: 0 }; A[id] = { n: cur.n + Math.round(r.n * k), pnl: cur.pnl, w: cur.w + Math.round(r.w * k), r: cur.r + r.r * k, trained: true } }
+  // training NEVER overwrites a record an agent already has (pre-trained or live): it only gives a starting record to agents that have none.
+  const applied = [];
+  for (const [id, r] of Object.entries(rec)) { const cur = ag0[id]; if (cur && cur.n >= 8) continue; const k = Math.min(1, 14 / r.n); A[id] = { n: Math.round(r.n * k), pnl: 0, w: Math.round(r.w * k), r: r.r * k, trained: true }; applied.push(id) }
+  for (const [id, c] of Object.entries(ag0)) if (!(id in rec) && A[id] === undefined) A[id] = c;
+  rec.__applied = applied;
   return rec;
 }
