@@ -72,6 +72,8 @@ const BUILD = "__BUILD__";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
+  CFG.wdSafe = false;
+  if (k === "safe") { applyPreset("protect"); CFG.learn.probation = false; CFG.swarmOff = false; CFG.core.on = true; CFG.wdSafe = true; applySecMode("balanced"); return }   // no real money for any agent until it has proven itself
   if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
   else if (k === "turbo") { applyActivity("active"); applyQuick(true); CFG.keep.on = false; CFG.learn.on = false; CFG.committeeMin = 1; CFG.agentHourly = 30; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 2; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100; CFG.risk.perHour = 200; CFG.risk.perDay = 2000; CFG.risk.maxCostPct = 6 }
   else { applyActivity("active"); applyQuick(false); CFG.learn.on = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }

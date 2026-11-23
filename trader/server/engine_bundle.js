@@ -68,10 +68,12 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 20:28";
+const BUILD = "2026-11-23 20:49";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
+  CFG.wdSafe = false;
+  if (k === "safe") { applyPreset("protect"); CFG.learn.probation = false; CFG.swarmOff = false; CFG.core.on = true; CFG.wdSafe = true; applySecMode("balanced"); return }   // no real money for any agent until it has proven itself
   if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
   else if (k === "turbo") { applyActivity("active"); applyQuick(true); CFG.keep.on = false; CFG.learn.on = false; CFG.committeeMin = 1; CFG.agentHourly = 30; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 2; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100; CFG.risk.perHour = 200; CFG.risk.perDay = 2000; CFG.risk.maxCostPct = 6 }
   else { applyActivity("active"); applyQuick(false); CFG.learn.on = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
@@ -366,15 +368,15 @@ function shadowUpdate(snaps, t) {
  */
 async function trainAgents(days, onProgress) {
   const keep = { S, MODE, vnow, last, stats, rejected, regime, regimeOk, rng, SEED, paused, FILL, uniMedian, LEARN: Object.assign({}, CFG.learn), tick: CFG.tick, hist: MOCK.toks, ev: [CFG.newEvery, CFG.trendEvery, CFG.monitorEvery] };
-  const ag0 = JSON.parse(JSON.stringify(S.pf.ag || {})), rec = {}, coreOn = CFG.core.on; CFG.core.on = false;
+  const ag0 = JSON.parse(JSON.stringify(S.pf.ag || {})), rec = {}, coreOn = CFG.core.on, swOff = CFG.swarmOff; CFG.core.on = false; CFG.swarmOff = true;
   try {
     MODE = "mock"; S = newState(10000); S.curve = [[1.76e9, 10000]]; last = {}; stats = freshStats(); rejected = {}; regime = "unknown"; paused = false;
     SEED = 4242 + (Date.now() & 0xff); rng = mulberry(SEED); vnow = 1.76e9; MOCK.init(); regimeOk = vnow; CFG.tick = 30; CFG.newEvery = 10; CFG.trendEvery = 30; CFG.monitorEvery = 30;
     const total = Math.round(days * 86400 / 30);
-    for (let i = 0; i < total; i++) { vnow += 30; await tick(); if (i % 400 === 0 && onProgress) { onProgress(i / total); await new Promise(r => setTimeout(r, 0)) } }
+    for (let i = 0; i < total; i++) { vnow += 30; await tick(); if (i % 150 === 0) { if (onProgress) onProgress(i / total); await new Promise(r => setTimeout(r, 15)) } }
     for (const a of AGENTS) { if (a.swarm) continue; const s = (S.pf.ag || {})[a.id]; if (s && s.n) rec[a.id] = { n: s.n, pnl: s.pnl, w: s.w, r: s.r } }
   } finally {
-    S = keep.S; MODE = keep.MODE; vnow = keep.vnow; last = keep.last; stats = keep.stats; rejected = keep.rejected; regime = keep.regime; regimeOk = keep.regimeOk; rng = keep.rng; SEED = keep.SEED; paused = keep.paused; FILL = keep.FILL; uniMedian = keep.uniMedian; CFG.learn = keep.LEARN; CFG.core.on = coreOn; CFG.tick = keep.tick; [CFG.newEvery, CFG.trendEvery, CFG.monitorEvery] = keep.ev; MOCK.toks = keep.hist;
+    S = keep.S; MODE = keep.MODE; vnow = keep.vnow; last = keep.last; stats = keep.stats; rejected = keep.rejected; regime = keep.regime; regimeOk = keep.regimeOk; rng = keep.rng; SEED = keep.SEED; paused = keep.paused; FILL = keep.FILL; uniMedian = keep.uniMedian; CFG.learn = keep.LEARN; CFG.core.on = coreOn; CFG.swarmOff = swOff; CFG.tick = keep.tick; [CFG.newEvery, CFG.trendEvery, CFG.monitorEvery] = keep.ev; MOCK.toks = keep.hist;
   }
   // blend: scale training records so a live record can overrule them quickly (at most 14 trades' worth), keep any existing live record
   const A = S.pf.ag || (S.pf.ag = {});
@@ -987,8 +989,8 @@ function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;ret
   if(t-wdLast<600)return;wdLast=t;
   if(CFG.secMode==="strict"){applySecMode("balanced");ev("warn","auto_relax","","No trades after 10 minutes of setup matches: security strictness lowered to Balanced")}
   else if(!CFG.lenient.sec||!CFG.lenient.regime){CFG.lenient.sec=true;CFG.lenient.regime=true;ev("warn","auto_relax","","No trades yet: now trading on market-structure checks when security or market data is missing")}
-  else if(CFG.secMode==="balanced"){applySecMode("loose");ev("warn","auto_relax","","Still no trades: security strictness lowered to Loose")}
-  else if(CFG.risk.maxRisk<95){CFG.risk.maxRisk=95;CFG.risk.maxCostPct=8;ev("warn","auto_relax","","Still no trades: risk-score and cost limits widened")}}
+  else if(CFG.secMode==="balanced"&&!CFG.wdSafe){applySecMode("loose");ev("warn","auto_relax","","Still no trades: security strictness lowered to Loose")}
+  else if(CFG.risk.maxRisk<95&&!CFG.wdSafe){CFG.risk.maxRisk=95;CFG.risk.maxCostPct=8;ev("warn","auto_relax","","Still no trades: risk-score and cost limits widened")}}
 /* three independent loops so prices never wait on scanning */
 let busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};

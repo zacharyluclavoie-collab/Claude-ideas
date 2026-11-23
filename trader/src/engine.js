@@ -115,8 +115,8 @@ function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;ret
   if(t-wdLast<600)return;wdLast=t;
   if(CFG.secMode==="strict"){applySecMode("balanced");ev("warn","auto_relax","","No trades after 10 minutes of setup matches: security strictness lowered to Balanced")}
   else if(!CFG.lenient.sec||!CFG.lenient.regime){CFG.lenient.sec=true;CFG.lenient.regime=true;ev("warn","auto_relax","","No trades yet: now trading on market-structure checks when security or market data is missing")}
-  else if(CFG.secMode==="balanced"){applySecMode("loose");ev("warn","auto_relax","","Still no trades: security strictness lowered to Loose")}
-  else if(CFG.risk.maxRisk<95){CFG.risk.maxRisk=95;CFG.risk.maxCostPct=8;ev("warn","auto_relax","","Still no trades: risk-score and cost limits widened")}}
+  else if(CFG.secMode==="balanced"&&!CFG.wdSafe){applySecMode("loose");ev("warn","auto_relax","","Still no trades: security strictness lowered to Loose")}
+  else if(CFG.risk.maxRisk<95&&!CFG.wdSafe){CFG.risk.maxRisk=95;CFG.risk.maxCostPct=8;ev("warn","auto_relax","","Still no trades: risk-score and cost limits widened")}}
 /* three independent loops so prices never wait on scanning */
 let busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};
