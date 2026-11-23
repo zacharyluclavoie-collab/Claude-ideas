@@ -11,7 +11,7 @@ const CFG = {
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   lenient:{sec:true,regime:true},
-  quick:{on:false,stop:3,tp1:4,tp2:8,trail:2}, agentProbation:0.6, watchdog:true, autoRearmMin:20,
+  quick:{on:false,stop:3,tp1:4,tp2:8,trail:2}, agentProbation:0.6, committeeMin:2, agentHourly:8, watchdog:true, autoRearmMin:20,
   secMode:"balanced",
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
@@ -68,12 +68,13 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 16:04";
+const BUILD = "2026-11-23 17:43";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
-  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
-  else { applyActivity("active"); applyQuick(false); CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
+  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
+  else if (k === "turbo") { applyActivity("active"); applyQuick(true); CFG.keep.on = false; CFG.learn.on = false; CFG.committeeMin = 1; CFG.agentHourly = 30; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 2; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100; CFG.risk.perHour = 200; CFG.risk.perDay = 2000; CFG.risk.maxCostPct = 6 }
+  else { applyActivity("active"); applyQuick(false); CFG.learn.on = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
   CFG.risk.perDay = CFG.risk.perHour * 5
 }
 
@@ -239,7 +240,7 @@ function agentStat(id) { const a = (S && S.pf && S.pf.ag && S.pf.ag[id]) || { n:
 function agentWeight(id) { const a = agentStat(id); if (a.n < 10) return CFG.agentProbation; const e = a.r / a.n; return clamp(1 + e * 3, 0.1, 2) }
 function agentRecent(id, t, win = 3600) { let n = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id && t - p.opened < win) n++; for (const c of S.pf.closed.slice(-200)) if (c.agent === id && c.t - c.held * 3600 > t - win) n++; return n }
 // proven agents trade freely; struggling agents are throttled; a benched agent only gets one probe trade every 6 hours
-function agentLimit(id, t) { const w = agentWeight(id), a = agentStat(id); if (a.n >= 20 && w <= 0.1) return agentRecent(id, t, 21600) >= 1 ? "benched (probe every 6h)" : ""; const lim = w >= 1 ? 8 : w >= 0.5 ? 4 : 2; return agentRecent(id, t) >= lim ? "agent entry limit (" + lim + "/hour at its current record)" : "" }
+function agentLimit(id, t) { const w = agentWeight(id), a = agentStat(id); if (a.n >= 20 && w <= 0.1) return agentRecent(id, t, 21600) >= 1 ? "benched (probe every 6h)" : ""; const lim = w >= 1 ? CFG.agentHourly : w >= 0.5 ? Math.ceil(CFG.agentHourly / 2) : Math.ceil(CFG.agentHourly / 4); return agentRecent(id, t) >= lim ? "agent entry limit (" + lim + "/hour at its current record)" : "" }
 function agentShare(id) { let tot = 0; for (const a of AGENTS) if (agentOn(a.id)) tot += agentWeight(a.id); return tot ? agentWeight(id) / tot : 0 }
 function agentExposure(id) { let v = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id) v += pv(p); return v }
 function ageOK(a, s, t) { const age = ageH(s, t); if (a.scope === "any") return true; if (age == null) return a.scope === "new"; return a.scope === "new" ? age <= 48 : age >= CFG.tr.minAgeH }
