@@ -50,7 +50,7 @@ const AG = Object.fromEntries(AGENTS.map(a => [a.id, a]));
 const agentOn = id => !(CFG.agentsOff || {})[id];
 function agentStat(id) { const a = (S && S.pf && S.pf.ag && S.pf.ag[id]) || { n: 0, pnl: 0, w: 0, r: 0 }; return a }
 // share of the portfolio an agent may use: grows with proven expectancy, shrinks after a losing record (needs 8+ trades to judge)
-function agentWeight(id) { const a = agentStat(id); if (a.n < 8) return 0.6; const e = a.r / a.n; return clamp(1 + e * 2.5, 0.1, 2) }
+function agentWeight(id) { const a = agentStat(id); if (a.n < 10) return CFG.agentProbation; const e = a.r / a.n; return clamp(1 + e * 3, 0.1, 2) }
 function agentRecent(id, t, win = 3600) { let n = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id && t - p.opened < win) n++; for (const c of S.pf.closed.slice(-200)) if (c.agent === id && c.t - c.held * 3600 > t - win) n++; return n }
 // proven agents trade freely; struggling agents are throttled; a benched agent only gets one probe trade every 6 hours
 function agentLimit(id, t) { const w = agentWeight(id), a = agentStat(id); if (a.n >= 20 && w <= 0.1) return agentRecent(id, t, 21600) >= 1 ? "benched (probe every 6h)" : ""; const lim = w >= 1 ? 8 : w >= 0.5 ? 4 : 2; return agentRecent(id, t) >= lim ? "agent entry limit (" + lim + "/hour at its current record)" : "" }

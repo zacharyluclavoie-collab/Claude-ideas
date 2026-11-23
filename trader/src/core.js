@@ -11,7 +11,7 @@ const CFG = {
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   lenient:{sec:true,regime:true},
-  watchdog:true, autoRearmMin:20,
+  quick:{on:false,stop:3,tp1:4,tp2:8,trail:2}, agentProbation:0.6, watchdog:true, autoRearmMin:20,
   secMode:"balanced",
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
   tr:{enabled:false, minAgeH:72, minVol:150000, minAccel:1.5, minBP:0.52, maxChg24:150, minScore:62, stop:10, tp1:20, tp2:45, trail:8, maxHoldH:48},
@@ -69,3 +69,13 @@ const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, o
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
 const BUILD = "__BUILD__";
+
+/* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
+function applyPreset(k) {
+  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, breakout: 1, quality: 1, whale: 1, gem: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 20; CFG.risk.maxPos = 100 }
+  else { applyActivity("active"); applyQuick(false); CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
+  CFG.risk.perDay = CFG.risk.perHour * 5
+}
+
+/* "small trades, sell when it drops": tiny positions, take profit early, cut any loser fast */
+function applyQuick(on) { CFG.quick.on = on; if (on) { CFG.risk.minRR = 1.0; CFG.risk.perTradePct = 0.15; CFG.risk.posNew = 0.4; CFG.risk.posTrend = 0.6; CFG.tp1Frac = 0.7; CFG.nw.maxHoldH = 3; CFG.tr.maxHoldH = 6 } else { CFG.risk.minRR = 1.5; CFG.risk.perTradePct = 0.5; CFG.risk.posNew = 1; CFG.risk.posTrend = 2; CFG.tp1Frac = 0.5; CFG.nw.maxHoldH = 12; CFG.tr.maxHoldH = 48 } }

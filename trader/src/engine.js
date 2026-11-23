@@ -36,6 +36,7 @@ async function evaluate(k,snap,src,t,agentId){let ag=AG[agentId];
   if(!plan)return reject(k,snap,src,rej.join("; "),rej.some(r=>r==="too young")?3:null);
   if(ag.id==="trend"){const bo=await P().breakout(snap);[plan,rej]=ag.run(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
   const cat=ag.cat;
+  if(CFG.quick.on)plan=Object.assign({},plan,{stop:CFG.quick.stop,tp1:CFG.quick.tp1,tp2:CFG.quick.tp2,trail:CFG.quick.trail,rr:CFG.quick.tp1/CFG.quick.stop});
   stats.strat++;
   let sec=await P().security(snap.chain,snap.addr);
   if(!sec)stats.secNull=(stats.secNull||0)+1;else stats.secOk=(stats.secOk||0)+1;
