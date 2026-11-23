@@ -2,7 +2,7 @@
 const CFG = {
   chains:["solana","base","ethereum","bsc"],
   tick:5, monitorEvery:4, newEvery:30, trendEvery:120, recheckEvery:300, regimeEvery:120, equityEvery:300,
-  deepPerScan:16, quickRejectSec:20, quickYoungSec:10, maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
+  deepPerScan:40, quickRejectSec:20, quickYoungSec:10, maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
   risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
         perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:5, dailyLock:0, worstCase:false},
@@ -31,12 +31,12 @@ let SEED=7,rng=mulberry(7);
 const gauss=()=>{let u=0,v=0;while(!u)u=rng();v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
 
 /* ============================ state ============================ */
-let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")||60;
+let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")||300;
 let paused=false, vnow=1.76e9, last={}, regime="unknown", regimeOk=0, rejected={}, stats=freshStats();
 let S; // {pf, journal[], trades[]}
 const key=()=>"pt_state_"+MODE;
 function newState(cap){return{feed:[],pf:{ag:{},exec:{buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0},feesPaid:0,start:cap,cash:cap,positions:{},realized:0,peak:cap,day:"",dayStart:cap,streak:0,pauseUntil:0,entries:[],cool:{},shutdown:false,why:"",closed:[]},journal:[],trades:[],curve:[]}}
-function load(){S=null;if(MODE!=="mock"){try{S=JSON.parse(LS.get(key()))}catch(e){S=null}}if(!S)S=newState(+LS.get("pt_cap")||10000);if(!S.feed)S.feed=[];if(S.pf.feesPaid==null)S.pf.feesPaid=0;if(!S.pf.ag)S.pf.ag={};if(!S.pf.exec)S.pf.exec={buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0}}
+function load(){S=null;if(MODE!=="mock"){try{S=JSON.parse(LS.get(key()))}catch(e){S=null}}if(!S)S=newState(+LS.get("pt_cap")||10000);if(!S.feed)S.feed=[];if(S.pf.feesPaid==null)S.pf.feesPaid=0;if(!S.pf.ag)S.pf.ag={};if(typeof seedPretrained==="function")seedPretrained();if(!S.pf.exec)S.pf.exec={buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0}}
 function dayAdd(v,t){const d=new Date(t*1000).toISOString().slice(0,10),m=S.pf.daily||(S.pf.daily={});m[d]=(m[d]||0)+v}
 function save(){if(S.trades.length>600)S.trades.length=600;if(MODE!=="mock")LS.set(key(),JSON.stringify(S))}
 const now=()=>MODE==="mock"?vnow:Date.now()/1000;
@@ -68,7 +68,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 07:58";
+const BUILD = "2026-11-23 15:39";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -222,6 +222,12 @@ const AGENTS = [
 ];
 // per-agent tuning found by the offline trainer (test/train_agents.mjs): stricter buy-pressure / liquidity gates and its own quick-mode exits
 const AGENT_TUNE = {};
+// agents that passed offline training on unseen simulated markets start with a small record (12 trades' worth, haircut) so they can trade from the first minute;
+// real results then overrule it quickly. Agents that failed offline training start with no record and have to practise.
+const AGENT_PRE = {
+  launch: { n: 12, w: 7, r: 1.6 }, breakout: { n: 12, w: 8, r: 3.4 }, quality: { n: 12, w: 6, r: 0.8 }, reversal: { n: 12, w: 6, r: 2.1 },
+};
+function seedPretrained() { const A = S.pf.ag || (S.pf.ag = {}); for (const [id, r] of Object.entries(AGENT_PRE)) if (!A[id] || !A[id].n) A[id] = { n: r.n, w: r.w, r: r.r, pnl: 0, pre: true } }
 
 /* trained agent settings (test/train_agents.mjs, validated on unseen markets) */
 Object.assign(AGENT_TUNE, {"launch":{"quick":{"stop":4.5,"tp1":6,"tp2":12,"trail":3}},"rider":{"quick":{"stop":2.5,"tp1":3,"tp2":6,"trail":1.5}},"quality":{"bp":0.08},"whale":{"quick":{"stop":2.5,"tp1":3,"tp2":6,"trail":1.5}}});
@@ -491,16 +497,22 @@ const LIVE = {
     const d = await getJSON(`https://api.geckoterminal.com/api/v2/networks/${net}/${path}`);
     return ((d && d.data) || []).map(p => geckoPool(chain, p)).filter(Boolean).map(s => ({ chain, addr: s.addr, source, snap: s }));
   },
+  _cycle: 0,
   async discoverNew(chains) {
-    const cs = chains || CFG.chains; let o = [];
-    for (const c of cs) o = o.concat(await this.pools(c, "new_pools?page=1", "new"));
-    const pr = await getJSON("https://api.dexscreener.com/token-profiles/latest/v1");
-    for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" });
+    const cs = chains || CFG.chains; let o = []; const cyc = this._cycle++;
+    // GeckoTerminal: three pages of newest pools per chain, rotated so the free rate limit is shared (page 1 every time, 2 and 3 alternate)
+    const pages = cyc % 2 ? [1, 2] : [1, 3];
+    for (const c of cs) for (const pg of pages) o = o.concat(await this.pools(c, `new_pools?page=${pg}`, "new"));
+    // DexScreener: newest profiles and boosted tokens (id lists), then keyword searches that return full pair data for up to 30 pairs each
+    for (const u of ["token-profiles/latest/v1", "token-boosts/latest/v1"]) { const pr = await getJSON("https://api.dexscreener.com/" + u); for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" }) }
+    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold"];
+    for (let i = 0; i < 6; i++) { const q = KW[(cyc * 6 + i) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
     return o;
   },
   async discoverTrending(chains) {
     const cs = chains || CFG.chains; let o = [];
-    for (const c of cs) { o = o.concat(await this.pools(c, "trending_pools?page=1", "trending")); o = o.concat(await this.pools(c, "pools?page=1&sort=h24_volume_usd_desc", "trending")) }
+    const pg = 1 + (this._tcycle = (this._tcycle || 0) + 1) % 3;
+    for (const c of cs) { o = o.concat(await this.pools(c, "trending_pools?page=1", "trending")); o = o.concat(await this.pools(c, `pools?page=${pg}&sort=h24_volume_usd_desc`, "trending")) }
     return o;
   },
   async snapshots(chain, addrs) {
@@ -529,7 +541,17 @@ const LIVE = {
     const o = {}; for (const x of rs) if (x) o[x[0]] = x[1];
     return Object.keys(o).length >= 2 ? o : null;
   },
+  _sec: {},
+  // one GoPlus call for many EVM tokens (it accepts a comma-separated list): turns 16 calls into 1
+  async prefetchSecurity(cands) {
+    const by = {}; for (const c of cands) if (c.chain !== "solana" && GP_CHAIN[c.chain] && !this._sec[c.chain + ":" + c.addr.toLowerCase()]) (by[c.chain] = by[c.chain] || []).push(c.addr.toLowerCase());
+    for (const [ch, addrs] of Object.entries(by)) for (let i = 0; i < addrs.length; i += 25) {
+      const part = addrs.slice(i, i + 25), d = await getJSON(`https://api.gopluslabs.io/api/v1/token_security/${GP_CHAIN[ch]}?contract_addresses=${part.join(",")}`), res = (d && d.result) || {};
+      for (const a of part) { const r = res[a]; if (!r) continue; const sd = parseGoPlusEvm(r); if (!(sd.honeypot == null && sd.sellTax == null && sd.holders == null)) this._sec[ch + ":" + a] = { t: Date.now(), sd } }
+    }
+  },
   async security(chain, addr) {
+    { const k = this._sec[chain + ":" + addr.toLowerCase()]; if (k && Date.now() - k.t < 120000) return k.sd }
     if (chain === "solana") {
       const d = await getJSON(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${addr}`);
       const r = d && d.result && d.result[addr]; if (!r) return null; const sd = parseGoPlusSol(r); return sd.mintable == null && sd.holders == null ? null : sd;
@@ -742,6 +764,7 @@ async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).leng
   if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   {const ch=cands.map(c=>c.snap).filter(s=>s&&s.liq>=30000&&isFinite(s.chg1h)).map(s=>s.chg1h).sort((a,b)=>a-b);if(ch.length>=8)uniMedian=ch[ch.length>>1]}
   pass.length=Math.min(pass.length,CFG.deepPerScan);
+  if(prov.prefetchSecurity&&pass.length)await prov.prefetchSecurity(pass);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
   for(const c of pass){if(S.pf.shutdown)break;const k=c.chain+":"+c.addr.toLowerCase(),snap=fresh[k]||c.snap;if(fresh[k]&&c.snap&&c.snap.buyers1h!=null){fresh[k].buyers1h=c.snap.buyers1h;fresh[k].sellers1h=c.snap.sellers1h}if(!snap||snap.price<=0)continue;await evaluate(k,snap,source,now(),c.agent)}

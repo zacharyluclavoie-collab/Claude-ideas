@@ -48,6 +48,12 @@ const AGENTS = [
 ];
 // per-agent tuning found by the offline trainer (test/train_agents.mjs): stricter buy-pressure / liquidity gates and its own quick-mode exits
 const AGENT_TUNE = {};
+// agents that passed offline training on unseen simulated markets start with a small record (12 trades' worth, haircut) so they can trade from the first minute;
+// real results then overrule it quickly. Agents that failed offline training start with no record and have to practise.
+const AGENT_PRE = {
+  launch: { n: 12, w: 7, r: 1.6 }, breakout: { n: 12, w: 8, r: 3.4 }, quality: { n: 12, w: 6, r: 0.8 }, reversal: { n: 12, w: 6, r: 2.1 },
+};
+function seedPretrained() { const A = S.pf.ag || (S.pf.ag = {}); for (const [id, r] of Object.entries(AGENT_PRE)) if (!A[id] || !A[id].n) A[id] = { n: r.n, w: r.w, r: r.r, pnl: 0, pre: true } }
 /*TUNE*/
 const AG = Object.fromEntries(AGENTS.map(a => [a.id, a]));
 const agentOn = id => !(CFG.agentsOff || {})[id];

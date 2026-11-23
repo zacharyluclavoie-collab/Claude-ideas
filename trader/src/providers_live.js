@@ -78,16 +78,22 @@ const LIVE = {
     const d = await getJSON(`https://api.geckoterminal.com/api/v2/networks/${net}/${path}`);
     return ((d && d.data) || []).map(p => geckoPool(chain, p)).filter(Boolean).map(s => ({ chain, addr: s.addr, source, snap: s }));
   },
+  _cycle: 0,
   async discoverNew(chains) {
-    const cs = chains || CFG.chains; let o = [];
-    for (const c of cs) o = o.concat(await this.pools(c, "new_pools?page=1", "new"));
-    const pr = await getJSON("https://api.dexscreener.com/token-profiles/latest/v1");
-    for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" });
+    const cs = chains || CFG.chains; let o = []; const cyc = this._cycle++;
+    // GeckoTerminal: three pages of newest pools per chain, rotated so the free rate limit is shared (page 1 every time, 2 and 3 alternate)
+    const pages = cyc % 2 ? [1, 2] : [1, 3];
+    for (const c of cs) for (const pg of pages) o = o.concat(await this.pools(c, `new_pools?page=${pg}`, "new"));
+    // DexScreener: newest profiles and boosted tokens (id lists), then keyword searches that return full pair data for up to 30 pairs each
+    for (const u of ["token-profiles/latest/v1", "token-boosts/latest/v1"]) { const pr = await getJSON("https://api.dexscreener.com/" + u); for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" }) }
+    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold"];
+    for (let i = 0; i < 6; i++) { const q = KW[(cyc * 6 + i) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
     return o;
   },
   async discoverTrending(chains) {
     const cs = chains || CFG.chains; let o = [];
-    for (const c of cs) { o = o.concat(await this.pools(c, "trending_pools?page=1", "trending")); o = o.concat(await this.pools(c, "pools?page=1&sort=h24_volume_usd_desc", "trending")) }
+    const pg = 1 + (this._tcycle = (this._tcycle || 0) + 1) % 3;
+    for (const c of cs) { o = o.concat(await this.pools(c, "trending_pools?page=1", "trending")); o = o.concat(await this.pools(c, `pools?page=${pg}&sort=h24_volume_usd_desc`, "trending")) }
     return o;
   },
   async snapshots(chain, addrs) {
@@ -116,7 +122,17 @@ const LIVE = {
     const o = {}; for (const x of rs) if (x) o[x[0]] = x[1];
     return Object.keys(o).length >= 2 ? o : null;
   },
+  _sec: {},
+  // one GoPlus call for many EVM tokens (it accepts a comma-separated list): turns 16 calls into 1
+  async prefetchSecurity(cands) {
+    const by = {}; for (const c of cands) if (c.chain !== "solana" && GP_CHAIN[c.chain] && !this._sec[c.chain + ":" + c.addr.toLowerCase()]) (by[c.chain] = by[c.chain] || []).push(c.addr.toLowerCase());
+    for (const [ch, addrs] of Object.entries(by)) for (let i = 0; i < addrs.length; i += 25) {
+      const part = addrs.slice(i, i + 25), d = await getJSON(`https://api.gopluslabs.io/api/v1/token_security/${GP_CHAIN[ch]}?contract_addresses=${part.join(",")}`), res = (d && d.result) || {};
+      for (const a of part) { const r = res[a]; if (!r) continue; const sd = parseGoPlusEvm(r); if (!(sd.honeypot == null && sd.sellTax == null && sd.holders == null)) this._sec[ch + ":" + a] = { t: Date.now(), sd } }
+    }
+  },
   async security(chain, addr) {
+    { const k = this._sec[chain + ":" + addr.toLowerCase()]; if (k && Date.now() - k.t < 120000) return k.sd }
     if (chain === "solana") {
       const d = await getJSON(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${addr}`);
       const r = d && d.result && d.result[addr]; if (!r) return null; const sd = parseGoPlusSol(r); return sd.mintable == null && sd.holders == null ? null : sd;

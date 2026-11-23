@@ -205,7 +205,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   $("exp").onclick=()=>copyText(JSON.stringify({positions:S.pf.positions,closed:S.pf.closed,daily:S.pf.daily,cash:S.pf.cash,realized:S.pf.realized},null,1));
   twoTap($("kill"),"Tap again to flatten and halt",()=>{LS.set("pt_kill_"+MODE,"1");tick()});
   $("rearm").onclick=()=>{LS.del("pt_kill_"+MODE);S.pf.shutdown=false;S.pf.why="";S.pf.peak=equity();S.pf.streak=0;save();render()};
-  twoTap($("reset"),"Tap again to delete this account",()=>{const c=Math.max(100,+$("cap").value||10000);LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),equity()]];render()}})}
+  twoTap($("reset"),"Tap again to delete this account",()=>{const c=Math.max(100,+$("cap").value||10000);LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);seedPretrained();resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),equity()]];render()}})}
 
 /* ---------- wiring ---------- */
 function rAgents(){const rows=AGENTS.map(a=>{const st=agentStat(a.id),w=agentWeight(a.id),open=Object.values(S.pf.positions).filter(p=>p.agent===a.id).length,e=st.n?st.r/st.n:0;return{a,st,w,open,e}}).sort((x,y)=>y.st.pnl-x.st.pnl);

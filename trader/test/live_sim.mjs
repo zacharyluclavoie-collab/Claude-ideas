@@ -30,14 +30,15 @@ ctx.__api = async url => {
     if (/ohlcv/.test(u.pathname)) return null;
   }
   if (u.host === "api.dexscreener.com") {
-    if (u.pathname.startsWith("/token-profiles")) return [];
+    if (u.pathname.startsWith("/token-profiles") || u.pathname.startsWith("/token-boosts")) return [];
+    if (u.pathname.startsWith("/latest/dex/search")) { const all = Object.values(TOK).flat(); return { pairs: all.filter(() => r() < 0.1).slice(0, 30).map(pair) } }
     const m = u.pathname.match(/tokens\/v1\/(\w+)\/(.+)$/); if (m) { const addrs = decodeURIComponent(m[2]).split(","); const out = []; for (const a of addrs) { const t = (TOK[m[1]] || []).find(x => x.addr.toLowerCase() === a.toLowerCase()); if (t) out.push(pair(t)); else if (/4200000000000000000000000000000000000006|So1111|cbB7/.test(a)) out.push({ chainId: m[1], pairAddress: "p", baseToken: { address: a, symbol: "W" }, priceUsd: "1", liquidity: { usd: 5e7 }, priceChange: { h1: -0.2 } }) } return out }
   }
   if (u.host === "api.gopluslabs.io") {
     if (MODE === "nosec") return null;
-    const sol = /solana\/token_security/.test(u.pathname), a = u.searchParams.get("contract_addresses"), all = Object.values(TOK).flat(), t = all.find(x => x.addr.toLowerCase() === a.toLowerCase());
-    if (!t) return { code: 1, result: {} };
-    return { code: 1, message: "OK", result: { [sol ? a : a.toLowerCase()]: sol ? gpSol(t) : gpEvm(t) } };
+    const sol = /solana\/token_security/.test(u.pathname), list = u.searchParams.get("contract_addresses").split(","), all = Object.values(TOK).flat(), result = {};
+    for (const a of list) { const t = all.find(x => x.addr.toLowerCase() === a.toLowerCase()); if (t) result[sol ? a : a.toLowerCase()] = sol ? gpSol(t) : gpEvm(t) }
+    log.sec = (log.sec || 0) + 1; return { code: 1, message: "OK", result };
   }
   if (u.host === "api.coingecko.com") { if (MODE === "nomarket") return null; return [{ id: "bitcoin", price_change_percentage_1h_in_currency: 0.1 }, { id: "ethereum", price_change_percentage_1h_in_currency: -0.2 }, { id: "solana", price_change_percentage_1h_in_currency: 0.3 }] }
   return null;
@@ -48,4 +49,5 @@ const t0 = Date.now();
 while (Date.now() - t0 < SECS * 1000) { await ev(ctx, `Promise.all([stepFast(now()),stepSlow(now()),stepScan(now())])`); await new Promise(r => setTimeout(r, 200)) }
 const out = JSON.parse(ev(ctx, `JSON.stringify({mode:${JSON.stringify(MODE)},uniq:stats.uniq,checks:stats.scanned,strat:stats.strat,sec:stats.sec,vetoed:stats.vetoed,bought:stats.bought,open:Object.keys(S.pf.positions).length,regime,secNull:stats.secNull||0,gated:stats.gated||0,
   rej:Object.entries(stats.rejWhy||{}).sort((a,b)=>b[1]-a[1]).slice(0,4),secWhy:Object.entries(stats.secWhy||{}).sort((a,b)=>b[1]-a[1]).slice(0,5),vwhy:Object.entries(stats.vwhy||{}).sort((a,b)=>b[1]-a[1]).slice(0,4),journal:S.journal.filter(j=>["buy","buy_failed","auto_relax","error"].includes(j.kind)).slice(0,3).map(j=>j.kind+": "+j.msg.slice(0,90))})`));
+out.goplusCalls = log.sec; out.apiCalls = log.calls;
 console.log(JSON.stringify(out, null, 1));
