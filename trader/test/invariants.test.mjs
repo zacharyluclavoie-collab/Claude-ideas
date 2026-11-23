@@ -10,7 +10,7 @@ function start(seed, setup = "") {
 }
 const run = (ctx, n) => ev(ctx, `__run(${n},10)`);
 const J = (ctx, code) => JSON.parse(ev(ctx, `JSON.stringify(${code})`));
-const loosen = "CFG.tr.enabled=true;CFG.nw.minUniq=0;CFG.nw.minScore=10;CFG.tr.minScore=10;CFG.nw.minTx=5;CFG.nw.minBP=0.3;CFG.nw.minAgeMin=1;CFG.newEvery=10;CFG.trendEvery=30;CFG.maxCands=40;CFG.risk.maxRisk=70;";
+const loosen = "CFG.learn.on=false;CFG.tr.enabled=true;CFG.nw.minUniq=0;CFG.nw.minScore=10;CFG.tr.minScore=10;CFG.nw.minTx=5;CFG.nw.minBP=0.3;CFG.nw.minAgeMin=1;CFG.newEvery=10;CFG.trendEvery=30;CFG.maxCands=40;CFG.risk.maxRisk=70;";
 
 test("hard caps hold at every step (wide profile, loosened strategy)", async () => {
   const ctx = start(5, "Object.assign(CFG.risk,{maxPos:100,perHour:30,perDay:150,totalExp:40,chainExp:20,newExp:20});" + loosen);

@@ -68,7 +68,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 01:46";
+const BUILD = "2026-11-23 02:48";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -153,7 +153,7 @@ function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({
   if(pf.positions[k])return no("already held");if(NOT_TRADABLE.has(snap.sym.toLowerCase()))return no("base asset or stablecoin");if(Object.values(pf.positions).some(p=>p.sym.toLowerCase()===snap.sym.toLowerCase()))return no("same symbol already held (clone risk)");if(t<(pf.cool[k]||0))return no("re-entry cooldown");
   if(!K&&pf.entries.filter(x=>t-x<3600).length>=R.perHour)return no("hourly entry limit");if(!K&&pf.entries.filter(x=>t-x<86400).length>=R.perDay)return no("daily entry limit");
   if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(!FILL&&risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
-  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100/(R.worstCase&&cat==="new"?1:plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1)*(FILL?CFG.keep.sizeMult:1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
+  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100*growth()/(R.worstCase&&cat==="new"?1:plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1)*(FILL?CFG.keep.sizeMult:1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
     liq:snap.liq*R.liqFrac,total:eq*R.totalExp/100-ex,cash:pf.cash-eq*R.cashReserve/100,chain:eq*R.chainExp/100-(expBy(p=>p.chain)[snap.chain]||0)};
   {const lim=agentId?agentLimit(agentId,t):"";if(lim)return no(lim)}
   if(agentId)caps.agent=eq*R.totalExp/100*agentShare(agentId)*1.6-agentExposure(agentId);
@@ -241,6 +241,73 @@ function pickAgent(s, t, source) {
     if (plan) { const sc = plan.score * agentWeight(a.id); if (!best || sc > best.sc) best = { agent: a, plan, sc } } else if (!why) why = rej[0];
   }
   return { best, why: why || "no agent matched" };
+}
+
+/* ============================ learning phase, committee review, profit-funded growth ============================
+ * 1. SHADOW TRADING: every agent that likes a coin records a virtual trade (no money) with the same stops, targets and realistic costs.
+ *    An agent only gets real money after it has proven itself on those virtual trades (and later on real ones).
+ * 2. COMMITTEE: many agents can study the same coin at once. A real trade needs a proven lead agent AND at least 3 of 5 independent
+ *    reviewers (not chasing, two-sided flow, real buyers, enough depth, market not falling). More approvals = slightly larger size.
+ * 3. GROWTH FROM PROFIT ONLY: position size can rise (up to 2x) only as realised profit builds, and never while in a drawdown.
+ */
+CFG.learn = { on: true, minTrades: 15, minExp: 0.05, minWin: 0.45, maxShadow: 90, perAgent: 14 };
+function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id); if (a.n < CFG.learn.minTrades) return false; return a.r / a.n >= CFG.learn.minExp && a.w / a.n >= CFG.learn.minWin }
+function agentLearning(id) { const a = agentStat(id); return { n: a.n, need: CFG.learn.minTrades, proven: agentProven(id) } }
+function pickAll(s, t, source) {
+  const hits = []; let why = null;
+  for (const a of AGENTS) {
+    if (!agentOn(a.id) || !ageOK(a, s, t)) continue;
+    const [plan, rej] = a.run(s, t, true);
+    if (plan) hits.push({ agent: a, plan }); else if (!why) why = rej[0];
+  }
+  return { hits, why: why || "no agent matched" };
+}
+function quickPlan(plan) { return CFG.quick.on ? Object.assign({}, plan, { stop: CFG.quick.stop, tp1: CFG.quick.tp1, tp2: CFG.quick.tp2, trail: CFG.quick.trail, rr: CFG.quick.tp1 / CFG.quick.stop }) : plan }
+function reviewers(s, cat) {
+  const u = _uniq(s);
+  const r = [
+    ["not chasing", s.chg1h <= 60 && s.chg5m >= -3],
+    ["two-sided flow", s.sells1h >= s.buys1h * 0.2],
+    ["real buyers", u == null || u >= 0.5],
+    ["enough depth", s.liq >= 20000 || cat === "trending"],
+    ["market not falling", regime === "ok"],
+  ];
+  return { ok: r.filter(x => x[1]).length, list: r };
+}
+function growth() { const pf = S.pf; const inDD = equity() < pf.peak * 0.97; return inDD ? 1 : 1 + clamp(pf.realized / pf.start * 5, 0, 1) }
+
+/* ---- shadow (virtual) trades ---- */
+function shadowOpen(snap, h, t) {
+  const sh = S.shadow || (S.shadow = {}), k = h.agent.id + "|" + snap.chain + ":" + snap.addr.toLowerCase();
+  const rc = S.shadowRecent || (S.shadowRecent = {}); if (sh[k] || (rc[k] && t - rc[k] < 21600)) return false;
+  const mine = Object.values(sh); if (mine.length >= CFG.learn.maxShadow || mine.filter(x => x.agent === h.agent.id).length >= CFG.learn.perAgent) return false;
+  const p = quickPlan(h.plan), usd = clamp(snap.liq * 0.004, 15, 60);   // about the size a real trade would get
+  sh[k] = { agent: h.agent.id, chain: snap.chain, addr: snap.addr, sym: snap.sym, cat: h.agent.cat, opened: t, entry: snap.price, last: snap.price, peak: snap.price, usd, stop: snap.price * (1 - p.stop / 100), tp1: snap.price * (1 + p.tp1 / 100), tp2: snap.price * (1 + p.tp2 / 100), trail: p.trail, tp1Done: false, real: 0, frac: 1, liq0: snap.liq, liq: snap.liq, stopPct: p.stop };
+  return true;
+}
+function shadowCost(sh) { const R = Math.max(sh.liq0 / 2, 1), gas = 2 * (CFG.ex.gas[sh.chain] ?? 0.5) * 1.2; return sh.usd * (2 * CFG.ex.fee / 100 + 2 * sh.usd / R + 0.006) + gas }
+function shadowClose(sh, key, why, t, px) {
+  const sd = S.shadow; delete sd[key]; (S.shadowRecent || (S.shadowRecent = {}))[key] = t;
+  const price = px ?? sh.last, leg = sh.frac * sh.usd * (price / sh.entry - 1), pnl = sh.real + leg - shadowCost(sh) * (sh.tp1Done ? 1 : 1), r = pnl / (sh.usd * sh.stopPct / 100);
+  const A = S.pf.ag || (S.pf.ag = {}), a = A[sh.agent] || (A[sh.agent] = { n: 0, pnl: 0, w: 0, r: 0 });
+  a.n++; a.pnl += pnl; a.w += pnl > 0 ? 1 : 0; a.r += r; a.sn = (a.sn || 0) + 1;
+  const L = S.shadowLog || (S.shadowLog = []); L.unshift({ t, agent: sh.agent, sym: sh.sym, pnl, r, why }); if (L.length > 150) L.length = 150;
+  if (agentProven(sh.agent) && !sh.announced && a.n === CFG.learn.minTrades) ev("info", "agent_proven", sh.agent, "agent passed its learning phase and may now trade real money");
+}
+function shadowUpdate(snaps, t) {
+  const sd = S.shadow; if (!sd) return;
+  for (const [key, sh] of Object.entries(sd)) {
+    const s = snaps[sh.chain + ":" + sh.addr.toLowerCase()], maxH = (sh.cat === "new" ? CFG.nw.maxHoldH : CFG.tr.maxHoldH) * 3600;
+    if (!s || s.price <= 0) { if (t - sh.opened > maxH) shadowClose(sh, key, "no price", t); continue }
+    const prevL = sh.liq; sh.last = s.price; sh.liq = s.liq; sh.peak = Math.max(sh.peak, s.price);
+    if (s.liq < sh.liq0 * 0.5 || (prevL > 0 && s.liq < prevL * 0.7)) { shadowClose(sh, key, "liquidity pulled", t, sh.last * 0.6); continue }   // exit into a drained pool is costly
+    const px = s.price;
+    if (sh.tp1Done) sh.stop = Math.max(sh.stop, sh.entry * 1.01, sh.peak * (1 - sh.trail / 100)); else if (px >= sh.entry * (1 + (sh.tp1 / sh.entry - 1) / 2)) sh.stop = Math.max(sh.stop, sh.entry * 1.01);
+    if (px <= sh.stop) shadowClose(sh, key, "stop", t, px * 0.995);
+    else if (!sh.tp1Done && px >= sh.tp1) { const f = CFG.tp1Frac; sh.real += f * sh.usd * (px / sh.entry - 1); sh.frac -= f; sh.tp1Done = true }
+    else if (sh.tp1Done && px >= sh.tp2) shadowClose(sh, key, "target", t, px)
+    else if (t - sh.opened > maxH) shadowClose(sh, key, "time", t, px);
+  }
 }
 
 /* ============================ execution simulator ============================
@@ -636,8 +703,8 @@ function safety(t){const pf=S.pf;let why="";
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
   for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
-    const s=c.snap;if(s&&s.price>0){const pk=pickAgent(s,t,source);
-      if(!pk.best){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.best.agent.id}
+    const s=c.snap;if(s&&s.price>0){const pk=pickAll(s,t,source);
+      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id}
     pass.push(c)}
   if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   {const ch=cands.map(c=>c.snap).filter(s=>s&&s.liq>=30000&&isFinite(s.chg1h)).map(s=>s.chg1h).sort((a,b)=>a-b);if(ch.length>=8)uniMedian=ch[ch.length>>1]}
@@ -653,14 +720,14 @@ function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr
   if(tr&&!stats.seen[k]){stats.seen[k]=1;if(SCAM.has(tr))stats.scamSeen++;else if(tr==="dead")stats.junkSeen++}
   S.feed.unshift(Object.assign({t:now(),sym:snap.sym,chain:snap.chain,src,outcome,detail,truth:tr},extra||{}));if(S.feed.length>80)S.feed.length=80}
 function reject(k,snap,src,why,min,stage,extra){rejected[k]=now()+60*(min||(src==="new"?CFG.rejectNewMin:CFG.rejectTrendMin));feedAdd(snap,src,stage||"strategy",why,extra)}
-async function evaluate(k,snap,src,t,agentId){let ag=AG[agentId];
-  if(!ag||!agentOn(ag.id)){const pk=pickAgent(snap,t,src);if(!pk.best)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);ag=pk.best.agent}
-  let [plan,rej]=ag.run(snap,t,true);
-  if(!plan)return reject(k,snap,src,rej.join("; "),rej.some(r=>r==="too young")?3:null);
-  if(ag.id==="trend"){const bo=await P().breakout(snap);[plan,rej]=ag.run(snap,t,bo);if(!plan)return reject(k,snap,src,rej.join("; "))}
-  const cat=ag.cat;
-  if(CFG.quick.on)plan=Object.assign({},plan,{stop:CFG.quick.stop,tp1:CFG.quick.tp1,tp2:CFG.quick.tp2,trail:CFG.quick.trail,rr:CFG.quick.tp1/CFG.quick.stop});
+async function evaluate(k,snap,src,t,agentId){
+  const pk=pickAll(snap,t,src);
+  if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
+  let hits=pk.hits;
+  if(hits.some(h=>h.agent.id==="trend")){const bo=await P().breakout(snap);hits=hits.map(h=>{if(h.agent.id!=="trend")return h;const [pl]=h.agent.run(snap,t,bo);return pl?{agent:h.agent,plan:pl}:null}).filter(Boolean);if(!hits.length)return reject(k,snap,src,"no breakout confirmed")}
+  for(const h of hits)h.plan=quickPlan(h.plan);
   stats.strat++;
+  let plan=hits[0].plan;
   let sec=await P().security(snap.chain,snap.addr);
   if(!sec)stats.secNull=(stats.secNull||0)+1;else stats.secOk=(stats.secOk||0)+1;
   if(!sec&&CFG.lenient.sec&&(stats.secNull||0)>=5&&(stats.secNull||0)>9*(stats.secOk||0))sec=UNVERIFIED;   // source is down: keep trading small, on market-structure checks only
@@ -669,9 +736,16 @@ async function evaluate(k,snap,src,t,agentId){let ag=AG[agentId];
   if(!v.pass){const W=stats.secWhy||(stats.secWhy={});for(const f of v.fails)W[f]=(W[f]||0)+1}
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
+  // learning phase: every unproven agent that likes this coin takes a virtual trade (many agents study one coin at once); only proven agents trade real money
+  const proven=[];for(const h of hits){if(agentProven(h.agent.id))proven.push(h);else shadowOpen(snap,h,t)}
+  if(!proven.length){feedAdd(snap,src,"learning",hits.map(h=>h.agent.name).join(", ")+" studying this coin with a virtual trade (no money yet)",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+90;return}
+  proven.sort((a,b)=>b.plan.score*agentWeight(b.agent.id)-a.plan.score*agentWeight(a.agent.id));
+  const ag=proven[0].agent;plan=proven[0].plan;const cat=ag.cat;
+  const com=reviewers(snap,cat);
+  if(com.ok<3){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
   const d=approve(snap,cat,v.risk,plan,t,ag.id);
   if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
-  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1),t,v.checks,ag.id)}
+  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok),t,v.checks,ag.id)}
 function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
   if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
@@ -701,8 +775,9 @@ function emergencyReason(p,s,pp,pl){const e=CFG.em;
 function adjustStop(p,s){const old=p.stop,be=p.entry*1.01;
   if(p.tp1Done)p.stop=Math.max(p.stop,be,p.peak*(1-p.trail/100));else if(s.price>=p.entry*(1+(p.tp1/p.entry-1)/2))p.stop=Math.max(p.stop,be);
   if(regime==="danger"&&s.price>p.entry)p.stop=Math.max(p.stop,s.price*0.96);if(p.stop>old*1.0001)ev("info","stop_raised",p.sym,`${old.toPrecision(4)} → ${p.stop.toPrecision(4)}`)}
-async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions);if(!ps.length)return;const byChain={},snaps={};for(const p of ps)(byChain[p.chain]=byChain[p.chain]||[]).push(p.addr);
+async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions),shs=Object.values(S.shadow||{});if(!ps.length&&!shs.length)return;const byChain={},snaps={};for(const p of ps)(byChain[p.chain]=byChain[p.chain]||[]).push(p.addr);for(const x of shs)(byChain[x.chain]=byChain[x.chain]||[]).push(x.addr);
   for(const ch in byChain){const r=await P().snapshots(ch,byChain[ch]);for(const a in r)snaps[ch+":"+a]=r[a]}
+  shadowUpdate(snaps,t);
   const feedUp=Object.keys(snaps).length>0;     // if no token at all came back, the price feed is down: that is not evidence the token died
   for(const p of ps){const s=snaps[p.chain+":"+p.addr.toLowerCase()];
     if(!s||s.price<=0){if(!feedUp)continue;p.staleSince=p.staleSince||t;if(t-p.staleSince>=CFG.em.staleMin*60){ev("crit","stale_writeoff",p.sym,"no price for "+CFG.em.staleMin+" minutes while other tokens update: closing at a haircut");const rec=pv(p)*CFG.em.staleHaircut;p.qty=0;closePos(p,"stale_data",rec,t)}continue}
