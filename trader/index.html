@@ -273,7 +273,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 18:09";
+const BUILD = "2026-11-23 18:22";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1311,6 +1311,7 @@ if(!LS.get("pt_preset_v6")){applyPreset("protect");LS.set("pt_preset_v6","1");LS
 else if(LS.get("pt_quick")==="1"||LS.get("pt_preset")==="protect"||LS.get("pt_preset")==="turbo")applyQuick(true);
 try{const c=JSON.parse(LS.get("pt_cm")||"{}");if(c.c)CFG.committeeMin=c.c;if(c.h)CFG.agentHourly=c.h}catch(e){}
 if(!LS.get("pt_preset_v7")){savePreset("turbo");LS.set("pt_preset_v7","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
+if(!LS.get("pt_preset_v8")){savePreset("protect");LS.set("pt_preset_v8","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
 function render(){header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};

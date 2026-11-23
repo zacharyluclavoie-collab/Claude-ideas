@@ -224,6 +224,7 @@ if(!LS.get("pt_preset_v6")){applyPreset("protect");LS.set("pt_preset_v6","1");LS
 else if(LS.get("pt_quick")==="1"||LS.get("pt_preset")==="protect"||LS.get("pt_preset")==="turbo")applyQuick(true);
 try{const c=JSON.parse(LS.get("pt_cm")||"{}");if(c.c)CFG.committeeMin=c.c;if(c.h)CFG.agentHourly=c.h}catch(e){}
 if(!LS.get("pt_preset_v7")){savePreset("turbo");LS.set("pt_preset_v7","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
+if(!LS.get("pt_preset_v8")){savePreset("protect");LS.set("pt_preset_v8","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
 function render(){header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
