@@ -79,7 +79,7 @@ function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLow
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
   pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
-  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
+  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
   if(s.liq<p.entryLiq*(1-e.liqTotal))return`liquidity down ${(100*(1-s.liq/p.entryLiq)).toFixed(0)}% vs entry`;
