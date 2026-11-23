@@ -25,7 +25,7 @@ try{const l=JSON.parse(LS.get("pt_len")||"{}");if(typeof l.sec==="boolean")CFG.l
 applySecMode(LS.get("pt_secmode")||"balanced");
 try{const l=JSON.parse(LS.get("pt_learn")||"{}");if(typeof l.on==="boolean")CFG.learn.on=l.on;if(typeof l.probation==="boolean")CFG.learn.probation=l.probation}catch(e){}
 const curPreset=()=>{const p=LS.get("pt_preset")||"recommended";return p==="safe"?"recommended":p};
-const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes. Best balance in testing."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 3x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 5x bigger trades. Highest expected profit in testing and the biggest swings."]];
+const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes. Simulated: about +0.09% a day, 2 of 12 test runs lost a little."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 2x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 3x bigger trades: the best size in testing (about +0.22% a day, 0 of 12 runs lost). Bigger trades than this did worse. Not a promise for live markets."]];
 const learnMode=()=>!CFG.learn.on?"off":CFG.learn.probation?"fast":"strict";
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
