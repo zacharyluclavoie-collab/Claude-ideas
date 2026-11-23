@@ -14,12 +14,15 @@ function pickAll(s, t, source) {
   const hits = []; let why = null;
   for (const a of AGENTS) {
     if (!agentOn(a.id) || !ageOK(a, s, t)) continue;
-    const [plan, rej] = a.run(s, t, true);
+    const [plan, rej] = a.run(s, t, true), T = AGENT_TUNE[a.id] || {};
+    if (plan && T.bp && bp(s) < 0.5 + T.bp) { if (!why) why = "buy pressure below tuned bar"; continue }
+    if (plan && T.liq && s.liq < CFG.sec.liqNew * T.liq) { if (!why) why = "liquidity below tuned bar"; continue }
+    if (plan && T.vlr && _vlr(s) < T.vlr) { if (!why) why = "turnover below tuned bar"; continue }
     if (plan) hits.push({ agent: a, plan }); else if (!why) why = rej[0];
   }
   return { hits, why: why || "no agent matched" };
 }
-function quickPlan(plan) { return CFG.quick.on ? Object.assign({}, plan, { stop: CFG.quick.stop, tp1: CFG.quick.tp1, tp2: CFG.quick.tp2, trail: CFG.quick.trail, rr: CFG.quick.tp1 / CFG.quick.stop }) : plan }
+function quickPlan(plan, id) { if (!CFG.quick.on) return plan; const q = Object.assign({}, CFG.quick, (AGENT_TUNE[id] || {}).quick || {}); return Object.assign({}, plan, { stop: q.stop, tp1: q.tp1, tp2: q.tp2, trail: q.trail, rr: q.tp1 / q.stop }) }
 function reviewers(s, cat) {
   const u = _uniq(s);
   const r = [
@@ -38,7 +41,7 @@ function shadowOpen(snap, h, t) {
   const sh = S.shadow || (S.shadow = {}), k = h.agent.id + "|" + snap.chain + ":" + snap.addr.toLowerCase();
   const rc = S.shadowRecent || (S.shadowRecent = {}); if (sh[k] || (rc[k] && t - rc[k] < 21600)) return false;
   const mine = Object.values(sh); if (mine.length >= CFG.learn.maxShadow || mine.filter(x => x.agent === h.agent.id).length >= CFG.learn.perAgent) return false;
-  const p = quickPlan(h.plan), usd = clamp(snap.liq * 0.004, 15, 60);   // about the size a real trade would get
+  const p = quickPlan(h.plan, h.agent.id), usd = clamp(snap.liq * 0.004, 15, 60);   // about the size a real trade would get
   sh[k] = { agent: h.agent.id, chain: snap.chain, addr: snap.addr, sym: snap.sym, cat: h.agent.cat, opened: t, entry: snap.price, last: snap.price, peak: snap.price, usd, stop: snap.price * (1 - p.stop / 100), tp1: snap.price * (1 + p.tp1 / 100), tp2: snap.price * (1 + p.tp2 / 100), trail: p.trail, tp1Done: false, real: 0, frac: 1, liq0: snap.liq, liq: snap.liq, stopPct: p.stop };
   return true;
 }

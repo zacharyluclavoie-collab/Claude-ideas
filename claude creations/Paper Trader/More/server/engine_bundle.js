@@ -5,7 +5,7 @@ const CFG = {
   deepPerScan:16, quickRejectSec:20, quickYoungSec:10, maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
   risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
-        perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:5, worstCase:false},
+        perHour:30, perDay:150, cooldownH:12, maxRisk:65, riskFull:35, minRR:1.5, maxCostPct:5, dailyLock:0, worstCase:false},
   sec:{buyTax:5, sellTax:8, liqNew:15000, liqTrend:100000, holdersNew:100, holdersTrend:500, top10:45, creator:8, owner:8, lpLocked:70, volLiq:40},
   nw:{enabled:true, minAgeMin:10, maxAgeH:24, minTx:50, minBP:0.55, maxChg1h:300, maxFdvLiq:60, minScore:60, minVlr:0, minUniq:0.5, minChg1h:-1000, stop:18, tp1:40, tp2:100, trail:15, maxHoldH:12},
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
@@ -68,12 +68,12 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 05:12";
+const BUILD = "2026-11-23 07:58";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
-  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, breakout: 1, quality: 1, whale: 1, gem: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
-  else { applyActivity("active"); applyQuick(false); CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
+  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
+  else { applyActivity("active"); applyQuick(false); CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
   CFG.risk.perDay = CFG.risk.perHour * 5
 }
 
@@ -145,7 +145,7 @@ function riskMult(){const pf=S.pf,eq=equity(),dd=Math.max(0,(pf.peak-eq)/pf.peak
 function shutdownReason(){const pf=S.pf;if(pf.shutdown)return pf.why;const eq=equity();pf.peak=Math.max(pf.peak,eq);
   const dd=(pf.peak-eq)/pf.peak*100;if(dd>=CFG.risk.maxDD)return`max drawdown ${dd.toFixed(1)}%`;
   const loss=(pf.start-eq)/pf.start*100;if(loss>=CFG.risk.maxTotalLoss)return`total loss ${loss.toFixed(1)}%`;return""}
-function globalBlock(t){const pf=S.pf,R=CFG.risk;if(pf.shutdown)return"emergency shutdown active";if(!marketOk(t))return regime==="unknown"?"market data missing (entries blocked)":"market regime "+regime;if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return"daily loss limit reached";if(!CFG.keep.on&&t<pf.pauseUntil)return"paused after losses";return""}
+function globalBlock(t){const pf=S.pf,R=CFG.risk;if(pf.shutdown)return"emergency shutdown active";if(!marketOk(t))return regime==="unknown"?"market data missing (entries blocked)":"market regime "+regime;if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return"daily loss limit reached";if(!CFG.keep.on&&t<pf.pauseUntil)return"paused after losses";if(R.dailyLock>0&&pf.dayStart>0&&(equity()-pf.dayStart)/pf.dayStart*100>=R.dailyLock)return"daily profit target reached: locking in today's gain";return""}
 function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({ok:false,why:r});
   if(pf.shutdown)return no("shutdown");if(!marketOk(t))return no("market regime");
   if(pf.dayStart>0&&(pf.dayStart-equity())/pf.dayStart*100>=R.dailyLoss)return no("daily loss limit");
@@ -220,6 +220,12 @@ const AGENTS = [
     if (s.chg6h < 6) return _no("6h below 6%"); if (s.chg1h < 2 || s.chg1h > 15) return _no("1h move outside 2-15%"); if (_acc(s) < 2) return _no("no volume surge"); if (bp(s) < 0.55) return _no("weak buy pressure");
     return [_p(9, 18, 40, 7, 52 + Math.min(20, _acc(s) * 6) + s.chg1h, `6h +${s.chg6h.toFixed(0)}% volume x${_acc(s).toFixed(1)}`), []] } },
 ];
+// per-agent tuning found by the offline trainer (test/train_agents.mjs): stricter buy-pressure / liquidity gates and its own quick-mode exits
+const AGENT_TUNE = {};
+
+/* trained agent settings (test/train_agents.mjs, validated on unseen markets) */
+Object.assign(AGENT_TUNE, {"launch":{"quick":{"stop":4.5,"tp1":6,"tp2":12,"trail":3}},"rider":{"quick":{"stop":2.5,"tp1":3,"tp2":6,"trail":1.5}},"quality":{"bp":0.08},"whale":{"quick":{"stop":2.5,"tp1":3,"tp2":6,"trail":1.5}}});
+
 const AG = Object.fromEntries(AGENTS.map(a => [a.id, a]));
 const agentOn = id => !(CFG.agentsOff || {})[id];
 function agentStat(id) { const a = (S && S.pf && S.pf.ag && S.pf.ag[id]) || { n: 0, pnl: 0, w: 0, r: 0 }; return a }
@@ -259,12 +265,15 @@ function pickAll(s, t, source) {
   const hits = []; let why = null;
   for (const a of AGENTS) {
     if (!agentOn(a.id) || !ageOK(a, s, t)) continue;
-    const [plan, rej] = a.run(s, t, true);
+    const [plan, rej] = a.run(s, t, true), T = AGENT_TUNE[a.id] || {};
+    if (plan && T.bp && bp(s) < 0.5 + T.bp) { if (!why) why = "buy pressure below tuned bar"; continue }
+    if (plan && T.liq && s.liq < CFG.sec.liqNew * T.liq) { if (!why) why = "liquidity below tuned bar"; continue }
+    if (plan && T.vlr && _vlr(s) < T.vlr) { if (!why) why = "turnover below tuned bar"; continue }
     if (plan) hits.push({ agent: a, plan }); else if (!why) why = rej[0];
   }
   return { hits, why: why || "no agent matched" };
 }
-function quickPlan(plan) { return CFG.quick.on ? Object.assign({}, plan, { stop: CFG.quick.stop, tp1: CFG.quick.tp1, tp2: CFG.quick.tp2, trail: CFG.quick.trail, rr: CFG.quick.tp1 / CFG.quick.stop }) : plan }
+function quickPlan(plan, id) { if (!CFG.quick.on) return plan; const q = Object.assign({}, CFG.quick, (AGENT_TUNE[id] || {}).quick || {}); return Object.assign({}, plan, { stop: q.stop, tp1: q.tp1, tp2: q.tp2, trail: q.trail, rr: q.tp1 / q.stop }) }
 function reviewers(s, cat) {
   const u = _uniq(s);
   const r = [
@@ -283,7 +292,7 @@ function shadowOpen(snap, h, t) {
   const sh = S.shadow || (S.shadow = {}), k = h.agent.id + "|" + snap.chain + ":" + snap.addr.toLowerCase();
   const rc = S.shadowRecent || (S.shadowRecent = {}); if (sh[k] || (rc[k] && t - rc[k] < 21600)) return false;
   const mine = Object.values(sh); if (mine.length >= CFG.learn.maxShadow || mine.filter(x => x.agent === h.agent.id).length >= CFG.learn.perAgent) return false;
-  const p = quickPlan(h.plan), usd = clamp(snap.liq * 0.004, 15, 60);   // about the size a real trade would get
+  const p = quickPlan(h.plan, h.agent.id), usd = clamp(snap.liq * 0.004, 15, 60);   // about the size a real trade would get
   sh[k] = { agent: h.agent.id, chain: snap.chain, addr: snap.addr, sym: snap.sym, cat: h.agent.cat, opened: t, entry: snap.price, last: snap.price, peak: snap.price, usd, stop: snap.price * (1 - p.stop / 100), tp1: snap.price * (1 + p.tp1 / 100), tp2: snap.price * (1 + p.tp2 / 100), trail: p.trail, tp1Done: false, real: 0, frac: 1, liq0: snap.liq, liq: snap.liq, stopPct: p.stop };
   return true;
 }
@@ -749,7 +758,7 @@ async function evaluate(k,snap,src,t,agentId){
   if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
   let hits=pk.hits;
   if(hits.some(h=>h.agent.id==="trend")){const bo=await P().breakout(snap);hits=hits.map(h=>{if(h.agent.id!=="trend")return h;const [pl]=h.agent.run(snap,t,bo);return pl?{agent:h.agent,plan:pl}:null}).filter(Boolean);if(!hits.length)return reject(k,snap,src,"no breakout confirmed")}
-  for(const h of hits)h.plan=quickPlan(h.plan);
+  for(const h of hits)h.plan=quickPlan(h.plan,h.agent.id);
   stats.strat++;
   let plan=hits[0].plan;
   let sec=await P().security(snap.chain,snap.addr);

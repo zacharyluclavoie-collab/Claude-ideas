@@ -35,7 +35,7 @@ async function evaluate(k,snap,src,t,agentId){
   if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
   let hits=pk.hits;
   if(hits.some(h=>h.agent.id==="trend")){const bo=await P().breakout(snap);hits=hits.map(h=>{if(h.agent.id!=="trend")return h;const [pl]=h.agent.run(snap,t,bo);return pl?{agent:h.agent,plan:pl}:null}).filter(Boolean);if(!hits.length)return reject(k,snap,src,"no breakout confirmed")}
-  for(const h of hits)h.plan=quickPlan(h.plan);
+  for(const h of hits)h.plan=quickPlan(h.plan,h.agent.id);
   stats.strat++;
   let plan=hits[0].plan;
   let sec=await P().security(snap.chain,snap.addr);
