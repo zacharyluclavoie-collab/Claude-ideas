@@ -125,6 +125,9 @@ h2{margin-top:30px}
 .agcard{position:relative;overflow:hidden}.agcard::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--cc,var(--accent));opacity:.9}
 .meter{height:6px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:6px}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--ok2));border-radius:99px}
 
+.modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.mbtn{border:1px solid var(--line);background:var(--soft);color:var(--tx);border-radius:14px;padding:12px 8px;font:600 14px/1.2 inherit;cursor:pointer}.mbtn.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+details.more{margin-top:18px}details.more>summary{cursor:pointer;font-weight:600;padding:12px 0;color:var(--mut);list-style:none}details.more>summary::before{content:"▸ "}details.more[open]>summary::before{content:"▾ "}
+
 </style>
 </head>
 <body>
@@ -138,18 +141,21 @@ h2{margin-top:30px}
 <section id="t-home" class="tab on">
   <div class="panel" id="intro" hidden style="margin-top:14px"><b>Welcome to Paper Trader</b><div class="sub" style="margin:6px 0 10px;color:var(--tx)">It scans new and trending tokens, runs security checks, sizes each trade under hard risk limits and manages stops and exits on its own. All money is simulated, and fills include fees, delays, slippage and failed transactions. The Scanner tab shows why each token was bought or rejected.</div><button class="btn pri" id="introok" style="margin:0">Got it</button></div>
   <div id="blocked"></div>
+  <div id="modebox"></div>
   <div id="nowbox"></div>
+  <h2>Equity <span class="chips" id="ranges"><button class="chip" data-r="3600">1H</button><button class="chip" data-r="21600">6H</button><button class="chip" data-r="86400">1D</button><button class="chip on" data-r="0">All</button></span></h2>
+  <div class="panel"><div class="chartwrap" id="chartwrap"><div class="scrub" id="scrub"></div><div id="chart"></div></div><div class="sub" id="chartnote"></div></div>
+  <details class="more"><summary>More details</summary>
   <div class="stats" id="stats"></div>
   <div id="wl"></div>
   <div id="corebox"></div>
-  <h2>Equity <span class="chips" id="ranges"><button class="chip" data-r="3600">1H</button><button class="chip" data-r="21600">6H</button><button class="chip" data-r="86400">1D</button><button class="chip on" data-r="0">All</button></span></h2>
-  <div class="panel"><div class="chartwrap" id="chartwrap"><div class="scrub" id="scrub"></div><div id="chart"></div></div><div class="sub" id="chartnote"></div></div>
   <h2>Portfolio <small id="slots"></small></h2>
   <div class="panel"><div class="hm" id="hm"></div><div id="expo"></div></div>
   <h2>Risk limits <small>hard-coded</small></h2>
   <div class="panel" id="meters"></div>
   <h2>Live activity</h2>
   <div class="list" id="act"></div>
+  </details>
 </section>
 
 <section id="t-pos" class="tab">
@@ -275,11 +281,15 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 21:32";
+const BUILD = "2026-11-23 22:18";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
   CFG.wdSafe = false;
+  if (k === "recommended") { applyPreset("safe"); return }
+  if (k === "easy") { applyPreset("safe"); CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
+  if (k === "risky") { applyPreset("safe"); CFG.risk.perTradePct = 0.45; CFG.risk.posNew = 1.2; CFG.risk.posTrend = 1.8; CFG.risk.totalExp = 50; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 10; return }
+  if (k === "most") { applyPreset("safe"); CFG.risk.perTradePct = 0.8; CFG.risk.posNew = 2; CFG.risk.posTrend = 3; CFG.risk.totalExp = 60; CFG.risk.dailyLoss = 5; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 15; CFG.agentHourly = 12; return }
   if (k === "safe") { applyPreset("protect"); CFG.learn.probation = false; CFG.swarmOff = false; CFG.core.on = true; CFG.wdSafe = true; applySecMode("balanced"); return }   // no real money for any agent until it has proven itself
   if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
   else if (k === "turbo") { applyActivity("active"); applyQuick(true); CFG.keep.on = false; CFG.learn.on = false; CFG.committeeMin = 1; CFG.agentHourly = 30; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 2; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100; CFG.risk.perHour = 200; CFG.risk.perDay = 2000; CFG.risk.maxCostPct = 6 }
@@ -1139,11 +1149,12 @@ function safety(t){const pf=S.pf;let why="";
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
   for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
     const s=c.snap;if(s&&s.price>0){const pk=pickAll(s,t,source);
-      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id}
+      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id;c.core=pk.hits.some(h=>!h.agent.swarm)}
     pass.push(c)}
   if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   {const ch=cands.map(c=>c.snap).filter(s=>s&&s.liq>=30000&&isFinite(s.chg1h)).map(s=>s.chg1h).sort((a,b)=>a-b);if(ch.length>=8)uniMedian=ch[ch.length>>1]}
-  pass.length=Math.min(pass.length,CFG.deepPerScan);
+  {const a=pass.filter(c=>c.core!==false),b=pass.filter(c=>c.core===false);pass.length=0;pass.push(...a,...b.slice(0,Math.max(0,CFG.deepPerScan-a.length,Math.min(10,b.length))))}   // coins a real agent likes go first; scout-only coins get the leftover deep-check slots
+  pass.length=Math.min(pass.length,CFG.deepPerScan+10);
   if(prov.prefetchSecurity&&pass.length)await prov.prefetchSecurity(pass);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
@@ -1264,7 +1275,7 @@ const CH={solana:"SOL",ethereum:"ETH",base:"BASE",bsc:"BSC",arbitrum:"ARB"},CHC=
 let AUTOTRAIN=null;
 async function autoTrain(force){const last=+LS.get("pt_autotrain_at_"+MODE)||0;if(!force&&Date.now()-last<24*3600e3)return;if(AUTOTRAIN!=null)return;AUTOTRAIN=0;holdLoops=true;
   for(let i=0;i<150&&(busyF||busyL||busyS||busyUI);i++)await new Promise(r=>setTimeout(r,100));
-  try{await trainAgents(3,f=>{AUTOTRAIN=f;const el=$("status");if(el){el.className="st dim";el.textContent="Training in simulation "+Math.round(f*100)+"% (no money used)"}});LS.set("pt_autotrain_at_"+MODE,Date.now());save();ev("info","auto_train","","agents practised 3 simulated days (no money used)")}catch(e){console.error(e)}finally{holdLoops=false;AUTOTRAIN=null;render()}}
+  try{await trainAgents(3,f=>{AUTOTRAIN=f;const el=$("chip");if(el){el.className="st dim";el.textContent="Training "+Math.round(f*100)+"%";el.title="Agents practise in a simulation. No money is used."}});LS.set("pt_autotrain_at_"+MODE,Date.now());save();ev("info","auto_train","","agents practised 3 simulated days (no money used)")}catch(e){console.error(e)}finally{holdLoops=false;AUTOTRAIN=null;render()}}
 let holdLoops=false,ffUntil=0,tab="home",range=0,q="",sortBy="pct",filt="all",ffilt="all",openRows=new Set(),openFeed=new Set(),timers=[],busyUI=false,scrubF=null;
 const rows=new Map(),prevPx={};
 const RK=[["perTradePct","Risk per trade (% of equity)",0.1,1,0.1],["maxPos","Max open positions",2,100,1],["perHour","Max new entries per hour",1,40,1],["totalExp","Max total exposure (%)",10,50,5],["maxDD","Max drawdown before shutdown (%)",5,15,1],["dailyLoss","Daily loss limit (%)",1,5,0.5]];
@@ -1281,7 +1292,8 @@ applyExit(LS.get("pt_exit")||"big");
 try{const l=JSON.parse(LS.get("pt_len")||"{}");if(typeof l.sec==="boolean")CFG.lenient.sec=l.sec;if(typeof l.regime==="boolean")CFG.lenient.regime=l.regime}catch(e){}
 applySecMode(LS.get("pt_secmode")||"balanced");
 try{const l=JSON.parse(LS.get("pt_learn")||"{}");if(typeof l.on==="boolean")CFG.learn.on=l.on;if(typeof l.probation==="boolean")CFG.learn.probation=l.probation}catch(e){}
-const curPreset=()=>LS.get("pt_preset")||"safe";
+const curPreset=()=>{const p=LS.get("pt_preset")||"recommended";return p==="safe"?"recommended":p};
+const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes. Best balance in testing."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 3x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 5x bigger trades. Highest expected profit in testing and the biggest swings."]];
 const learnMode=()=>!CFG.learn.on?"off":CFG.learn.probation?"fast":"strict";
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
@@ -1302,7 +1314,7 @@ function header(){const pf=S.pf,eq=totalEquity(),rt=(eq/totalStart()-1)*100,td=e
   $("sub").innerHTML=`<span class="${rt>=0?"g":"r"}">${pct(rt)}</span> <span class="hide-sm"> all time</span> · <span class="${td>=0?"g":"r"}">${sgn(td,0)}</span> today`;
   const c=$("chip");let cls="st live",tx="Running";
   if(pf.shutdown){cls="st bad";tx="Shutdown"}else if(now()<pf.pauseUntil){cls="st warn";tx="Cooling down"}else if(regime==="danger"||regime==="crash"){cls="st warn";tx="Market danger"}
-  else if(AUTOTRAIN!=null){cls="st dim";tx="Training in simulation "+Math.round(AUTOTRAIN*100)+"%"}else if(ffUntil>vnow){cls="st dim";tx="Skipping ahead"}else if(paused){cls="st dim";tx="Entries paused"}else if(MODE==="live"&&health.ok===0&&health.fail>2){cls="st bad";tx="No data"}else if(regime==="unknown"){cls="st dim";tx="Waiting for data"}
+  else if(AUTOTRAIN!=null){cls="st dim";tx="Training "+Math.round(AUTOTRAIN*100)+"%"}else if(ffUntil>vnow){cls="st dim";tx="Skipping ahead"}else if(paused){cls="st dim";tx="Entries paused"}else if(MODE==="live"&&health.ok===0&&health.fail>2){cls="st bad";tx="No data"}else if(regime==="unknown"){cls="st dim";tx="Waiting for data"}
   c.className=cls;c.textContent=tx;
   $("clock").textContent=MODE==="mock"?`Demo · ${tlabel(vnow)} · ${SPEED}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`}
 function drainToasts(){const box=$("toasts");let n=0;while(toastQ.length&&n<2){const j=toastQ.shift();
@@ -1326,10 +1338,13 @@ function rCore(){const el=$("corebox");if(!el)return;const c=S.core;if(!CFG.core
   const v=coreValue(),pl=v-c.start,rows=CFG.core.ids.map(id=>{const q=c.qty[id]||0,val=q*(c.px[id]||0),s=c.sig[id];return`<div><span>${CORE_SYM[id]} ${c.px[id]?"$"+(+c.px[id]).toLocaleString(undefined,{maximumFractionDigits:c.px[id]>100?0:2}):"…"}</span><b>${val>1?fmt(val,0):"in cash"}</b><span>${s==null?"reading history":s>0?"trend "+Math.round(s*3)+"/3 up":"trend down"}</span></div>`}).join("");
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Core: BTC · ETH · SOL trend</b><b class="${pl>=0?"g":"r"}">${sgn(pl)}</b></div><div class="sub" style="margin:4px 0 0">Slow strategy from the research: holds the big coins only while they trend up, steps aside when they fall. Value ${fmt(v,0)} · cash yield +${fmt(c.yieldEarned)} · fees ${fmt(c.fees)} · ${esc(c.why||"starting")}</div><div class="kv">${rows}</div></div>`}
 function rNow(){const el=$("nowbox");if(!el)return;const K={buy:"🟢",closed:"🏁",sell:"💵",core_buy:"🟢",core_sell:"💵",agent_proven:"🎓",auto_train:"🎓",emergency:"⚠️",core_on:"📈"};
-  const L=S.journal.filter(j=>K[j.kind]).slice(0,3),sh=Object.keys(S.shadow||{}).length,op=Object.values(S.pf.positions),u=op.reduce((a,p)=>a+(p.qty*(p.last||p.entry)-p.cost),0);
+  const L=S.journal.filter(j=>K[j.kind]).slice(0,2),sh=Object.keys(S.shadow||{}).length,op=Object.values(S.pf.positions),u=op.reduce((a,p)=>a+(p.qty*(p.last||p.entry)-p.cost),0);
   const d0=new Date(now()*1000).toISOString().slice(0,10),td=S.pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0),tw=td.filter(c=>c.pnl>0).length,tp=td.reduce((a,c)=>a+c.pnl,0);
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Right now</b><span class="sub">${op.length} open · open P/L <b class="${u>=0?"g":"r"}">${sgn(u)}</b> · ${sh} practice trades</span></div><div class="sub" style="margin-top:4px">Today: <b class="g">${tw} won</b> · <b class="r">${td.length-tw} lost</b> · <b class="${tp>=0?"g":"r"}">${sgn(tp)}</b>${S.lessons&&S.lessons.seen?` · learned from ${S.lessons.seen.toLocaleString()} trades`:""}</div>${L.length?L.map(j=>`<div class="sub" style="margin-top:6px">${K[j.kind]} ${esc(j.tok||"")} ${esc(j.msg.slice(0,90))} <span style="opacity:.6">· ${ago(j.t)}</span></div>`).join(""):`<div class="sub" style="margin-top:6px">Scanning coins. Agents only buy when a proven agent and the safety checks agree, so quiet periods are normal.</div>`}</div>`}
-function rHome(){rCore();rNow();{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
+function rMode(){const el=$("modebox");if(!el)return;const c=curPreset(),d=PRESETS.find(x=>x[0]===c);
+  el.innerHTML=`<div class="panel" style="margin-top:14px"><b>Mode</b><div class="modes">${PRESETS.map(x=>`<button class="mbtn ${c===x[0]?"on":""}" data-p="${x[0]}">${x[1]}</button>`).join("")}</div><div class="sub" style="margin-top:8px">${d?esc(d[2]):"Custom settings."}</div></div>`;
+  el.querySelectorAll(".mbtn").forEach(b=>b.onclick=()=>{savePreset(b.dataset.p);toast("Mode: "+b.textContent);render()})}
+function rHome(){rCore();rNow();rMode();{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
 const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
   const dd=Math.max(0,(pf.peak-eq)/pf.peak*100),day=Math.max(0,(pf.dayStart-eq)/pf.dayStart*100),ex=exposure()/eq*100;
   $("stats").innerHTML=[["Cash",fmt(pf.cash,0)],["Invested",fmt(exposure(),0)],["Realized",sgn(pf.realized,0),pf.realized>=0?"g":"r"],["Win rate",cl.length?Math.round(100*cl.filter(c=>c.pnl>0).length/cl.length)+"%":"–"]].map(x=>`<div class="stat"><span>${x[0]}</span><b class="${x[2]||""}">${x[1]}</b></div>`).join("");
@@ -1443,7 +1458,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   h+=`<h2>When data is missing</h2><div class="panel"><label class="tg"><span><b>Keep trading if the security source is down</b><small>Paper money only. Falls back to market-structure checks (sells exist, no wash trading, liquidity) and half-size positions. Off means no trade without a security report.</small></span><input type="checkbox" id="l_sec" ${CFG.lenient.sec?"checked":""}></label><label class="tg"><span><b>Judge the market from the tokens seen</b><small>If the CoinGecko and DexScreener market feeds fail, use the median move of the tokens being scanned.</small></span><input type="checkbox" id="l_reg" ${CFG.lenient.regime?"checked":""}></label></div>`;
   h+=`<h2>Always trading</h2><div class="panel"><label class="tg"><span><b>Keep positions open</b><small>When fewer than the target are open, the bot fills the gap with small scout positions from the best available tokens. No cooldowns, pauses or hourly limits. Security checks, size caps, the daily loss limit and the drawdown shutdown still apply.</small></span><input type="checkbox" id="k_on" ${CFG.keep.on?"checked":""}></label><div class="sl"><div class="ml"><span>Target open positions</span><b id="v_kt">${CFG.keep.target}</b></div><input type="range" id="k_t" min="1" max="100" step="1" value="${CFG.keep.target}" aria-label="Target open positions"></div><div class="sub">Forcing trades means buying weaker setups. In testing, keeping about 10 open lost roughly 2% a day in the demo market, against about 0.2% without it. Turn it off to trade only the best setups.</div></div>`;
   h+=`<h2>Exit style</h2><div class="chips" id="exitst"><button class="chip ${CFG.scalp?"":"on"}" data-e="big">Big winners</button><button class="chip ${CFG.scalp?"on":""}" data-e="scalp">Frequent small wins</button></div><div class="sub" style="margin-top:8px">Small wins takes profit early, which lifts the win rate from about 22% to about 34% in testing. It did not improve the result: wins get smaller, so the loss per day stayed about the same. Win rate is not profit.</div>`;
-  h+=`<h2>Mode</h2><div class="chips" id="preset">${[["safe","Safe (recommended)"],["protect","Balanced"],["turbo","Turbo (risky)"],["always","Always trading"]].map(([k,n])=>`<button class="chip ${curPreset()===k?"on":""}" data-p="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px"><b>Safe:</b> no agent risks money until it has proven itself (trained in simulation automatically, then on virtual trades), small trades, 6% stop, core BTC/ETH/SOL sleeve on. Fewest losses in testing. <b>Balanced:</b> like Safe, but unproven agents may trade at 40% size while they learn, which costs money during training. <b>Turbo:</b> about twice the trades of the safer mode in testing, with every trained agent trading from the first minute at small size. The price is quality: more weak coins get bought and the average trade was slightly negative (about −0.1R).  <b>Always trading:</b> keeps 10 positions open and lost the most. None of these is a promise on live data.</div>`;
+  h+=`<h2>Mode</h2><div class="chips" id="preset">${PRESETS.map(x=>[x[0],x[1]]).concat([["turbo","Turbo (lost in tests)"]]).map(([k,n])=>`<button class="chip ${curPreset()===k?"on":""}" data-p="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px"><b>Safe:</b> no agent risks money until it has proven itself (trained in simulation automatically, then on virtual trades), small trades, 6% stop, core BTC/ETH/SOL sleeve on. Fewest losses in testing. <b>Balanced:</b> like Safe, but unproven agents may trade at 40% size while they learn, which costs money during training. <b>Turbo:</b> about twice the trades of the safer mode in testing, with every trained agent trading from the first minute at small size. The price is quality: more weak coins get bought and the average trade was slightly negative (about −0.1R).  <b>Always trading:</b> keeps 10 positions open and lost the most. None of these is a promise on live data.</div>`;
   h+=`<h2>Extra strategies</h2><div class="panel"><label class="tg"><span>Core BTC · ETH · SOL trend sleeve (${Math.round(CFG.core.share*100)}% of the account, slow, research-based)</span><input type="checkbox" id="coreon" ${CFG.core.on?"checked":""}></label><label class="tg"><span>300 scout agents (practice trades only, they teach the lessons)</span><input type="checkbox" id="swarmon" ${!CFG.swarmOff?"checked":""}></label></div>`;
   h+=`<h2>Train the agents</h2><button class="btn pri" id="trainbtn" style="margin-top:0">Train agents now (about 30 seconds)</button><div class="sub" id="trainmsg" style="margin-top:6px">The agents already come pre-trained, so you do not need this. It runs 6 simulated days of practice and gives a starting record only to agents that have none. It never lowers a record an agent already has.</div>`;
   h+=`<h2>Agent practice rule</h2><div class="chips" id="learnm">${[["strict","Strict"],["fast","Fast (recommended)"],["off","Off"]].map(([k,n])=>`<button class="chip ${learnMode()===k?"on":""}" data-l="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px">Every agent always practises with virtual trades. <b>Strict:</b> only agents with a proven record trade real money. <b>Fast:</b> agents without a clearly bad record also trade at 40% size while they prove themselves, which in testing doubled the number of trades with a drawdown of about 0.1%. <b>Off:</b> all agents trade real money from the start. That made the most trades in testing, but it skips the safety of practising first.</div>`;
@@ -1504,8 +1519,11 @@ else if(LS.get("pt_quick")==="1"||LS.get("pt_preset")==="protect"||LS.get("pt_pr
 try{const c=JSON.parse(LS.get("pt_cm")||"{}");if(c.c)CFG.committeeMin=c.c;if(c.h)CFG.agentHourly=c.h}catch(e){}
 if(!LS.get("pt_preset_v7")){savePreset("turbo");LS.set("pt_preset_v7","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
 if(!LS.get("pt_preset_v8")){savePreset("protect");LS.set("pt_preset_v8","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
+if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1");LS.set("pt_preset_v9","1")}
 if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set("pt_core","1");LS.set("pt_swarm","1")}
-function render(){header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
+{const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
+  CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){}}}
+function render(){if(AUTOTRAIN!=null)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
 $("ranges").onclick=e=>{if(e.target.dataset.r!=null){range=+e.target.dataset.r;render()}};
