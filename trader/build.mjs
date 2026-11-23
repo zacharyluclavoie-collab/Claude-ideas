@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const rd = f => fs.readFileSync(path.join(dir, "src", f), "utf8");
-const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "agents.js", "learn.js", "train.js", "execution.js", "providers_live.js", "sim_market.js", "backtest_summary.js", "engine.js"];
+const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "agents.js", "learn.js", "train.js", "execution.js", "providers_live.js", "sim_market.js", "backtest_summary.js", "majors.js", "engine.js"];
 const BUILD = new Date().toISOString().slice(0, 16).replace("T", " ");
 let tuneJs = "";
 try { const t = JSON.parse(fs.readFileSync(path.join(dir, "src", "agent_tune.json"), "utf8")); tuneJs = "\n/* trained agent settings (test/train_agents.mjs, validated on unseen markets) */\nObject.assign(AGENT_TUNE, " + JSON.stringify(t) + ");\n" } catch (e) {}

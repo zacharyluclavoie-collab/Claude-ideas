@@ -1,7 +1,7 @@
 const P=()=>MODE==="mock"?MOCK:LIVE;
 /* ============================ engine ============================ */
 const due=(n,every,t)=>{if(t-(last[n]||0)>=every){last[n]=t;return true}return false};
-function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}}
+function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}if(S.core&&d!==S.core.day){S.core.day=d;S.core.dayStart=coreValue()}}
 async function updateRegime(t){let m=await P().majors();if(!m&&CFG.lenient.regime&&uniMedian!=null)m={universe:uniMedian};const r=regimeOf(m);
   if(r!=="unknown"){regimeOk=t;if(r!==regime)ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);regime=r}
   if(regime==="crash")for(const p of Object.values(S.pf.positions))p.emergency=p.emergency||"market crash"}
@@ -121,9 +121,9 @@ function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;ret
 let busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};
 async function stepFast(t){if(busyF)return;busyF=true;await guard(async()=>{roll(t);safety(t);if(due("monitor",CFG.monitorEvery,t)){await monitor(t);if(MODE==="live")LS.set("pt_last_live",Math.floor(t))}
-  if(due("equity",CFG.equityEvery,t)){S.curve.push([t,equity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
+  if(due("equity",CFG.equityEvery,t)){S.curve.push([t,totalEquity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
 async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{watchdog(t);if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
-  if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t)});busyL=false}
+  if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t);await coreStep(t)});busyL=false}
 async function stepScan(t){if(busyS||paused||S.pf.shutdown)return;busyS=true;scanning=true;await guard(async()=>{if(due("new",CFG.newEvery,t))await scan("new",now());if(due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
 async function tick(){if(busy)return;busy=true;try{const t=now();await stepFast(t);await stepSlow(t);await stepScan(t)}finally{busy=false}}
 

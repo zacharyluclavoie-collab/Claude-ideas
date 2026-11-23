@@ -68,7 +68,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 19:37";
+const BUILD = "2026-11-23 20:28";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -272,7 +272,7 @@ function agentWeight(id) { const a = agentStat(id); if (a.n < 10) return CFG.age
 function agentRecent(id, t, win = 3600) { let n = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id && t - p.opened < win) n++; for (const c of S.pf.closed.slice(-200)) if (c.agent === id && c.t - c.held * 3600 > t - win) n++; return n }
 // proven agents trade freely; struggling agents are throttled; a benched agent only gets one probe trade every 6 hours
 function agentLimit(id, t) { const w = agentWeight(id), a = agentStat(id); if (a.n >= 20 && w <= 0.1) return agentRecent(id, t, 21600) >= 1 ? "benched (probe every 6h)" : ""; const lim = w >= 1 ? CFG.agentHourly : w >= 0.5 ? Math.ceil(CFG.agentHourly / 2) : Math.ceil(CFG.agentHourly / 4); return agentRecent(id, t) >= lim ? "agent entry limit (" + lim + "/hour at its current record)" : "" }
-function agentShare(id) { let tot = 0; for (const a of AGENTS) if (agentOn(a.id)) tot += agentWeight(a.id); return tot ? agentWeight(id) / tot : 0 }
+function agentShare(id) { let tot = 0; for (const a of AGENTS) if (agentOn(a.id) && (!a.swarm || agentProven(a.id))) tot += agentWeight(a.id); return tot ? agentWeight(id) / tot : 0 }
 function agentExposure(id) { let v = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id) v += pv(p); return v }
 function ageOK(a, s, t) { const age = ageH(s, t); if (a.scope === "any") return true; if (age == null) return a.scope === "new"; return a.scope === "new" ? age <= 48 : age >= CFG.tr.minAgeH }
 // every enabled agent looks at the token; returns the best match or null, plus the first rejection reason for diagnostics
@@ -366,7 +366,7 @@ function shadowUpdate(snaps, t) {
  */
 async function trainAgents(days, onProgress) {
   const keep = { S, MODE, vnow, last, stats, rejected, regime, regimeOk, rng, SEED, paused, FILL, uniMedian, LEARN: Object.assign({}, CFG.learn), tick: CFG.tick, hist: MOCK.toks, ev: [CFG.newEvery, CFG.trendEvery, CFG.monitorEvery] };
-  const ag0 = JSON.parse(JSON.stringify(S.pf.ag || {})), rec = {};
+  const ag0 = JSON.parse(JSON.stringify(S.pf.ag || {})), rec = {}, coreOn = CFG.core.on; CFG.core.on = false;
   try {
     MODE = "mock"; S = newState(10000); S.curve = [[1.76e9, 10000]]; last = {}; stats = freshStats(); rejected = {}; regime = "unknown"; paused = false;
     SEED = 4242 + (Date.now() & 0xff); rng = mulberry(SEED); vnow = 1.76e9; MOCK.init(); regimeOk = vnow; CFG.tick = 30; CFG.newEvery = 10; CFG.trendEvery = 30; CFG.monitorEvery = 30;
@@ -374,7 +374,7 @@ async function trainAgents(days, onProgress) {
     for (let i = 0; i < total; i++) { vnow += 30; await tick(); if (i % 400 === 0 && onProgress) { onProgress(i / total); await new Promise(r => setTimeout(r, 0)) } }
     for (const a of AGENTS) { if (a.swarm) continue; const s = (S.pf.ag || {})[a.id]; if (s && s.n) rec[a.id] = { n: s.n, pnl: s.pnl, w: s.w, r: s.r } }
   } finally {
-    S = keep.S; MODE = keep.MODE; vnow = keep.vnow; last = keep.last; stats = keep.stats; rejected = keep.rejected; regime = keep.regime; regimeOk = keep.regimeOk; rng = keep.rng; SEED = keep.SEED; paused = keep.paused; FILL = keep.FILL; uniMedian = keep.uniMedian; CFG.learn = keep.LEARN; CFG.tick = keep.tick; [CFG.newEvery, CFG.trendEvery, CFG.monitorEvery] = keep.ev; MOCK.toks = keep.hist;
+    S = keep.S; MODE = keep.MODE; vnow = keep.vnow; last = keep.last; stats = keep.stats; rejected = keep.rejected; regime = keep.regime; regimeOk = keep.regimeOk; rng = keep.rng; SEED = keep.SEED; paused = keep.paused; FILL = keep.FILL; uniMedian = keep.uniMedian; CFG.learn = keep.LEARN; CFG.core.on = coreOn; CFG.tick = keep.tick; [CFG.newEvery, CFG.trendEvery, CFG.monitorEvery] = keep.ev; MOCK.toks = keep.hist;
   }
   // blend: scale training records so a live record can overrule them quickly (at most 14 trades' worth), keep any existing live record
   const A = S.pf.ag || (S.pf.ag = {});
@@ -780,10 +780,100 @@ const MOCK = {
 /* filled from test/sweep.mjs (seeds 101-124, 7 simulated days, default settings); shown in the app so expectations stay honest */
 const BACKTEST = { seeds: 24, days: 7, med: "-0.13", worst: "-0.52", best: "0.21", trades: 23, losing: 17, none: "-0.20", mid: "+0.45", high: "+0.94" };
 
+/* ============================ Core sleeve: BTC / ETH / SOL trend following + idle-cash yield ============================
+ * The research (reports/Profitable crypto strategies for small accounts.md) found that slow, volatility-sized trend following on the big,
+ * liquid coins is one of the few approaches with published after-cost evidence, mainly because it steps aside in long bear markets.
+ * Rules (kept simple on purpose, so they are hard to over-fit):
+ *   - signal per coin = share of {10, 20, 50}-day moving averages that the price is above (0, 1/3, 2/3 or 1)
+ *   - size = signal x min(1, 35% target volatility / the coin's 20-day volatility), split evenly across the 3 coins
+ *   - looked at every 3 days; only trades when the target moved by more than 35% of a slot (fewer trades = lower costs)
+ *   - every trade pays 0.3% fee + 0.05% slippage; cash not in coins earns a stablecoin-lending yield (default 3%/yr, Aave-style)
+ * It lives in its own sub-account so its swings never trip the memecoin kill switches, and it never touches memecoin cash after setup.
+ * Honest expectation: a few % a month in good trends, flat or small losses in choppy markets. It does not get rich quick.
+ */
+CFG.core = { on: true, share: 0.4, lookbacks: [10, 20, 50], volTarget: 0.3, fee: 0.3, slip: 0.05, checkH: 72, band: 0.35, yieldApr: 3, ids: ["bitcoin", "ethereum", "solana"] };
+const CORE_SYM = { bitcoin: "BTC", ethereum: "ETH", solana: "SOL" };
+const coreValue = () => { const c = S && S.core; if (!c) return 0; let v = c.cash; for (const id in c.qty) v += c.qty[id] * (c.px[id] || 0); return v };
+const totalEquity = () => equity() + coreValue();
+const totalStart = () => S.pf.start + (S.core ? S.core.start : 0);
+function coreInit(t) {
+  if (S.core || !CFG.core.on) return;
+  const pf = S.pf, amt = Math.floor(Math.max(0, pf.cash * CFG.core.share)); if (amt < 50) return;
+  pf.cash -= amt; pf.start -= amt; pf.peak = Math.max(0, pf.peak - amt); pf.dayStart = Math.max(0, pf.dayStart - amt);
+  S.core = { cash: amt, start: amt, qty: {}, px: {}, hist: {}, fees: 0, lastCheck: 0, lastPx: 0, lastYield: t, yieldEarned: 0, trades: [], sig: {}, vol: {}, why: "" };
+  ev("info", "core_on", "CORE", `core sleeve opened with ${fmt(amt, 0)} (BTC/ETH/SOL trend + cash yield)`);
+}
+function coreOff() {
+  const c = S.core; if (!c) return; for (const id in c.qty) coreTrade(id, -c.qty[id] * (c.px[id] || 0), now(), "core sleeve switched off");
+  const pf = S.pf; pf.cash += c.cash; pf.start += c.start; pf.peak += c.cash; pf.dayStart += c.cash; delete S.core; save();
+}
+/* ---- prices: live from CoinGecko (daily history once, then spot), demo from a regime-switching simulator with its own random stream ---- */
+const CSIM = { r: null, px: null, d: null, f: null, t: 0, vol: { bitcoin: 0.55, ethereum: 0.7, solana: 0.9 } };
+function csimStep(hours) {
+  if (!CSIM.r) { CSIM.r = mulberry((SEED || 1) * 7 + 13); CSIM.px = { bitcoin: 60000, ethereum: 3000, solana: 140 }; CSIM.d = 0 }
+  const g = () => { let u = 0, v = 0; while (!u) u = CSIM.r(); v = CSIM.r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) };
+  for (let h = 0; h < hours; h++) {
+    if (CSIM.r() < 1 / (24 * 25)) CSIM.d = g() * 0.6;                       // market trend regime: lasts ~25 days, annual drift ~N(0, 60%) -> zero on average
+    const m = g();
+    for (const id of CFG.core.ids) { const s = CSIM.vol[id] / Math.sqrt(8760), beta = id === "bitcoin" ? 1 : id === "ethereum" ? 1.2 : 1.5;
+      CSIM.px[id] *= Math.exp(CSIM.d * beta / 8760 - s * s / 2 + s * (0.75 * m + 0.66 * g())) }
+  }
+}
+async function coreQuotes(t) {
+  const c = S.core;
+  if (MODE === "live") {
+    for (const id of CFG.core.ids) if (!c.hist[id] || c.hist[id].length < 55 || (c.histAt || 0) < t - 7 * 86400) {
+      const d = await getJSON(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=120&interval=daily`);
+      if (d && Array.isArray(d.prices) && d.prices.length > 55) { c.hist[id] = d.prices.slice(-120).map(p => [Math.floor(p[0] / 86400000), +p[1]]); c.histAt = t }
+    }
+    const q = await getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${CFG.core.ids.join(",")}&vs_currencies=usd`);
+    if (q) for (const id of CFG.core.ids) if (q[id] && q[id].usd > 0) c.px[id] = +q[id].usd;
+  } else {
+    if (!CSIM.r || !c.hist.bitcoin) { CSIM.r = null; csimStep(1); for (const id of CFG.core.ids) c.hist[id] = []; const day0 = Math.floor(t / 86400) - 120;
+      for (let d = 0; d < 120; d++) { csimStep(24); for (const id of CFG.core.ids) c.hist[id].push([day0 + d, CSIM.px[id]]) } CSIM.t = t }
+    const h = Math.floor((t - CSIM.t) / 3600); if (h > 0) { csimStep(h); CSIM.t += h * 3600 }
+    for (const id of CFG.core.ids) c.px[id] = CSIM.px[id];
+  }
+  const day = Math.floor(t / 86400);
+  for (const id of CFG.core.ids) { const H = c.hist[id]; if (!H || !(c.px[id] > 0)) continue; if (H.length && H[H.length - 1][0] === day) H[H.length - 1][1] = c.px[id]; else { H.push([day, c.px[id]]); if (H.length > 130) H.shift() } }
+}
+function coreSignal(id) {
+  const c = S.core, H = c.hist[id]; if (!H || H.length < 55 || !(c.px[id] > 0)) return null;
+  const cl = H.map(x => x[1]), p = c.px[id]; let s = 0;
+  for (const L of CFG.core.lookbacks) { const w = cl.slice(-L), ma = w.reduce((a, b) => a + b, 0) / w.length; if (p > ma) s++ }
+  const r = []; for (let i = cl.length - 20; i < cl.length; i++) r.push(Math.log(cl[i] / cl[i - 1]));
+  const mu = r.reduce((a, b) => a + b, 0) / r.length, vol = Math.sqrt(r.reduce((a, b) => a + (b - mu) ** 2, 0) / (r.length - 1) * 365) || 1;
+  return { sig: s / CFG.core.lookbacks.length, vol };
+}
+function coreTrade(id, usd, t, why) {
+  const c = S.core, px = c.px[id]; if (!(px > 0) || Math.abs(usd) < 5) return;
+  const cost = Math.abs(usd) * (CFG.core.fee + CFG.core.slip) / 100;
+  if (usd > 0) { usd = Math.min(usd, c.cash - cost); if (usd < 5) return; c.cash -= usd + cost; c.qty[id] = (c.qty[id] || 0) + usd / px }
+  else { const q = Math.min(c.qty[id] || 0, -usd / px); if (q <= 0) return; c.qty[id] -= q; c.cash += q * px - cost; if (c.qty[id] * px < 1) delete c.qty[id] }
+  c.fees += cost; c.trades.unshift({ t, sym: CORE_SYM[id], side: usd > 0 ? "buy" : "sell", usd: Math.abs(usd), px, why }); if (c.trades.length > 100) c.trades.length = 100;
+  ev("info", "core_" + (usd > 0 ? "buy" : "sell"), CORE_SYM[id], `${why}: ${usd > 0 ? "buy" : "sell"} ${fmt(Math.abs(usd), 0)} @ ${px.toPrecision(5)}`);
+}
+async function coreStep(t) {
+  if (!CFG.core.on) { if (S.core) coreOff(); return } coreInit(t); const c = S.core; if (!c) return;
+  if (t - (c.lastPx || 0) < (MODE === "live" ? 600 : 3600)) return; c.lastPx = t;
+  // stablecoin-lending yield on the sleeve's idle cash
+  const dt = Math.max(0, t - (c.lastYield || t)); if (dt > 0) { const y = c.cash * CFG.core.yieldApr / 100 * dt / (365 * 86400); c.cash += y; c.yieldEarned += y; c.lastYield = t }
+  await coreQuotes(t);
+  if (t - (c.lastCheck || 0) < CFG.core.checkH * 3600) return;
+  const tot = coreValue(), n = CFG.core.ids.length; let traded = false;
+  for (const id of CFG.core.ids) {
+    const s = coreSignal(id); if (!s) { c.why = "waiting for price history"; continue }
+    c.sig[id] = s.sig; c.vol[id] = s.vol;
+    const target = tot / n * s.sig * Math.min(1, CFG.core.volTarget / s.vol), cur = (c.qty[id] || 0) * c.px[id], diff = target - cur;
+    if ((s.sig === 0 && cur > 1) || Math.abs(diff) > CFG.core.band * tot / n) { coreTrade(id, diff, t, s.sig === 0 ? "trend down: step aside" : `trend ${Math.round(s.sig * 3)}/3, vol ${(s.vol * 100).toFixed(0)}%`); traded = true }
+  }
+  c.lastCheck = t; c.why = traded ? "rebalanced" : "holding (no change needed)"; save();
+}
+
 const P=()=>MODE==="mock"?MOCK:LIVE;
 /* ============================ engine ============================ */
 const due=(n,every,t)=>{if(t-(last[n]||0)>=every){last[n]=t;return true}return false};
-function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}}
+function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}if(S.core&&d!==S.core.day){S.core.day=d;S.core.dayStart=coreValue()}}
 async function updateRegime(t){let m=await P().majors();if(!m&&CFG.lenient.regime&&uniMedian!=null)m={universe:uniMedian};const r=regimeOf(m);
   if(r!=="unknown"){regimeOk=t;if(r!==regime)ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);regime=r}
   if(regime==="crash")for(const p of Object.values(S.pf.positions))p.emergency=p.emergency||"market crash"}
@@ -903,9 +993,9 @@ function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;ret
 let busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};
 async function stepFast(t){if(busyF)return;busyF=true;await guard(async()=>{roll(t);safety(t);if(due("monitor",CFG.monitorEvery,t)){await monitor(t);if(MODE==="live")LS.set("pt_last_live",Math.floor(t))}
-  if(due("equity",CFG.equityEvery,t)){S.curve.push([t,equity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
+  if(due("equity",CFG.equityEvery,t)){S.curve.push([t,totalEquity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
 async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{watchdog(t);if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
-  if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t)});busyL=false}
+  if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t);await coreStep(t)});busyL=false}
 async function stepScan(t){if(busyS||paused||S.pf.shutdown)return;busyS=true;scanning=true;await guard(async()=>{if(due("new",CFG.newEvery,t))await scan("new",now());if(due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
 async function tick(){if(busy)return;busy=true;try{const t=now();await stepFast(t);await stepSlow(t);await stepScan(t)}finally{busy=false}}
 

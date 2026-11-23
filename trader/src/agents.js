@@ -94,7 +94,7 @@ function agentWeight(id) { const a = agentStat(id); if (a.n < 10) return CFG.age
 function agentRecent(id, t, win = 3600) { let n = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id && t - p.opened < win) n++; for (const c of S.pf.closed.slice(-200)) if (c.agent === id && c.t - c.held * 3600 > t - win) n++; return n }
 // proven agents trade freely; struggling agents are throttled; a benched agent only gets one probe trade every 6 hours
 function agentLimit(id, t) { const w = agentWeight(id), a = agentStat(id); if (a.n >= 20 && w <= 0.1) return agentRecent(id, t, 21600) >= 1 ? "benched (probe every 6h)" : ""; const lim = w >= 1 ? CFG.agentHourly : w >= 0.5 ? Math.ceil(CFG.agentHourly / 2) : Math.ceil(CFG.agentHourly / 4); return agentRecent(id, t) >= lim ? "agent entry limit (" + lim + "/hour at its current record)" : "" }
-function agentShare(id) { let tot = 0; for (const a of AGENTS) if (agentOn(a.id)) tot += agentWeight(a.id); return tot ? agentWeight(id) / tot : 0 }
+function agentShare(id) { let tot = 0; for (const a of AGENTS) if (agentOn(a.id) && (!a.swarm || agentProven(a.id))) tot += agentWeight(a.id); return tot ? agentWeight(id) / tot : 0 }
 function agentExposure(id) { let v = 0; for (const p of Object.values(S.pf.positions)) if (p.agent === id) v += pv(p); return v }
 function ageOK(a, s, t) { const age = ageH(s, t); if (a.scope === "any") return true; if (age == null) return a.scope === "new"; return a.scope === "new" ? age <= 48 : age >= CFG.tr.minAgeH }
 // every enabled agent looks at the token; returns the best match or null, plus the first rejection reason for diagnostics
