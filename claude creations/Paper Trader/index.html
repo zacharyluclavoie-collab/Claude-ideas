@@ -178,7 +178,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 /* ============================ config (mirrors paper_trader/config.py) ============================ */
 const CFG = {
   chains:["solana","base","ethereum","bsc"],
-  tick:5, monitorEvery:10, newEvery:30, trendEvery:120, recheckEvery:300, regimeEvery:120, equityEvery:300,
+  tick:5, monitorEvery:4, newEvery:30, trendEvery:120, recheckEvery:300, regimeEvery:120, equityEvery:300,
   deepPerScan:16, quickRejectSec:20, quickYoungSec:10, maxCands:16, rejectMin:45, rejectNewMin:8, rejectTrendMin:20,
   risk:{perTradePct:0.5, posTrend:2, posNew:1, totalExp:40, newExp:20, chainExp:20, cashReserve:20, maxPos:100,
         liqFrac:0.006, minTrade:15, dailyLoss:3, maxDD:12, maxTotalLoss:20, streakPause:3, pauseMin:60,
@@ -245,11 +245,11 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 02:47";
+const BUILD = "2026-11-23 05:00";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
-  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, breakout: 1, quality: 1, whale: 1, gem: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 20; CFG.risk.maxPos = 100 }
+  if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, breakout: 1, quality: 1, whale: 1, gem: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
   else { applyActivity("active"); applyQuick(false); CFG.keep.on = true; CFG.agentProbation = 0.6; CFG.agentsOff = {}; CFG.risk.dailyLoss = 3; CFG.risk.maxDD = 12; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100 }
   CFG.risk.perDay = CFG.risk.perHour * 5
 }
@@ -427,8 +427,10 @@ function pickAgent(s, t, source) {
  *    reviewers (not chasing, two-sided flow, real buyers, enough depth, market not falling). More approvals = slightly larger size.
  * 3. GROWTH FROM PROFIT ONLY: position size can rise (up to 2x) only as realised profit builds, and never while in a drawdown.
  */
-CFG.learn = { on: true, minTrades: 15, minExp: 0.05, minWin: 0.45, maxShadow: 90, perAgent: 14 };
+CFG.learn = { probation: true, on: true, minTrades: 12, minExp: 0.05, minWin: 0.45, maxShadow: 400, perAgent: 100 };
 function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id); if (a.n < CFG.learn.minTrades) return false; return a.r / a.n >= CFG.learn.minExp && a.w / a.n >= CFG.learn.minWin }
+// probation: an agent without a clear bad record may trade real money at 40% size while it keeps practising (faster, still capped)
+function agentProbation(id) { if (!CFG.learn.on || agentProven(id) || !CFG.learn.probation) return false; const a = agentStat(id); return a.n < 8 || a.r / a.n > -0.25 }
 function agentLearning(id) { const a = agentStat(id); return { n: a.n, need: CFG.learn.minTrades, proven: agentProven(id) } }
 function pickAll(s, t, source) {
   const hits = []; let why = null;
@@ -914,7 +916,7 @@ async function evaluate(k,snap,src,t,agentId){
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   // learning phase: every unproven agent that likes this coin takes a virtual trade (many agents study one coin at once); only proven agents trade real money
-  const proven=[];for(const h of hits){if(agentProven(h.agent.id))proven.push(h);else shadowOpen(snap,h,t)}
+  const proven=[];for(const h of hits){const pr=agentProven(h.agent.id),pb=!pr&&agentProbation(h.agent.id);if(pr||pb){h.prob=pb;proven.push(h)}if(!pr)shadowOpen(snap,h,t)}
   if(!proven.length){feedAdd(snap,src,"learning",hits.map(h=>h.agent.name).join(", ")+" studying this coin with a virtual trade (no money yet)",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+90;return}
   proven.sort((a,b)=>b.plan.score*agentWeight(b.agent.id)-a.plan.score*agentWeight(a.agent.id));
   const ag=proven[0].agent;plan=proven[0].plan;const cat=ag.cat;
@@ -922,7 +924,7 @@ async function evaluate(k,snap,src,t,agentId){
   if(com.ok<3){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
   const d=approve(snap,cat,v.risk,plan,t,ag.id);
   if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
-  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok),t,v.checks,ag.id)}
+  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1),t,v.checks,ag.id)}
 function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
   if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
@@ -1016,6 +1018,8 @@ const saveKeep=()=>LS.set("pt_keep",JSON.stringify({on:CFG.keep.on,target:CFG.ke
 applyExit(LS.get("pt_exit")||"big");
 try{const l=JSON.parse(LS.get("pt_len")||"{}");if(typeof l.sec==="boolean")CFG.lenient.sec=l.sec;if(typeof l.regime==="boolean")CFG.lenient.regime=l.regime}catch(e){}
 applySecMode(LS.get("pt_secmode")||"balanced");
+try{const l=JSON.parse(LS.get("pt_learn")||"{}");if(typeof l.on==="boolean")CFG.learn.on=l.on;if(typeof l.probation==="boolean")CFG.learn.probation=l.probation}catch(e){}
+const learnMode=()=>!CFG.learn.on?"off":CFG.learn.probation?"fast":"strict";
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
 const pnlTot=p=>p.real+pv(p)-p.cost,pnlPct=p=>pnlTot(p)/(p.size0||p.cost||1)*100;
@@ -1165,6 +1169,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   h+=`<h2>Always trading</h2><div class="panel"><label class="tg"><span><b>Keep positions open</b><small>When fewer than the target are open, the bot fills the gap with small scout positions from the best available tokens. No cooldowns, pauses or hourly limits. Security checks, size caps, the daily loss limit and the drawdown shutdown still apply.</small></span><input type="checkbox" id="k_on" ${CFG.keep.on?"checked":""}></label><div class="sl"><div class="ml"><span>Target open positions</span><b id="v_kt">${CFG.keep.target}</b></div><input type="range" id="k_t" min="1" max="100" step="1" value="${CFG.keep.target}" aria-label="Target open positions"></div><div class="sub">Forcing trades means buying weaker setups. In testing, keeping about 10 open lost roughly 2% a day in the demo market, against about 0.2% without it. Turn it off to trade only the best setups.</div></div>`;
   h+=`<h2>Exit style</h2><div class="chips" id="exitst"><button class="chip ${CFG.scalp?"":"on"}" data-e="big">Big winners</button><button class="chip ${CFG.scalp?"on":""}" data-e="scalp">Frequent small wins</button></div><div class="sub" style="margin-top:8px">Small wins takes profit early, which lifts the win rate from about 22% to about 34% in testing. It did not improve the result: wins get smaller, so the loss per day stayed about the same. Win rate is not profit.</div>`;
   h+=`<h2>Mode</h2><div class="chips" id="preset"><button class="chip ${CFG.quick.on?"on":""}" data-p="protect">Small trades, sell fast</button><button class="chip ${CFG.quick.on?"":"on"}" data-p="always">Always trading</button></div><div class="sub" style="margin-top:8px"><b>Small trades, sell fast:</b> tiny positions, take profit at about +4%, sell any loser at about −3%, only the four agents that held up in testing. In 24 unseen test markets it won about 68% of trades and finished slightly positive (about +0.06% a day), with about 5 of 24 markets ending down and drawdowns around 0.2%. <b>Always trading:</b> keeps 10 positions open all the time and lost far more in testing. Neither is a promise on live data.</div>`;
+  h+=`<h2>Agent practice rule</h2><div class="chips" id="learnm">${[["strict","Strict"],["fast","Fast (recommended)"],["off","Off"]].map(([k,n])=>`<button class="chip ${learnMode()===k?"on":""}" data-l="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px">Every agent always practises with virtual trades. <b>Strict:</b> only agents with a proven record trade real money. <b>Fast:</b> agents without a clearly bad record also trade at 40% size while they prove themselves, which in testing doubled the number of trades with a drawdown of about 0.1%. <b>Off:</b> all agents trade real money from the start. That made the most trades in testing, but it skips the safety of practising first.</div>`;
   h+=`<h2>Trading activity</h2><div class="chips" id="act">${Object.entries(ACTIVITY).map(([k,a])=>`<button class="chip ${k===ACT?"on":""}" data-a="${k}">${a.name}</button>`).join("")}</div><div class="sub" style="margin-top:8px">${esc(ACTIVITY[ACT].note)}. More trades means looking at weaker setups, and every extra trade pays fees and slippage. Security checks stay mandatory at every level.</div>`;
   h+=`<h2>Scan speed</h2><div class="chips" id="turbo"><button class="chip ${CFG.turbo?"on":""}" data-v="1">Turbo</button><button class="chip ${CFG.turbo?"":"on"}" data-v="0">Standard</button></div><div class="sub" style="margin-top:8px">Turbo re-judges every known token about every second using only data already in hand, then fetches fresh prices and security reports just for the few that survive. Real data providers cap how fast new tokens can be fetched, so live mode finds tokens at a few dozen per second at best; the demo universe has no such cap.</div>`;
   h+=`<h2>Strategies</h2><div class="panel"><label class="tg"><span><b>New tokens</b><small>Fresh pools after security checks. Around break-even in testing; profit depends on assumptions nobody can verify.</small></span><input type="checkbox" id="f_nw" ${CFG.nw.enabled?"checked":""}></label><label class="tg"><span><b>Established tokens (experimental)</b><small>Momentum on older tokens. No edge after costs in testing, so it is off by default. Scanning continues either way.</small></span><input type="checkbox" id="f_tr" ${CFG.tr.enabled?"checked":""}></label></div>`;
@@ -1183,6 +1188,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   $("k_on").onchange=e=>{CFG.keep.on=e.target.checked;saveKeep()};$("k_t").oninput=e=>{CFG.keep.target=+e.target.value;$("v_kt").textContent=e.target.value;saveKeep()};
   $("exitst").onclick=e=>{const k=e.target.dataset&&e.target.dataset.e;if(!k)return;applyExit(k);LS.set("pt_exit",k);buildSettings()};
   $("preset").onclick=e=>{const k=e.target.dataset&&e.target.dataset.p;if(!k)return;savePreset(k);buildSettings();render()};
+  $("learnm").onclick=e=>{const k=e.target.dataset&&e.target.dataset.l;if(!k)return;CFG.learn.on=k!=="off";CFG.learn.probation=k==="fast";LS.set("pt_learn",JSON.stringify({on:CFG.learn.on,probation:CFG.learn.probation}));buildSettings()};
   $("act").onclick=e=>{const k=e.target.dataset&&e.target.dataset.a;if(!k)return;applyActivity(k);LS.set("pt_activity",k);buildSettings()};
   $("turbo").onclick=e=>{const v=e.target.dataset&&e.target.dataset.v;if(v==null)return;LS.set("pt_turbo",v);applyScan();buildSettings()};
   $("f_nw").onchange=e=>{CFG.nw.enabled=e.target.checked;saveFlags()};$("f_tr").onchange=e=>{CFG.tr.enabled=e.target.checked;saveFlags()};

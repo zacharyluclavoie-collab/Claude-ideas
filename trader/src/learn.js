@@ -5,8 +5,10 @@
  *    reviewers (not chasing, two-sided flow, real buyers, enough depth, market not falling). More approvals = slightly larger size.
  * 3. GROWTH FROM PROFIT ONLY: position size can rise (up to 2x) only as realised profit builds, and never while in a drawdown.
  */
-CFG.learn = { on: true, minTrades: 15, minExp: 0.05, minWin: 0.45, maxShadow: 90, perAgent: 14 };
+CFG.learn = { probation: true, on: true, minTrades: 12, minExp: 0.05, minWin: 0.45, maxShadow: 400, perAgent: 100 };
 function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id); if (a.n < CFG.learn.minTrades) return false; return a.r / a.n >= CFG.learn.minExp && a.w / a.n >= CFG.learn.minWin }
+// probation: an agent without a clear bad record may trade real money at 40% size while it keeps practising (faster, still capped)
+function agentProbation(id) { if (!CFG.learn.on || agentProven(id) || !CFG.learn.probation) return false; const a = agentStat(id); return a.n < 8 || a.r / a.n > -0.25 }
 function agentLearning(id) { const a = agentStat(id); return { n: a.n, need: CFG.learn.minTrades, proven: agentProven(id) } }
 function pickAll(s, t, source) {
   const hits = []; let why = null;
