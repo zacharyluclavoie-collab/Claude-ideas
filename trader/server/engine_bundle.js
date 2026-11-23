@@ -68,7 +68,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 21:03";
+const BUILD = "2026-11-23 21:32";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -297,7 +297,7 @@ function pickAgent(s, t, source) {
  * 3. GROWTH FROM PROFIT ONLY: position size can rise (up to 2x) only as realised profit builds, and never while in a drawdown.
  */
 CFG.learn = { probation: true, on: true, minTrades: 12, minExp: 0.05, minWin: 0.45, maxShadow: 400, perAgent: 100 };
-function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id), sw = AG[id] && AG[id].swarm; if (a.n < (sw ? 30 : CFG.learn.minTrades)) return false; return a.r / a.n >= (sw ? 0.15 : CFG.learn.minExp) && a.w / a.n >= (sw ? 0.5 : CFG.learn.minWin) }
+function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id), sw = AG[id] && AG[id].swarm; if (sw && !CFG.swarmReal) return false; if (a.n < (sw ? 30 : CFG.learn.minTrades)) return false; return a.r / a.n >= (sw ? 0.15 : CFG.learn.minExp) && a.w / a.n >= (sw ? 0.5 : CFG.learn.minWin) }
 // probation: an agent without a clear bad record may trade real money at 40% size while it keeps practising (faster, still capped)
 function agentExploring(id, t) { if (!CFG.learn.probation || (AG[id] && AG[id].swarm)) return false; const last = S.lastOpenAt || 0; if (t - last < 1800) return false; let best = null, be = -9; for (const a of AGENTS) { if (!agentOn(a.id) || a.swarm) continue; const s = agentStat(a.id), e = s.n ? s.r / s.n : 0; if (e > be) { be = e; best = a.id } } return best === id }
 function agentProbation(id) { if (!CFG.learn.on || agentProven(id) || !CFG.learn.probation || (AG[id] && AG[id].swarm)) return false; const a = agentStat(id); return a.n < 8 || a.r / a.n > -0.25 }
@@ -372,6 +372,7 @@ function shadowUpdate(snaps, t) {
  * A new real trade is blocked when trades that looked like it have lost on average (needs enough history first).
  * Practice trades are never blocked, so the lessons keep getting tested and can change their mind.
  */
+CFG.swarmReal = false;   // testing: scouts that "proved" themselves on practice trades lost money with real money (mostly luck among 300), so scouts only practise and teach the lessons
 CFG.lessons = { on: true, minSamples: 150, minPred: -0.12, k: 30, decay: 0.998 };
 const _band = (v, cuts) => { if (v == null || !isFinite(v)) return "na"; let i = 0; while (i < cuts.length && v >= cuts[i]) i++; return i };
 const LESSON_LABEL = {

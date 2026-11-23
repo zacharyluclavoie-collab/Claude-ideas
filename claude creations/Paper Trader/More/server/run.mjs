@@ -22,16 +22,22 @@ vm.runInContext('"use strict";\n' + fs.readFileSync(path.join(dir, "engine_bundl
 const E = code => vm.runInContext(code, ctx);
 
 E(`MODE=${JSON.stringify(DEMO ? "mock" : "live")};SEED=${DEMO ? 7 : Date.now() & 0xffffff};rng=mulberry(SEED);load();last={};stats=freshStats();regime="unknown";regimeOk=now();
+  applyPreset(LS.get("pt_preset")||"safe");CFG.core.on=LS.get("pt_core")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";
   (function(){let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of Object.keys(sv))if(typeof sv[k]==="number"&&k in CFG.risk)CFG.risk[k]=sv[k];CFG.risk.perDay=CFG.risk.perHour*5;
    applyActivity(LS.get("pt_activity")||"active");applyExit(LS.get("pt_exit")||"big");applySecMode(LS.get("pt_secmode")||"balanced");try{const k=JSON.parse(LS.get("pt_keep")||"{}");if(typeof k.on==="boolean")CFG.keep.on=k.on;if(typeof k.target==="number")CFG.keep.target=k.target}catch(e){}let f={};try{f=JSON.parse(LS.get("pt_flags")||"{}")}catch(e){}if(typeof f.nw==="boolean")CFG.nw.enabled=f.nw;if(typeof f.tr==="boolean")CFG.tr.enabled=f.tr})();
-  if(!S.curve.length)S.curve=[[now(),equity()]];`);
+  if(!S.curve.length)S.curve=[[now(),totalEquity()]];`);
 if (DEMO) { E(`vnow=1.76e9;MOCK.init();regimeOk=vnow;S.curve=[[vnow,equity()]]`); let acc = 0; setInterval(async () => { acc += SPEED * 0.25; while (acc >= 5) { acc -= 5; E("vnow+=5"); await E("tick()") } }, 250) }
-else { setInterval(() => E("stepFast(now())"), 2000); setInterval(() => E("stepSlow(now())"), 5000); setInterval(() => E("stepScan(now())"), 3000) }
+else {
+  // the agents practise in simulation once a day (the account is set aside and restored; no money is used)
+  let hold = false; const train = async () => { if (Date.now() - (+store["pt_autotrain_at_live"] || 0) < 86400e3) return; hold = true; for (let i = 0; i < 300 && E("busyF||busyL||busyS"); i++) await new Promise(r => setTimeout(r, 100));
+    try { await E("trainAgents(3)"); E(`LS.set("pt_autotrain_at_live",Date.now());save();ev("info","auto_train","","agents practised 3 simulated days (no money used)")`) } catch (e) { console.error("training failed", e) } hold = false };
+  setInterval(() => { if (!hold) E("stepFast(now())") }, 2000); setInterval(() => { if (!hold) E("stepSlow(now())") }, 5000); setInterval(() => { if (!hold) E("stepScan(now())") }, 3000);
+  setTimeout(train, 10000); setInterval(train, 3600e3) }
 const away = +store["pt_last_live"] || 0; if (!DEMO && away && Date.now() / 1000 - away > 300) E(`ev("warn","restart","","Runner was stopped for ${Math.round((Date.now() / 1000 - away) / 60)} minutes; resuming")`);
 setInterval(flush, 5000);
 const bye = () => { try { E("save()") } catch (e) {} flush(); process.exit(0) }; process.on("SIGINT", bye); process.on("SIGTERM", bye);
 
-const snapshot = () => JSON.parse(E(`JSON.stringify((()=>{const pf=S.pf,cl=pf.closed;return{mode:MODE,now:now(),equity:equity(),start:pf.start,cash:pf.cash,exposure:exposure(),realized:pf.realized,shutdown:pf.shutdown,why:pf.why,regime,paused,
+const snapshot = () => JSON.parse(E(`JSON.stringify((()=>{const pf=S.pf,cl=pf.closed;return{mode:MODE,now:now(),equity:totalEquity(),start:totalStart(),cash:pf.cash,exposure:exposure(),realized:pf.realized,shutdown:pf.shutdown,why:pf.why,regime,paused,
   positions:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,cat:p.cat,value:pv(p),pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost)*100,held:(now()-p.opened)/3600,emergency:p.emergency,seenAt:p.seenAt})),
   closed:cl.slice(-50).reverse(),curve:S.curve.slice(-400),journal:S.journal.slice(0,40),health:typeof health!=="undefined"?{ok:health.ok,fail:health.fail,lastErr:health.lastErr}:null,stats:{scanned:stats.scanned,bought:stats.bought,vetoed:stats.vetoed}}})())`));
 const PAGE = `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Paper Trader runner</title>

@@ -186,6 +186,7 @@ h2{margin-top:30px}
 <section id="t-agents" class="tab">
   <h2>Your agents <small>each judges every coin</small></h2>
   <div class="sub" id="agsum" style="margin-bottom:10px"></div>
+  <div id="lessons"></div>
   <div id="aglist"></div>
 </section>
 
@@ -274,7 +275,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-23 20:49";
+const BUILD = "2026-11-23 21:32";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -460,7 +461,7 @@ function makeSwarm() {
       c5: pick([-3, 0, 1, 2]), bp: pick([0.5, 0.55, 0.6, 0.65, 0.7]), vlr: pick([0, 0.5, 1.5, 3]), acc: pick([0, 0, 2, 3]), u: pick([0, 0, 0.6, 0.75]), ex: Math.floor(rnd() * exits.length) };
     const key = JSON.stringify(c); if (seen.has(key)) continue; seen.add(key);
     const ex = exits[c.ex], i = out.length + 1, tag = (c.c1[0] < 0 ? "dip " : "up ") + c.c1[0] + ".." + c.c1[1] + "%";
-    out.push({ id: "sw" + String(i).padStart(3, "0"), name: "Scout " + String(i).padStart(3, "0"), swarm: true, cat: est ? "trending" : "new", scope: est ? "est" : "new", quick: ex,
+    out.push({ c, id: "sw" + String(i).padStart(3, "0"), name: "Scout " + String(i).padStart(3, "0"), swarm: true, cat: est ? "trending" : "new", scope: est ? "est" : "new", quick: ex,
       desc: `${est ? "Established" : "New"} coin · ${tag} 1h · liquidity ≥ $${c.liq / 1000}k · buyers ≥ ${Math.round(c.bp * 100)}%${c.vlr ? " · turnover ≥ " + c.vlr + "x" : ""}${c.acc ? " · volume surge ≥ " + c.acc + "x" : ""}${c.u ? " · unique buyers ≥ " + Math.round(c.u * 100) + "%" : ""}`,
       run(s, t) {
         const age = ageH(s, t); if (!c.est && (age == null || age < c.age[0] || age > c.age[1])) return _no("age window");
@@ -503,14 +504,18 @@ function pickAgent(s, t, source) {
  * 3. GROWTH FROM PROFIT ONLY: position size can rise (up to 2x) only as realised profit builds, and never while in a drawdown.
  */
 CFG.learn = { probation: true, on: true, minTrades: 12, minExp: 0.05, minWin: 0.45, maxShadow: 400, perAgent: 100 };
-function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id), sw = AG[id] && AG[id].swarm; if (a.n < (sw ? 30 : CFG.learn.minTrades)) return false; return a.r / a.n >= (sw ? 0.15 : CFG.learn.minExp) && a.w / a.n >= (sw ? 0.5 : CFG.learn.minWin) }
+function agentProven(id) { if (!CFG.learn.on) return true; const a = agentStat(id), sw = AG[id] && AG[id].swarm; if (sw && !CFG.swarmReal) return false; if (a.n < (sw ? 30 : CFG.learn.minTrades)) return false; return a.r / a.n >= (sw ? 0.15 : CFG.learn.minExp) && a.w / a.n >= (sw ? 0.5 : CFG.learn.minWin) }
 // probation: an agent without a clear bad record may trade real money at 40% size while it keeps practising (faster, still capped)
 function agentExploring(id, t) { if (!CFG.learn.probation || (AG[id] && AG[id].swarm)) return false; const last = S.lastOpenAt || 0; if (t - last < 1800) return false; let best = null, be = -9; for (const a of AGENTS) { if (!agentOn(a.id) || a.swarm) continue; const s = agentStat(a.id), e = s.n ? s.r / s.n : 0; if (e > be) { be = e; best = a.id } } return best === id }
 function agentProbation(id) { if (!CFG.learn.on || agentProven(id) || !CFG.learn.probation || (AG[id] && AG[id].swarm)) return false; const a = agentStat(id); return a.n < 8 || a.r / a.n > -0.25 }
 function agentLearning(id) { const a = agentStat(id); return { n: a.n, need: CFG.learn.minTrades, proven: agentProven(id) } }
 function pickAll(s, t, source) {
-  const hits = []; let why = null;
+  const hits = []; let why = null; const age = ageH(s, t), b = bp(s), off = CFG.agentsOff || {};
   for (const a of AGENTS) {
+    if (a.c) {   // scouts: cheap shared pre-filter so 300 of them cost almost nothing per coin
+      const c = a.c; if (CFG.swarmOff || s.liq < c.liq || s.chg1h < c.c1[0] || s.chg1h > c.c1[1] || s.chg5m < c.c5 || b < c.bp || off[a.id]) continue;
+      if (c.est ? (age == null || age < CFG.tr.minAgeH) : (age == null || age < c.age[0] || age > c.age[1])) continue;
+    }
     if (!agentOn(a.id) || !ageOK(a, s, t)) continue;
     const [plan, rej] = a.run(s, t, true), T = AGENT_TUNE[a.id] || {};
     if (plan && T.bp && bp(s) < 0.5 + T.bp) { if (!why) why = "buy pressure below tuned bar"; continue }
@@ -540,7 +545,7 @@ function shadowOpen(snap, h, t) {
   const rc = S.shadowRecent || (S.shadowRecent = {}); if (sh[k] || (rc[k] && t - rc[k] < 21600)) return false;
   const sw = !!h.agent.swarm, mine = Object.values(sh), nSw = mine.filter(x => x.sw).length; if (sw ? nSw >= 500 : mine.length - nSw >= CFG.learn.maxShadow) return false; if (mine.filter(x => x.agent === h.agent.id).length >= (sw ? 3 : CFG.learn.perAgent)) return false;
   const p = quickPlan(h.plan, h.agent.id), usd = clamp(snap.liq * 0.004, 15, 60);   // about the size a real trade would get
-  sh[k] = { sw: !!h.agent.swarm, agent: h.agent.id, chain: snap.chain, addr: snap.addr, sym: snap.sym, cat: h.agent.cat, opened: t, entry: snap.price, last: snap.price, peak: snap.price, usd, stop: snap.price * (1 - p.stop / 100), tp1: snap.price * (1 + p.tp1 / 100), tp2: snap.price * (1 + p.tp2 / 100), trail: p.trail, tp1Done: false, real: 0, frac: 1, liq0: snap.liq, liq: snap.liq, stopPct: p.stop };
+  sh[k] = { fx: lessonFx(snap, t, h.agent), sw: !!h.agent.swarm, agent: h.agent.id, chain: snap.chain, addr: snap.addr, sym: snap.sym, cat: h.agent.cat, opened: t, entry: snap.price, last: snap.price, peak: snap.price, usd, stop: snap.price * (1 - p.stop / 100), tp1: snap.price * (1 + p.tp1 / 100), tp2: snap.price * (1 + p.tp2 / 100), trail: p.trail, tp1Done: false, real: 0, frac: 1, liq0: snap.liq, liq: snap.liq, stopPct: p.stop };
   return true;
 }
 function shadowCost(sh) { const R = Math.max(sh.liq0 / 2, 1), gas = 2 * (CFG.ex.gas[sh.chain] ?? 0.5) * 1.2; return sh.usd * (2 * CFG.ex.fee / 100 + 2 * sh.usd / R + 0.006) + gas }
@@ -548,7 +553,7 @@ function shadowClose(sh, key, why, t, px) {
   const sd = S.shadow; delete sd[key]; (S.shadowRecent || (S.shadowRecent = {}))[key] = t;
   const price = px ?? sh.last, leg = sh.frac * sh.usd * (price / sh.entry - 1), pnl = sh.real + leg - shadowCost(sh) * (sh.tp1Done ? 1 : 1), r = pnl / (sh.usd * sh.stopPct / 100);
   const A = S.pf.ag || (S.pf.ag = {}), a = A[sh.agent] || (A[sh.agent] = { n: 0, pnl: 0, w: 0, r: 0 });
-  a.n++; a.pnl += pnl; a.w += pnl > 0 ? 1 : 0; a.r += r; a.sn = (a.sn || 0) + 1;
+  a.n++; a.pnl += pnl; a.w += pnl > 0 ? 1 : 0; a.r += r; a.sn = (a.sn || 0) + 1; lessonAdd(sh.fx, r);
   const L = S.shadowLog || (S.shadowLog = []); L.unshift({ t, agent: sh.agent, sym: sh.sym, pnl, r, why }); if (L.length > 150) L.length = 150;
   if (agentProven(sh.agent) && !sh.announced && a.n === CFG.learn.minTrades) ev("info", "agent_proven", sh.agent, "agent passed its learning phase and may now trade real money");
 }
@@ -566,6 +571,46 @@ function shadowUpdate(snaps, t) {
     else if (sh.tp1Done && px >= sh.tp2) shadowClose(sh, key, "target", t, px)
     else if (t - sh.opened > maxH) shadowClose(sh, key, "time", t, px);
   }
+}
+
+/* ---- lessons: learn from every finished trade (real AND practice), above all from the failures ----
+ * Each trade is described by a few plain features at entry (1h move, 5m move, buy share, liquidity, age, turnover, chain, agent).
+ * Every close adds its result (in R) to each feature's bucket, with slow forgetting so recent markets count more.
+ * A new real trade is blocked when trades that looked like it have lost on average (needs enough history first).
+ * Practice trades are never blocked, so the lessons keep getting tested and can change their mind.
+ */
+CFG.swarmReal = false;   // testing: scouts that "proved" themselves on practice trades lost money with real money (mostly luck among 300), so scouts only practise and teach the lessons
+CFG.lessons = { on: true, minSamples: 150, minPred: -0.12, k: 30, decay: 0.998 };
+const _band = (v, cuts) => { if (v == null || !isFinite(v)) return "na"; let i = 0; while (i < cuts.length && v >= cuts[i]) i++; return i };
+const LESSON_LABEL = {
+  c1: ["1h move below -10%", "1h move -10..0%", "1h move 0..5%", "1h move 5..15%", "1h move 15..40%", "1h move above 40%"],
+  c5: ["5m move below -2%", "5m move -2..0%", "5m move 0..2%", "5m move above 2%"],
+  bp: ["buyers under 50%", "buyers 50-55%", "buyers 55-60%", "buyers 60-70%", "buyers over 70%"],
+  lq: ["liquidity under $15k", "liquidity $15-40k", "liquidity $40-100k", "liquidity $100-300k", "liquidity over $300k"],
+  ag: ["age under 1h", "age 1-4h", "age 4-24h", "age 1-7 days", "age over 7 days"],
+  tv: ["turnover under 0.5x/h", "turnover 0.5-1.5x/h", "turnover 1.5-4x/h", "turnover over 4x/h"],
+};
+function lessonFx(s, t, agent) {
+  return { c1: _band(s.chg1h, [-10, 0, 5, 15, 40]), c5: _band(s.chg5m, [-2, 0, 2]), bp: _band(bp(s), [0.5, 0.55, 0.6, 0.7]), lq: _band(s.liq, [15000, 40000, 100000, 300000]),
+    ag: _band(ageH(s, t), [1, 4, 24, 168]), tv: _band(_vlr(s), [0.5, 1.5, 4]), ch: s.chain, by: agent ? (agent.swarm ? "scout" : agent.id) : "na" };
+}
+function lessonAdd(fx, r) {
+  if (!fx || !isFinite(r) || !CFG.lessons.on) return; const L = S.lessons || (S.lessons = { n: 0, sum: 0, b: {} }), d = CFG.lessons.decay;
+  r = clamp(r, -3, 6); L.n = L.n * d + 1; L.sum = L.sum * d + r; L.seen = (L.seen || 0) + 1;
+  for (const k in L.b) { L.b[k].n *= d; L.b[k].s *= d }
+  for (const [f, v] of Object.entries(fx)) { const o = L.b[f + "=" + v] || (L.b[f + "=" + v] = { n: 0, s: 0 }); o.n += 1; o.s += r }
+}
+function lessonPred(fx) {
+  const L = S.lessons; if (!L || (L.seen || 0) < CFG.lessons.minSamples || !fx) return null;
+  const gm = L.sum / L.n, K = CFG.lessons.k; let p = gm;
+  for (const [f, v] of Object.entries(fx)) { const o = L.b[f + "=" + v]; if (o) p += (o.s + K * gm) / (o.n + K) - gm }
+  return p;
+}
+function lessonList() {
+  const L = S.lessons; if (!L || !L.n) return [];
+  const gm = L.sum / L.n, K = CFG.lessons.k;
+  return Object.entries(L.b).filter(([k, o]) => o.n >= 8 && !k.endsWith("=na")).map(([k, o]) => { const [f, v] = k.split("="); const lab = LESSON_LABEL[f] ? LESSON_LABEL[f][+v] : f === "ch" ? "chain " + v : f === "by" ? (v === "scout" ? "scout agents" : (AG[v] ? AG[v].name : v)) : k;
+    return { k, lab, n: o.n, avg: o.s / o.n, edge: (o.s + K * gm) / (o.n + K) - gm } });
 }
 
 /* ============================ boot camp ============================
@@ -1134,6 +1179,7 @@ async function evaluate(k,snap,src,t,agentId){
   const ag=proven[0].agent;plan=proven[0].plan;const cat=ag.cat;
   const com=reviewers(snap,cat);
   if(com.ok<CFG.committeeMin){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
+  {const lp=CFG.lessons.on?lessonPred(lessonFx(snap,t,ag)):null;if(lp!=null&&lp<CFG.lessons.minPred){stats.vetoed++;stats.lessonVeto=(stats.lessonVeto||0)+1;S.lessonVetoes=(S.lessonVetoes||0)+1;{const w="lessons: similar trades lost";(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","lessons from past trades: setups like this averaged "+lp.toFixed(2)+"R, skipped",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+600;return}}
   const d=approve(snap,cat,v.risk,plan,t,ag.id);
   if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
   open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1),t,v.checks,ag.id)}
@@ -1143,7 +1189,7 @@ function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   S.lastOpenAt=t;pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
-    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair};
+    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
@@ -1157,7 +1203,7 @@ function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLow
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
   pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
-  const r=p.risk0?p.real/p.risk0:0;pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
+  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
   if(s.liq<p.entryLiq*(1-e.liqTotal))return`liquidity down ${(100*(1-s.liq/p.entryLiq)).toFixed(0)}% vs entry`;
@@ -1281,7 +1327,8 @@ function rCore(){const el=$("corebox");if(!el)return;const c=S.core;if(!CFG.core
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Core: BTC · ETH · SOL trend</b><b class="${pl>=0?"g":"r"}">${sgn(pl)}</b></div><div class="sub" style="margin:4px 0 0">Slow strategy from the research: holds the big coins only while they trend up, steps aside when they fall. Value ${fmt(v,0)} · cash yield +${fmt(c.yieldEarned)} · fees ${fmt(c.fees)} · ${esc(c.why||"starting")}</div><div class="kv">${rows}</div></div>`}
 function rNow(){const el=$("nowbox");if(!el)return;const K={buy:"🟢",closed:"🏁",sell:"💵",core_buy:"🟢",core_sell:"💵",agent_proven:"🎓",auto_train:"🎓",emergency:"⚠️",core_on:"📈"};
   const L=S.journal.filter(j=>K[j.kind]).slice(0,3),sh=Object.keys(S.shadow||{}).length,op=Object.values(S.pf.positions),u=op.reduce((a,p)=>a+(p.qty*(p.last||p.entry)-p.cost),0);
-  el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Right now</b><span class="sub">${op.length} open · open P/L <b class="${u>=0?"g":"r"}">${sgn(u)}</b> · ${sh} practice trades</span></div>${L.length?L.map(j=>`<div class="sub" style="margin-top:6px">${K[j.kind]} ${esc(j.tok||"")} ${esc(j.msg.slice(0,90))} <span style="opacity:.6">· ${ago(j.t)}</span></div>`).join(""):`<div class="sub" style="margin-top:6px">Scanning coins. Agents only buy when a proven agent and the safety checks agree, so quiet periods are normal.</div>`}</div>`}
+  const d0=new Date(now()*1000).toISOString().slice(0,10),td=S.pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0),tw=td.filter(c=>c.pnl>0).length,tp=td.reduce((a,c)=>a+c.pnl,0);
+  el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Right now</b><span class="sub">${op.length} open · open P/L <b class="${u>=0?"g":"r"}">${sgn(u)}</b> · ${sh} practice trades</span></div><div class="sub" style="margin-top:4px">Today: <b class="g">${tw} won</b> · <b class="r">${td.length-tw} lost</b> · <b class="${tp>=0?"g":"r"}">${sgn(tp)}</b>${S.lessons&&S.lessons.seen?` · learned from ${S.lessons.seen.toLocaleString()} trades`:""}</div>${L.length?L.map(j=>`<div class="sub" style="margin-top:6px">${K[j.kind]} ${esc(j.tok||"")} ${esc(j.msg.slice(0,90))} <span style="opacity:.6">· ${ago(j.t)}</span></div>`).join(""):`<div class="sub" style="margin-top:6px">Scanning coins. Agents only buy when a proven agent and the safety checks agree, so quiet periods are normal.</div>`}</div>`}
 function rHome(){rCore();rNow();{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
 const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
   const dd=Math.max(0,(pf.peak-eq)/pf.peak*100),day=Math.max(0,(pf.dayStart-eq)/pf.dayStart*100),ex=exposure()/eq*100;
@@ -1397,7 +1444,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   h+=`<h2>Always trading</h2><div class="panel"><label class="tg"><span><b>Keep positions open</b><small>When fewer than the target are open, the bot fills the gap with small scout positions from the best available tokens. No cooldowns, pauses or hourly limits. Security checks, size caps, the daily loss limit and the drawdown shutdown still apply.</small></span><input type="checkbox" id="k_on" ${CFG.keep.on?"checked":""}></label><div class="sl"><div class="ml"><span>Target open positions</span><b id="v_kt">${CFG.keep.target}</b></div><input type="range" id="k_t" min="1" max="100" step="1" value="${CFG.keep.target}" aria-label="Target open positions"></div><div class="sub">Forcing trades means buying weaker setups. In testing, keeping about 10 open lost roughly 2% a day in the demo market, against about 0.2% without it. Turn it off to trade only the best setups.</div></div>`;
   h+=`<h2>Exit style</h2><div class="chips" id="exitst"><button class="chip ${CFG.scalp?"":"on"}" data-e="big">Big winners</button><button class="chip ${CFG.scalp?"on":""}" data-e="scalp">Frequent small wins</button></div><div class="sub" style="margin-top:8px">Small wins takes profit early, which lifts the win rate from about 22% to about 34% in testing. It did not improve the result: wins get smaller, so the loss per day stayed about the same. Win rate is not profit.</div>`;
   h+=`<h2>Mode</h2><div class="chips" id="preset">${[["safe","Safe (recommended)"],["protect","Balanced"],["turbo","Turbo (risky)"],["always","Always trading"]].map(([k,n])=>`<button class="chip ${curPreset()===k?"on":""}" data-p="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px"><b>Safe:</b> no agent risks money until it has proven itself (trained in simulation automatically, then on virtual trades), small trades, 6% stop, core BTC/ETH/SOL sleeve on. Fewest losses in testing. <b>Balanced:</b> like Safe, but unproven agents may trade at 40% size while they learn, which costs money during training. <b>Turbo:</b> about twice the trades of the safer mode in testing, with every trained agent trading from the first minute at small size. The price is quality: more weak coins get bought and the average trade was slightly negative (about −0.1R).  <b>Always trading:</b> keeps 10 positions open and lost the most. None of these is a promise on live data.</div>`;
-  h+=`<h2>Extra strategies</h2><div class="panel"><label class="tg"><span>Core BTC · ETH · SOL trend sleeve (${Math.round(CFG.core.share*100)}% of the account, slow, research-based)</span><input type="checkbox" id="coreon" ${CFG.core.on?"checked":""}></label><label class="tg"><span>300 scout agents (virtual trades only until each proves itself)</span><input type="checkbox" id="swarmon" ${!CFG.swarmOff?"checked":""}></label></div>`;
+  h+=`<h2>Extra strategies</h2><div class="panel"><label class="tg"><span>Core BTC · ETH · SOL trend sleeve (${Math.round(CFG.core.share*100)}% of the account, slow, research-based)</span><input type="checkbox" id="coreon" ${CFG.core.on?"checked":""}></label><label class="tg"><span>300 scout agents (practice trades only, they teach the lessons)</span><input type="checkbox" id="swarmon" ${!CFG.swarmOff?"checked":""}></label></div>`;
   h+=`<h2>Train the agents</h2><button class="btn pri" id="trainbtn" style="margin-top:0">Train agents now (about 30 seconds)</button><div class="sub" id="trainmsg" style="margin-top:6px">The agents already come pre-trained, so you do not need this. It runs 6 simulated days of practice and gives a starting record only to agents that have none. It never lowers a record an agent already has.</div>`;
   h+=`<h2>Agent practice rule</h2><div class="chips" id="learnm">${[["strict","Strict"],["fast","Fast (recommended)"],["off","Off"]].map(([k,n])=>`<button class="chip ${learnMode()===k?"on":""}" data-l="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px">Every agent always practises with virtual trades. <b>Strict:</b> only agents with a proven record trade real money. <b>Fast:</b> agents without a clearly bad record also trade at 40% size while they prove themselves, which in testing doubled the number of trades with a drawdown of about 0.1%. <b>Off:</b> all agents trade real money from the start. That made the most trades in testing, but it skips the safety of practising first.</div>`;
   h+=`<h2>Trading activity</h2><div class="chips" id="act">${Object.entries(ACTIVITY).map(([k,a])=>`<button class="chip ${k===ACT?"on":""}" data-a="${k}">${a.name}</button>`).join("")}</div><div class="sub" style="margin-top:8px">${esc(ACTIVITY[ACT].note)}. More trades means looking at weaker setups, and every extra trade pays fees and slippage. Security checks stay mandatory at every level.</div>`;
@@ -1433,9 +1480,16 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   twoTap($("reset"),"Tap again to delete this account",()=>{const c=Math.max(100,+$("cap").value||10000);LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);seedPretrained();resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),equity()]];render()}})}
 
 /* ---------- wiring ---------- */
-function rAgents(){const rows=AGENTS.filter(a=>!a.swarm||agentProven(a.id)||Object.values(S.pf.positions).some(p=>p.agent===a.id)).map(a=>{const st=agentStat(a.id),w=agentWeight(a.id),open=Object.values(S.pf.positions).filter(p=>p.agent===a.id).length,e=st.n?st.r/st.n:0;return{a,st,w,open,e}}).sort((x,y)=>y.st.pnl-x.st.pnl);
+function rLessons(){const el=$("lessons");if(!el)return;const L=S.lessons,ls=lessonList(),need=CFG.lessons.minSamples,seen=(L&&L.seen)||0;
+  const bad=ls.filter(x=>x.edge<-0.05&&x.avg<0).sort((a,b)=>a.edge-b.edge).slice(0,5),good=ls.filter(x=>x.edge>0.05&&x.avg>0).sort((a,b)=>b.edge-a.edge).slice(0,5);
+  const li=(x,c)=>`<div class="row" style="margin-top:6px"><span>${esc(x.lab)}</span><b class="${c}">${x.avg>=0?"+":""}${x.avg.toFixed(2)}R <span class="sub">(${Math.round(x.n)})</span></b></div>`;
+  el.innerHTML=`<div class="panel" style="margin-bottom:12px"><div class="row"><b>Lessons from every trade</b><label class="tg" style="padding:0;border:0"><input type="checkbox" id="lesson_on" ${CFG.lessons.on?"checked":""} aria-label="Use lessons"></label></div>
+  <div class="sub" style="margin:4px 0 6px">Every finished trade (real and practice) teaches it which setups win and which fail. Real trades that look like past losers are skipped. ${seen<need?`Learning: ${seen} of ${need} trades before lessons start blocking.`:`${seen.toLocaleString()} trades learned from · ${(S.lessonVetoes||0).toLocaleString()} losing-looking trades skipped.`}</div>
+  ${bad.length?`<div class="sub" style="margin-top:8px"><b>Fails it now avoids</b></div>${bad.map(x=>li(x,"r")).join("")}`:""}${good.length?`<div class="sub" style="margin-top:10px"><b>What has worked</b></div>${good.map(x=>li(x,"g")).join("")}`:""}</div>`;
+  $("lesson_on").onchange=e=>{CFG.lessons.on=e.target.checked;LS.set("pt_lessons",CFG.lessons.on?"1":"0")}}
+function rAgents(){rLessons();const rows=AGENTS.filter(a=>!a.swarm||agentProven(a.id)||Object.values(S.pf.positions).some(p=>p.agent===a.id)).map(a=>{const st=agentStat(a.id),w=agentWeight(a.id),open=Object.values(S.pf.positions).filter(p=>p.agent===a.id).length,e=st.n?st.r/st.n:0;return{a,st,w,open,e}}).sort((x,y)=>y.st.pnl-x.st.pnl);
   const tot=rows.reduce((s,r)=>s+r.st.pnl,0),on=AGENTS.filter(a=>agentOn(a.id)).length;
-  $("agsum").innerHTML=`${on} of ${AGENTS.length} agents on · <b>${AGENTS.filter(a=>agentProven(a.id)).length} earning real money</b> · combined ${sgn(tot)}<br>${(()=>{const sw=AGENTS.filter(a=>a.swarm),pr=sw.filter(a=>agentProven(a.id)).length,pl=sw.filter(a=>!agentProven(a.id)&&agentStat(a.id).n>0).length,vt=Object.values(S.shadow||{}).filter(x=>x.sw).length;return`<b>${sw.length} scouts</b>: ${pr} proven · ${pl} practising · ${vt} virtual trades running (no money until a scout proves itself)<br>`})()}Every agent studies every coin. A real trade needs a proven agent plus 3 of 5 reviewers to agree.`;
+  $("agsum").innerHTML=`${on} of ${AGENTS.length} agents on · <b>${AGENTS.filter(a=>agentProven(a.id)).length} earning real money</b> · combined ${sgn(tot)}<br>${(()=>{const sw=AGENTS.filter(a=>a.swarm),pr=sw.filter(a=>agentProven(a.id)).length,pl=sw.filter(a=>!agentProven(a.id)&&agentStat(a.id).n>0).length,vt=Object.values(S.shadow||{}).filter(x=>x.sw).length;return`<b>${sw.length} scouts</b>: ${pl} practising · ${vt} practice trades running. Scouts never use money: they test ideas and feed the lessons below.<br>`})()}Every agent studies every coin. A real trade needs a proven agent plus 3 of 5 reviewers to agree.`;
   $("aglist").innerHTML=rows.map(({a,st,w,open,e},i)=>{const pv0=agentProven(a.id),tag=!agentOn(a.id)?["dim","OFF"]:!pv0?(st.n<CFG.learn.minTrades?["b","LEARNING "+st.n+"/"+CFG.learn.minTrades]:["warn","NOT PROVEN YET"]):(st.n>=20&&w<=0.1)?["bad","BENCHED"]:w<0.5?["warn","THROTTLED"]:["ok","PROVEN"];
     const hh=hue(a.id),prog=clamp(st.n/CFG.learn.minTrades,0,1);
     return`<div class="panel agcard" style="margin:10px 0;--cc:hsl(${hh} 75% 58%)"><div class="row"><div class="pn" style="gap:10px"><div class="av" style="background:linear-gradient(135deg,hsl(${hh} 80% 60%),hsl(${(hh+40)%360} 75% 48%))">${esc(a.name[0])}</div><div style="min-width:0"><b>${esc(a.name)}</b><div><i class="tag ${tag[0]}">${tag[1]}</i></div></div></div><label class="tg" style="padding:0;border:0"><input type="checkbox" data-ag="${a.id}" ${agentOn(a.id)?"checked":""} aria-label="Turn ${esc(a.name)} on or off"></label></div>
@@ -1443,7 +1497,7 @@ function rAgents(){const rows=AGENTS.filter(a=>!a.swarm||agentProven(a.id)||Obje
     <div class="kv"><div><span>Open now</span><b>${open}</b></div><div><span>Coins won / lost</span><b><span class="g" style="display:inline;font-size:inherit">${st.w}</span> / <span class="r" style="display:inline;font-size:inherit">${st.n-st.w}</span></b></div><div><span>Profit</span><b class="${st.pnl>=0?"g":"r"}">${sgn(st.pnl)}</b></div><div><span>Win rate</span><b>${st.n?Math.round(100*st.w/st.n)+"%":"–"}</b></div><div><span>Avg return</span><b class="${e>=0?"g":"r"}">${st.n?e.toFixed(2)+"R":"–"}</b></div><div><span>Share of portfolio</span><b>${(agentShare(a.id)*100).toFixed(0)}%</b></div></div></div>`}).join("")}
 document.addEventListener("change",e=>{const id=e.target&&e.target.dataset&&e.target.dataset.ag;if(!id)return;CFG.agentsOff=CFG.agentsOff||{};if(e.target.checked)delete CFG.agentsOff[id];else CFG.agentsOff[id]=1;LS.set("pt_agents",JSON.stringify(CFG.agentsOff));render()});
 try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){CFG.agentsOff={}}
-CFG.core.on=LS.get("pt_core")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";
+CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";
 function savePreset(k){applyPreset(k);LS.set("pt_preset",k);LS.set("pt_core",CFG.core.on?"1":"0");LS.set("pt_swarm",CFG.swarmOff?"0":"1");LS.set("pt_learn",JSON.stringify({on:CFG.learn.on,probation:CFG.learn.probation}));LS.set("pt_cm",JSON.stringify({c:CFG.committeeMin,h:CFG.agentHourly}));LS.set("pt_agents",JSON.stringify(CFG.agentsOff||{}));LS.set("pt_keep",JSON.stringify({on:CFG.keep.on,target:CFG.keep.target}));LS.set("pt_activity",ACT);saveRisk()}
 if(!LS.get("pt_preset_v6")){applyPreset("protect");LS.set("pt_preset_v6","1");LS.set("pt_preset","protect");LS.set("pt_agents",JSON.stringify(CFG.agentsOff));LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}));LS.set("pt_activity","selective");LS.set("pt_quick","1");saveRisk()}
 else if(LS.get("pt_quick")==="1"||LS.get("pt_preset")==="protect"||LS.get("pt_preset")==="turbo")applyQuick(true);
