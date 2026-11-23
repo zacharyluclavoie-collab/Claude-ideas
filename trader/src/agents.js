@@ -55,8 +55,39 @@ const AGENT_PRE = {
 };
 function seedPretrained() { const A = S.pf.ag || (S.pf.ag = {}); for (const [id, r] of Object.entries(AGENT_PRE)) if (!A[id] || !A[id].n) A[id] = { n: r.n, w: r.w, r: r.r, pnl: 0, pre: true } }
 /*TUNE*/
+
+/* ============================ the scout swarm (300 extra agents) ============================
+ * Parameter variants of the same market-structure ideas (age window, liquidity floor, momentum band, buy pressure, turnover, volume surge,
+ * unique buyers, exit style). They NEVER risk money while unproven: every scout takes virtual (shadow) trades with full costs, and may only
+ * trade for real after 30+ virtual trades with positive average return AND win rate >= 50%. Real trades from scouts use half size.
+ * Honest caveat: with 300 candidates some will look good by luck, so the bar is strict and live results keep re-judging them.
+ */
+const SWARM_N = 300;
+function makeSwarm() {
+  let x = 20240611; const rnd = () => (x = (x * 1664525 + 1013904223) % 4294967296) / 4294967296, pick = a => a[Math.floor(rnd() * a.length)];
+  const seen = new Set(), out = [];
+  const exits = [{ stop: 6, tp1: 8, tp2: 16, trail: 4 }, { stop: 8, tp1: 12, tp2: 28, trail: 6 }, { stop: 5, tp1: 7, tp2: 14, trail: 3 }, { stop: 10, tp1: 16, tp2: 36, trail: 7 }];
+  let guard = 0;
+  while (out.length < SWARM_N && guard++ < 20000) {
+    const est = rnd() < 0.3;
+    const c = { est, age: est ? [0, 0] : pick([[0.3, 3], [0.75, 8], [3, 24], [0.3, 12]]), liq: pick(est ? [60000, 100000, 250000] : [8000, 15000, 30000, 60000]), c1: pick(est ? [[1, 12], [2, 25], [-20, -3]] : [[2, 15], [5, 30], [10, 60], [-25, -5], [0, 80]]),
+      c5: pick([-3, 0, 1, 2]), bp: pick([0.5, 0.55, 0.6, 0.65, 0.7]), vlr: pick([0, 0.5, 1.5, 3]), acc: pick([0, 0, 2, 3]), u: pick([0, 0, 0.6, 0.75]), ex: Math.floor(rnd() * exits.length) };
+    const key = JSON.stringify(c); if (seen.has(key)) continue; seen.add(key);
+    const ex = exits[c.ex], i = out.length + 1, tag = (c.c1[0] < 0 ? "dip " : "up ") + c.c1[0] + ".." + c.c1[1] + "%";
+    out.push({ id: "sw" + String(i).padStart(3, "0"), name: "Scout " + String(i).padStart(3, "0"), swarm: true, cat: est ? "trending" : "new", scope: est ? "est" : "new", quick: ex,
+      desc: `${est ? "Established" : "New"} coin · ${tag} 1h · liquidity ≥ $${c.liq / 1000}k · buyers ≥ ${Math.round(c.bp * 100)}%${c.vlr ? " · turnover ≥ " + c.vlr + "x" : ""}${c.acc ? " · volume surge ≥ " + c.acc + "x" : ""}${c.u ? " · unique buyers ≥ " + Math.round(c.u * 100) + "%" : ""}`,
+      run(s, t) {
+        const age = ageH(s, t); if (!c.est && (age == null || age < c.age[0] || age > c.age[1])) return _no("age window");
+        if (s.liq < Math.max(c.liq, c.est ? CFG.sec.liqTrend : CFG.sec.liqNew)) return _no("liquidity low"); if (s.chg1h < c.c1[0] || s.chg1h > c.c1[1]) return _no("1h move outside band"); if (s.chg5m < c.c5) return _no("5m too weak");
+        const b = bp(s); if (b < c.bp) return _no("weak buy pressure"); if (c.vlr && _vlr(s) < c.vlr) return _no("turnover low"); if (c.acc && Math.max(_acc(s), s.vol1h > 0 ? s.vol5 * 12 / s.vol1h : 0) < c.acc) return _no("no volume surge");
+        if (c.u) { const u = _uniq(s); if (u == null || u < c.u) return _no("few unique buyers") }
+        return [_p(ex.stop, ex.tp1, ex.tp2, ex.trail, 50 + (b - 0.5) * 60 + Math.min(10, Math.abs(s.chg1h) / 3), `scout ${i}: buyers ${(b * 100).toFixed(0)}% 1h ${s.chg1h.toFixed(0)}%`), []] } });
+  }
+  return out;
+}
+AGENTS.push(...makeSwarm());
 const AG = Object.fromEntries(AGENTS.map(a => [a.id, a]));
-const agentOn = id => !(CFG.agentsOff || {})[id];
+const agentOn = id => !(CFG.agentsOff || {})[id] && !(CFG.swarmOff && AG[id] && AG[id].swarm);
 function agentStat(id) { const a = (S && S.pf && S.pf.ag && S.pf.ag[id]) || { n: 0, pnl: 0, w: 0, r: 0 }; return a }
 // share of the portfolio an agent may use: grows with proven expectancy, shrinks after a losing record (needs 8+ trades to judge)
 function agentWeight(id) { const a = agentStat(id); if (a.n < 10) return CFG.agentProbation; const e = a.r / a.n; return clamp(1 + e * 3, 0.1, 2) }
