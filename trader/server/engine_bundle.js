@@ -70,17 +70,20 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-24 03:45";
+const BUILD = "2026-11-24 05:15";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
+  Object.assign(CFG.quick, { stop: 6, tp1: 8, tp2: 16, trail: 4 }); if (CFG.lessons) CFG.lessons.on = true;
   CFG.deepPerScan = 40; CFG.risk.cooldownH = 12; CFG.risk.streakPause = 3; CFG.wdSafe = false; CFG.flt.minBuyers = 0; CFG.flt.minUniq = 0;
   if (k === "recommended") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; return }   // research scam filters: ~12x fewer scam buys in testing at similar profit
   if (k === "easy") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
   if (k === "risky") { applyPreset("safe"); CFG.risk.perTradePct = 0.3; CFG.risk.posNew = 0.8; CFG.risk.posTrend = 1.2; CFG.risk.totalExp = 45; CFG.risk.dailyLoss = 2.5; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; return }
   if (k === "most") { applyPreset("safe"); CFG.risk.perTradePct = 0.45; CFG.risk.posNew = 1.2; CFG.risk.posTrend = 1.8; CFG.risk.totalExp = 50; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 10; return }   // the best-tested size: 5x was worse (pool impact)
   if (k === "max") { applyPreset("lots"); CFG.risk.cooldownH = 0.1; CFG.risk.streakPause = 99; CFG.risk.perHour = 2000; CFG.risk.perDay = 20000; CFG.committeeMin = 1; CFG.agentHourly = 60; CFG.deepPerScan = 120; return }   // no cooldowns, no pause after losses, deepest scan
-  if (k === "lots") { applyPreset("most"); applyActivity("active"); return }   // ~2.5x the trades of Most money in testing, similar average profit, more losers
+  if (k === "lots") { applyPreset("most"); applyActivity("active");   // settings found by the self-search (test/search.mjs, config #10): cut losers at -4%, let winners run to +8% / +24%
+    CFG.risk.perTradePct = 0.74; CFG.risk.posNew = 1.45; CFG.risk.posTrend = 2.18; CFG.risk.totalExp = 70; CFG.risk.maxPos = 30;
+    Object.assign(CFG.quick, { stop: 4, tp1: 8, tp2: 24, trail: 6 }); CFG.tp1Frac = 0.5; CFG.committeeMin = 2; CFG.nw.maxHoldH = 3; CFG.tr.maxHoldH = 6; CFG.lessons.on = false; return }
   if (k === "safe") { applyPreset("protect"); CFG.learn.probation = false; CFG.swarmOff = true; CFG.core.on = true; CFG.wdSafe = true; applySecMode("balanced"); return }   // no real money for any agent until it has proven itself
   if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
   else if (k === "turbo") { applyActivity("active"); applyQuick(true); CFG.keep.on = false; CFG.learn.on = false; CFG.committeeMin = 1; CFG.agentHourly = 30; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 2; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100; CFG.risk.perHour = 200; CFG.risk.perDay = 2000; CFG.risk.maxCostPct = 6 }
