@@ -9,7 +9,7 @@ const BUILD = new Date().toISOString().slice(0, 16).replace("T", " ");
 let tuneJs = "";
 try { const t = JSON.parse(fs.readFileSync(path.join(dir, "src", "agent_tune.json"), "utf8")); tuneJs = "\n/* trained agent settings (test/train_agents.mjs, validated on unseen markets) */\nObject.assign(AGENT_TUNE, " + JSON.stringify(t) + ");\n" } catch (e) {}
 const engine = ENGINE_FILES.map(rd).join("\n").replace("__BUILD__", BUILD).replace("/*TUNE*/", tuneJs);
-const ui = rd("ui.js");
+const ui = rd("anim.js") + "\n" + rd("ui.js");
 const distDir = process.env.BUILD_DIST || path.join(dir, "dist");
 fs.mkdirSync(distDir, { recursive: true });
 fs.writeFileSync(path.join(distDir, "engine_bundle.js"), engine);
@@ -65,7 +65,7 @@ fs.writeFileSync(path.join(dir, "app.html"), html);   // the single app on its o
 const J = x => JSON.stringify(x).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 const appLive = html.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<!--DESK-->\n');
 const appDemo = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<!--DESK-->\n<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n${art}\n</body>\n</html>\n`;
-const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("host.js");
+const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("host.js");
 const hostPage = `<!doctype html>
 <html lang="en">
 <head>

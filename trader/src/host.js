@@ -16,21 +16,40 @@ window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.d
 function dots() { for (let i = 1; i <= 5; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
 function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
 setInterval(() => { const t = totals(); if (Object.keys(R).length) { hist.push(t.eq); if (hist.length > 1500) hist.shift() } }, 2000);
-function draw() {
-  const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
-  $h("h_eq").textContent = money(t.eq); $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of 5 desks running` : "Starting 5 desks…";
-  $h("h_tot").textContent = sg(pl); $h("h_tot").className = pl >= 0 ? "g" : "r";
-  $h("h_kv").innerHTML = [["Won", sg(t.w), "g", t.wn + (t.wn === 1 ? " coin" : " coins")], ["Lost", sg(t.l), "r", t.ln + (t.ln === 1 ? " coin" : " coins")], ["Open now", sg(t.openPl), t.openPl >= 0 ? "g" : "r", t.open + (t.open === 1 ? " coin" : " coins")], ["Trades today", String(t.todayN), "", ""], ["Win rate", t.wn + t.ln ? Math.round(100 * t.wn / (t.wn + t.ln)) + "%" : "–", "", ""], ["Coins scanned", t.scanned.toLocaleString(), "", ""]]
-    .map(x => `<div><span>${x[0]}</span><b class="${x[2]}">${x[1]}</b>${x[3] ? `<span>${x[3]}</span>` : ""}</div>`).join("");
-  $h("h_desks").innerHTML = DN.map((name, i) => { const r = R[i + 1]; if (!r) return `<div class="panel hdesk" data-d="${i + 1}" style="margin:10px 0"><b>${name}</b><div class="sub">starting…</div></div>`; const p = r.eq - r.start;
-    return `<div class="panel hdesk" data-d="${i + 1}" style="margin:10px 0;cursor:pointer"><div class="row"><b>${name}</b><b class="${p >= 0 ? "g" : "r"}">${sg(p)}</b></div><div class="sub" style="margin-top:4px">${money(r.eq)} · ${escH(MODEN[r.mode] || r.mode)} · ${escH(r.status)}${r.clock ? " · " + escH(r.clock) : ""}</div>
-      <div class="sub" style="margin-top:4px"><span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today</div>${r.lastSym ? `<div class="sub" style="margin-top:4px;opacity:.75">Last: ${escH(r.lastSym)} ${escH(String(r.last).slice(0, 70))}</div>` : ""}</div>` }).join("");
+let built = false; const lastSeen = {};
+function buildBoard() {
+  built = true;
+  $h("h_kv").innerHTML = [["Won", "hk_w", "g", "hk_wn"], ["Lost", "hk_l", "r", "hk_ln"], ["Open now", "hk_o", "", "hk_on"], ["Trades today", "hk_td", "", ""], ["Win rate", "hk_wr", "", ""], ["Coins scanned", "hk_sc", "", ""]]
+    .map(x => `<div><span>${x[0]}</span><b id="${x[1]}" class="num ${x[2]}">–</b>${x[3] ? `<span id="${x[3]}"></span>` : ""}</div>`).join("");
+  $h("h_desks").innerHTML = DN.map((name, i) => `<div class="panel hdesk rise" data-d="${i + 1}" id="dk${i + 1}" style="margin:10px 0;cursor:pointer;animation-delay:${i * 70}ms">
+    <div class="row"><b>${name}</b><b id="dkp${i + 1}" class="num">starting…</b></div>
+    <div class="sub" style="margin-top:4px"><span id="dke${i + 1}" class="num"></span> · <span id="dki${i + 1}"></span></div>
+    <div class="sub" style="margin-top:4px" id="dkw${i + 1}"></div><div class="sub" style="margin-top:4px;opacity:.75" id="dkl${i + 1}"></div></div>`).join("");
   document.querySelectorAll(".hdesk").forEach(el => el.onclick = () => show(+el.dataset.d));
+}
+function draw() {
+  if (!built) buildBoard();
+  const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
+  anim("h_eq", t.eq, v => money(v));
+  $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of 5 desks running` : "Starting 5 desks…";
+  anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
+  anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v)); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
+  const pc = (k, w) => k + (k === 1 ? " " + w : " " + w + "s");
+  $h("hk_wn").textContent = pc(t.wn, "coin"); $h("hk_ln").textContent = pc(t.ln, "coin"); $h("hk_on").textContent = pc(t.open, "coin");
+  $h("hk_td").textContent = String(t.todayN); $h("hk_wr").textContent = t.wn + t.ln ? Math.round(100 * t.wn / (t.wn + t.ln)) + "%" : "–"; $h("hk_sc").textContent = t.scanned.toLocaleString();
+  for (let i = 1; i <= 5; i++) { const r = R[i]; if (!r) continue; const p = r.eq - r.start;
+    anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v));
+    $h("dki" + i).textContent = `${MODEN[r.mode] || r.mode} · ${r.status}${r.clock ? " · " + r.clock : ""}`;
+    $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today`;
+    $h("dkl" + i).textContent = r.lastSym ? `Last: ${r.lastSym} ${String(r.last).slice(0, 70)}` : "";
+    const key = r.lastSym + "|" + r.last; if (lastSeen[i] !== undefined && lastSeen[i] !== key) { const c = $h("dk" + i); c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse") } lastSeen[i] = key }
   const ch = $h("h_chart"); if (hist.length > 1) { const lo = Math.min(...hist, t.start), hi = Math.max(...hist, t.start), pd = (hi - lo) * 0.12 || t.start * 0.001 || 1, w = 340, h = 120, X = i => 4 + i / (hist.length - 1) * (w - 8), Y = v => h - 4 - (v - lo + pd) / (hi - lo + 2 * pd) * (h - 8);
-    const d = hist.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(""), c = hist[hist.length - 1] >= t.start ? "var(--g)" : "var(--r)";
-    ch.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="120" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${Y(t.start)}" y2="${Y(t.start)}" stroke="var(--mut)" stroke-dasharray="3 4" stroke-width="1"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>` }
+    const d = hist.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(""), up = hist[hist.length - 1] >= t.start, c = up ? "var(--g)" : "var(--r)", lx = X(hist.length - 1), ly = Y(hist[hist.length - 1]);
+    ch.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="120" preserveAspectRatio="none"><defs><linearGradient id="hg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
+      <line x1="0" x2="${w}" y1="${Y(t.start)}" y2="${Y(t.start)}" stroke="var(--mut)" stroke-dasharray="3 4" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="${d}L${lx} ${h}L4 ${h}Z" fill="url(#hg)"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><span class="livedot ${up ? "g" : "r"}" style="left:${(lx / w * 100).toFixed(2)}%;top:${(ly / h * 100).toFixed(2)}%"></span>` }
   else ch.innerHTML = '<div class="sub" style="padding:46px 0;text-align:center">Collecting data…</div>';
 }
+
 /* ---- Master settings: one tap changes every desk ---- */
 const send = (ptcmd, v) => document.querySelectorAll(".hframe").forEach(f => { try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} });
 let capPick = 2000, resetArm = 0;
