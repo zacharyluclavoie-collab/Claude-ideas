@@ -25,7 +25,7 @@ try{const l=JSON.parse(LS.get("pt_len")||"{}");if(typeof l.sec==="boolean")CFG.l
 applySecMode(LS.get("pt_secmode")||"balanced");
 try{const l=JSON.parse(LS.get("pt_learn")||"{}");if(typeof l.on==="boolean")CFG.learn.on=l.on;if(typeof l.probation==="boolean")CFG.learn.probation=l.probation}catch(e){}
 const curPreset=()=>{const p=LS.get("pt_preset")||"recommended";return p==="safe"?"recommended":p};
-const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes. Simulated: about +0.09% a day, 2 of 12 test runs lost a little."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 2x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 3x bigger trades: the best size in testing (about +0.22% a day, 0 of 12 runs lost). Bigger trades than this did worse. Not a promise for live markets."]];
+const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes. Simulated: about +0.09% a day, 2 of 12 test runs lost a little."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 2x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 3x bigger trades: the best size in testing (about +0.22% a day, 0 of 12 runs lost). Bigger trades than this did worse. Not a promise for live markets."],["lots","Lots of trades","Most money sizes plus a much wider scan: about 2.5x more trades in testing with similar profit (+0.24% a day), but more losing trades and bigger dips."]];
 const learnMode=()=>!CFG.learn.on?"off":CFG.learn.probation?"fast":"strict";
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
@@ -262,7 +262,7 @@ if(!LS.get("pt_preset_v8")){savePreset("protect");LS.set("pt_preset_v8","1");LS.
 if(!LS.get("pt_swarm_v11")){LS.set("pt_swarm","0");LS.set("pt_swarm_v11","1")}   // testing: scouts lowered results even as practice-only, so they start off
 if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1");LS.set("pt_preset_v9","1")}
 if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set("pt_core","1");LS.set("pt_swarm","1")}
-{const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
+{const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){}}}
 function render(){if(AUTOTRAIN!=null)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
