@@ -143,3 +143,27 @@ body.hostbody{padding-block:0 84px}
 .dkctl select{flex:1 1 130px;min-width:0;border:1px solid var(--line);background:var(--soft);color:var(--tx);border-radius:12px;padding:7px 8px;font:600 13px inherit}
 .mrow{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;align-items:center;margin-top:8px}.mrow label{grid-column:1/-1;font-size:13px;color:var(--mut)}
 .mrow input{grid-column:1}.mrow b{min-width:52px;text-align:right}.mrow input.off{opacity:.45}
+
+/* ---- iPhone: fit more on one screen ---- */
+@media (max-width:520px){
+  .panel{padding:12px 13px;border-radius:16px}
+  h2{margin:16px 2px 7px}
+  .hd .eq{font-size:30px}
+  .kv{gap:6px 8px;margin-top:8px}.kv b{font-size:13px}.kv span{font-size:10.5px}
+  .modes{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}.mbtn{padding:9px 4px;font-size:12px;border-radius:11px}
+  .chartwrap svg{max-height:170px}
+  #h_chart,#h_chart svg{height:96px!important}
+  .hdesk{margin:8px 0!important;padding:10px 12px}.hdesk .sub{font-size:12px;line-height:1.35}
+  .hdesk [id^="dkl"]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dkctl{gap:5px;margin-top:8px;flex-wrap:nowrap}.dkctl select{flex:1 1 auto;padding:6px;font-size:12px}.dkctl .chip{padding:6px 9px;font-size:12px}
+  .chips .chip{padding:6px 10px;font-size:12.5px}
+  .deskbar{padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}.deskbar button{padding:9px 2px;font-size:11px}
+}
+@media (max-width:520px){
+  .eq{font-size:30px!important;letter-spacing:-.02em}
+  .hd .sub{font-size:12px}
+  .mdesc{font-size:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .dkctl .chip{white-space:nowrap}
+  .deskbar .dot{flex:0 0 7px}
+  .kv>div:only-child{grid-column:1/-1}
+}

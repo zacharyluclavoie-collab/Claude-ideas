@@ -16,7 +16,9 @@ function show(d) { cur = d; $h("hmaster").hidden = d !== 0; document.querySelect
 window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
 function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
 function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
-setInterval(() => { const t = totals(); if (Object.keys(R).length) { hist.push(t.eq); if (hist.length > 1500) hist.shift() } }, 2000);
+try { const h = JSON.parse(localStorage.getItem("pt_host_hist") || "null"); if (h && h.n === NDESK && Array.isArray(h.v)) hist.push(...h.v.slice(-1500)) } catch (e) {}   // the Master chart survives reloads
+setInterval(() => { const t = totals(); if (Object.keys(R).length === NDESK) { hist.push(t.eq); if (hist.length > 1500) hist.shift() } }, 2000);
+setInterval(() => { try { localStorage.setItem("pt_host_hist", JSON.stringify({ n: NDESK, v: hist.slice(-1500) })) } catch (e) {} }, 20000);
 let built = false; const lastSeen = {};
 function buildBoard() {
   built = true;
@@ -26,7 +28,7 @@ function buildBoard() {
     <div class="row"><b>${name}</b><b id="dkp${i + 1}" class="num">starting…</b></div>
     <div class="sub" style="margin-top:4px"><span id="dke${i + 1}" class="num"></span> · <span id="dki${i + 1}"></span></div>
     <div class="sub" style="margin-top:4px" id="dkw${i + 1}"></div><div class="sub" style="margin-top:4px;opacity:.75" id="dkl${i + 1}"></div>
-    <div class="dkctl" data-d="${i + 1}"><select data-act="mode" aria-label="Mode for ${DN[i]}">${PRM.map(x => `<option value="${x[0]}">${x[1]}</option>`).join("")}</select><button class="chip" data-act="pause" id="dkpz${i + 1}">Pause</button><button class="chip" data-act="close">Sell all</button><button class="chip" data-act="open">Open ›</button></div></div>`).join("");
+    <div class="dkctl" data-d="${i + 1}"><select data-act="mode" aria-label="Mode for ${DN[i]}">${PRM.map(x => `<option value="${x[0]}">${x[1]}</option>`).join("")}</select><button class="chip" data-act="pause" id="dkpz${i + 1}">Pause</button><button class="chip" data-act="close">Sell all</button><button class="chip" data-act="open">Open</button></div></div>`).join("");
   document.querySelectorAll(".dkctl").forEach(el => { el.onclick = e => e.stopPropagation(); const d = +el.dataset.d;
     el.querySelector("select").onchange = e => sendTo(d, "preset", e.target.value);
     el.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation(); const a = b.dataset.act, r = R[d];
@@ -51,8 +53,8 @@ function draw() {
     { const sel = document.querySelector(`.dkctl[data-d="${i}"] select`); if (sel && document.activeElement !== sel && sel.value !== r.mode) sel.value = r.mode; const pz = $h("dkpz" + i); if (pz) { pz.textContent = r.shutdown ? "Stopped" : r.paused ? "Resume" : "Pause"; pz.classList.toggle("on", !!r.paused || !!r.shutdown) } }
     $h("dkl" + i).textContent = r.lastSym ? `Last: ${r.lastSym} ${String(r.last).slice(0, 70)}` : "";
     const key = r.lastSym + "|" + r.last; if (lastSeen[i] !== undefined && lastSeen[i] !== key) { const c = $h("dk" + i); c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse") } lastSeen[i] = key }
-  const ch = $h("h_chart"); if (hist.length > 1) { const lo = Math.min(...hist, t.start), hi = Math.max(...hist, t.start), pd = (hi - lo) * 0.12 || t.start * 0.001 || 1, w = 340, h = 120, X = i => 4 + i / (hist.length - 1) * (w - 8), Y = v => h - 4 - (v - lo + pd) / (hi - lo + 2 * pd) * (h - 8);
-    const d = hist.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(""), up = hist[hist.length - 1] >= t.start, c = up ? "var(--g)" : "var(--r)", lx = X(hist.length - 1), ly = Y(hist[hist.length - 1]);
+  const ch = $h("h_chart"), pts = Object.keys(R).length === NDESK ? hist.concat([t.eq]) : hist; if (pts.length > 1) { const lo = Math.min(...pts, t.start), hi = Math.max(...pts, t.start), pd = (hi - lo) * 0.12 || t.start * 0.001 || 1, w = 340, h = 120, X = i => 4 + i / (pts.length - 1) * (w - 8), Y = v => h - 4 - (v - lo + pd) / (hi - lo + 2 * pd) * (h - 8);
+    const d = pts.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(""), up = pts[pts.length - 1] >= t.start, c = up ? "var(--g)" : "var(--r)", lx = X(pts.length - 1), ly = Y(pts[pts.length - 1]);
     ch.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="120" preserveAspectRatio="none"><defs><linearGradient id="hg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
       <line x1="0" x2="${w}" y1="${Y(t.start)}" y2="${Y(t.start)}" stroke="var(--mut)" stroke-dasharray="3 4" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="${d}L${lx} ${h}L4 ${h}Z" fill="url(#hg)"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><span class="livedot ${up ? "g" : "r"}" style="left:${(lx / w * 100).toFixed(2)}%;top:${(ly / h * 100).toFixed(2)}%"></span>` }
   else ch.innerHTML = '<div class="sub" style="padding:46px 0;text-align:center">Collecting data…</div>';

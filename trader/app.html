@@ -159,6 +159,30 @@ body.hostbody{padding-block:0 84px}
 .mrow{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;align-items:center;margin-top:8px}.mrow label{grid-column:1/-1;font-size:13px;color:var(--mut)}
 .mrow input{grid-column:1}.mrow b{min-width:52px;text-align:right}.mrow input.off{opacity:.45}
 
+/* ---- iPhone: fit more on one screen ---- */
+@media (max-width:520px){
+  .panel{padding:12px 13px;border-radius:16px}
+  h2{margin:16px 2px 7px}
+  .hd .eq{font-size:30px}
+  .kv{gap:6px 8px;margin-top:8px}.kv b{font-size:13px}.kv span{font-size:10.5px}
+  .modes{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}.mbtn{padding:9px 4px;font-size:12px;border-radius:11px}
+  .chartwrap svg{max-height:170px}
+  #h_chart,#h_chart svg{height:96px!important}
+  .hdesk{margin:8px 0!important;padding:10px 12px}.hdesk .sub{font-size:12px;line-height:1.35}
+  .hdesk [id^="dkl"]{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dkctl{gap:5px;margin-top:8px;flex-wrap:nowrap}.dkctl select{flex:1 1 auto;padding:6px;font-size:12px}.dkctl .chip{padding:6px 9px;font-size:12px}
+  .chips .chip{padding:6px 10px;font-size:12.5px}
+  .deskbar{padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}.deskbar button{padding:9px 2px;font-size:11px}
+}
+@media (max-width:520px){
+  .eq{font-size:30px!important;letter-spacing:-.02em}
+  .hd .sub{font-size:12px}
+  .mdesc{font-size:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .dkctl .chip{white-space:nowrap}
+  .deskbar .dot{flex:0 0 7px}
+  .kv>div:only-child{grid-column:1/-1}
+}
+
 </style>
 </head>
 <body>
@@ -315,7 +339,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-24 15:20";
+const BUILD = "2026-11-24 15:54";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1316,7 +1340,7 @@ function watchdog(t){if(!CFG.watchdog)return;if(!wdStart){wdStart=t;wdLast=t;ret
 let busySAt=0,busy=false,busyF=false,busyL=false,busyS=false,scanning=false;
 const guard=async(fn)=>{try{await fn()}catch(e){ev("warn","error","",String(e&&e.message||e))}};
 async function stepFast(t){if(busyF)return;busyF=true;await guard(async()=>{roll(t);safety(t);if(due("monitor",CFG.monitorEvery,t)){await monitor(t);if(MODE==="live")LS.set("pt_last_live",Math.floor(t))}
-  if(due("equity",CFG.equityEvery,t)){S.curve.push([t,totalEquity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
+  if(due("equity",MODE==="live"?30:CFG.equityEvery,t)){S.curve.push([t,totalEquity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
 async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{watchdog(t);if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
   if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t);await coreStep(t)});busyL=false}
 async function stepScan(t){if(paused||S.pf.shutdown)return;if(busyS){if(Date.now()-(busySAt||0)<300e3)return;ev("warn","error","","a scan was stuck for 5 minutes and was restarted")}busyS=true;busySAt=Date.now();scanning=true;await guard(async()=>{if(!CFG.onlyTrend&&due("new",CFG.newEvery,t))await scan("new",now());if(due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
@@ -1357,8 +1381,9 @@ function animTick(n) {
 /* ============================ UI ============================ */
 /* trading desks: the same app runs 5 times side by side (one per market area), each with its own account; the Master board adds them up */
 const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Ethereum",chains:["ethereum"]},{n:"Big coins",chains:["solana","base","bsc","ethereum"],trend:true}];
-const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:["lots","most","Best tested setting, found by the bot's own 2-round search: widest scan, cut losers at -5%, half sold at +7%, rest can run to +40%. On 10 simulated markets it never saw: about +1.7% a day, ~54 trades a day, all 10 made money. Not a promise for live markets."][v]||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
+const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:["lots","most","risky","recommended","lots"][v]||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
 if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
+if(DESK&&!["recommended","easy","risky","most","lots","max","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const sgn=(n,d=2)=>(n>=0?"+":"-")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -1389,7 +1414,7 @@ try{const l=JSON.parse(LS.get("pt_len")||"{}");if(typeof l.sec==="boolean")CFG.l
 applySecMode(LS.get("pt_secmode")||"balanced");
 try{const l=JSON.parse(LS.get("pt_learn")||"{}");if(typeof l.on==="boolean")CFG.learn.on=l.on;if(typeof l.probation==="boolean")CFG.learn.probation=l.probation}catch(e){}
 const curPreset=()=>{const p=LS.get("pt_preset")||"recommended";return p==="safe"?"recommended":p};
-const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes, plus scam filters (enough real buyers, no fake volume) that cut scam buys about 12x in testing. Fewest losses."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 2x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 3x bigger trades: the best size in testing (about +0.22% a day, 0 of 12 runs lost). Bigger trades than this did worse. Not a promise for live markets."],["max","Max trades","The most trades (~56 a day): widest scan, bigger trades, up to 20 coins, holds up to 6 hours. On 10 unseen simulated markets: about +1.8% a day, 9 of 10 made money, but the deepest dips of any mode."],["lots","Lots of trades","Settings the bot found itself by testing 24 setups: cut losers at -4%, let winners run to +8% and +24%, bigger trades. Checked on 8 simulated markets it never saw: about +1.2% a day and ~40 trades a day, 6 of 8 runs made money (old setting: +0.11%). Not a promise for live markets."]];
+const PRESETS=[["recommended","Recommended","Only proven agents trade, small sizes, plus scam filters (enough real buyers, no fake volume) that cut scam buys about 12x in testing. Fewest losses."],["easy","Easy","Smallest trades and limits. Lowest risk, slowest."],["risky","Risky","Same proven agents, about 2x bigger trades. Bigger wins and bigger losses."],["most","Most money","Same agents, about 3x bigger trades: the best size in testing (about +0.22% a day, 0 of 12 runs lost). Bigger trades than this did worse. Not a promise for live markets."],["max","Max trades","The most trades (~56 a day): widest scan, bigger trades, up to 20 coins, holds up to 6 hours. On 10 unseen simulated markets: about +1.8% a day, 9 of 10 made money, but the deepest dips of any mode."],["lots","Lots of trades","Best tested setting, found by the bot's own 2-round search: widest scan, cut losers at -5%, half sold at +7%, rest can run to +40%. On 10 simulated markets it never saw: about +1.7% a day, ~54 trades a day, all 10 made money. Not a promise for live markets."]];
 const learnMode=()=>!CFG.learn.on?"off":CFG.learn.probation?"fast":"strict";
 const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.tr.enabled}));
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
@@ -1438,15 +1463,15 @@ function rNow(){const el=$("nowbox");if(!el)return;const K={buy:"🟢",closed:"�
   const d0=new Date(now()*1000).toISOString().slice(0,10),td=S.pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0),tw=td.filter(c=>c.pnl>0).length,tp=td.reduce((a,c)=>a+c.pnl,0);
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Right now</b><span class="sub">${op.length} open · open P/L <b class="${u>=0?"g":"r"}">${sgn(u)}</b> · ${sh} practice trades</span></div><div class="sub" style="margin-top:4px">Today: <b class="g">${tw} won</b> · <b class="r">${td.length-tw} lost</b> · <b class="${tp>=0?"g":"r"}">${sgn(tp)}</b>${S.lessons&&S.lessons.seen?` · learned from ${S.lessons.seen.toLocaleString()} trades`:""}</div>${L.length?L.map(j=>`<div class="sub" style="margin-top:6px">${K[j.kind]} ${esc(j.tok||"")} ${esc(j.msg.slice(0,90))} <span style="opacity:.6">· ${ago(j.t)}</span></div>`).join(""):`<div class="sub" style="margin-top:6px">Scanning coins. Agents only buy when a proven agent and the safety checks agree, so quiet periods are normal.</div>`}</div>`}
 function rMode(){const el=$("modebox");if(!el)return;const c=curPreset(),d=PRESETS.find(x=>x[0]===c);
-  el.innerHTML=`<div class="panel" style="margin-top:14px"><b>Mode</b><div class="modes">${PRESETS.map(x=>`<button class="mbtn ${c===x[0]?"on":""}" data-p="${x[0]}">${x[1]}</button>`).join("")}</div><div class="sub" style="margin-top:8px">${d?esc(d[2]):"Custom settings."}</div></div>`;
+  el.innerHTML=`<div class="panel" style="margin-top:14px"><b>Mode</b><div class="modes">${PRESETS.map(x=>`<button class="mbtn ${c===x[0]?"on":""}" data-p="${x[0]}">${x[1]}</button>`).join("")}</div><div class="sub mdesc" style="margin-top:8px">${d?esc(d[2]):"Custom settings."}</div></div>`;
   el.querySelectorAll(".mbtn").forEach(b=>b.onclick=()=>{savePreset(b.dataset.p);toast("Mode: "+b.textContent);render()})}
 function rPnl(){const el=$("pnlbox");if(!el)return;const pf=S.pf;if(!pf.tot){const T=pf.tot={w:0,wn:0,l:0,ln:0};for(const c of pf.closed){if(c.pnl>0){T.w+=c.pnl;T.wn++}else{T.l+=c.pnl;T.ln++}}}
   const T=pf.tot,tot=totalEquity()-totalStart(),op=Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),co=S.core?coreValue()-S.core.start:0,ag={};
   for(const c of pf.closed.slice(-500)){const k=c.agent||"launch";ag[k]=(ag[k]||0)+c.pnl}
-  const tops=Object.entries(ag).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,v])=>`<div class="row" style="margin-top:4px"><span class="sub">${esc(AG[k]?AG[k].name:k)}</span><b class="${v>=0?"g":"r"}">${sgn(v)}</b></div>`).join("");
+  const tops=Object.entries(ag).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`<div class="row" style="margin-top:4px"><span class="sub">${esc(AG[k]?AG[k].name:k)}</span><b class="${v>=0?"g":"r"}">${sgn(v)}</b></div>`).join("");
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Total profit / loss</b><b id="a_tot" class="num ${tot>=0?"g":"r"}" style="font-size:22px"></b></div>
-  <div class="kv"><div><span>Won</span><b id="a_won" class="num g"></b><span>${T.wn} coins</span></div><div><span>Lost</span><b id="a_lost" class="num r"></b><span>${T.ln} coins</span></div><div><span>Open now</span><b id="a_open" class="num ${op>=0?"g":"r"}"></b><span>${Object.keys(pf.positions).length} coins</span></div>
-  <div><span>BTC/ETH/SOL</span><b class="${co>=0?"g":"r"}">${S.core?sgn(co):"off"}</b></div><div><span>Cash interest</span><b class="g">${sgn((pf.yieldEarned||0)+(S.core?S.core.yieldEarned:0))}</b></div><div><span>Fees (included)</span><b>${fmt(pf.feesPaid+(S.core?S.core.fees:0))}</b></div><div><span>Win rate</span><b>${T.wn+T.ln?Math.round(100*T.wn/(T.wn+T.ln))+"%":"–"}</b></div></div>
+  <div class="kv"><div><span>Won</span><b id="a_won" class="num g"></b><span>${T.wn} coin${T.wn===1?"":"s"}</span></div><div><span>Lost</span><b id="a_lost" class="num r"></b><span>${T.ln} coin${T.ln===1?"":"s"}</span></div><div><span>Open now</span><b id="a_open" class="num ${op>=0?"g":"r"}"></b><span>${Object.keys(pf.positions).length} coin${Object.keys(pf.positions).length===1?"":"s"}</span></div>
+  ${S.core?`<div><span>BTC/ETH/SOL</span><b class="${co>=0?"g":"r"}">${sgn(co)}</b></div>`:""}<div><span>Cash interest</span><b class="g">${sgn((pf.yieldEarned||0)+(S.core?S.core.yieldEarned:0))}</b></div><div><span>Fees (included)</span><b>${fmt(pf.feesPaid+(S.core?S.core.fees:0))}</b></div><div><span>Win rate</span><b>${T.wn+T.ln?Math.round(100*T.wn/(T.wn+T.ln))+"%":"–"}</b></div></div>
   ${tops?`<div class="sub" style="margin-top:10px"><b>By agent</b></div>${tops}`:""}</div>`;anim("a_tot",tot,v=>sgn(v));anim("a_won",T.w,v=>sgn(v));anim("a_lost",T.l,v=>sgn(v));anim("a_open",op,v=>sgn(v),0)}
 function rHome(){rPnl();rCore();rNow();rMode();{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
 const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
