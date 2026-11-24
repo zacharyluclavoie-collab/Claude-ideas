@@ -129,7 +129,9 @@ const MOCK = {
       if (rng() < this.cfg.crashPerMin && this.crashUntil < vnow) this.crashUntil = vnow + mkU(2, 5) * 3600;     // market-wide sell-off about every 4 days
       const bm = (this.crashUntil > vnow ? -0.0006 : 0) + gauss() * 0.00045 * this.vol;
       this.majorHist.push(bm); if (this.majorHist.length > 61) this.majorHist.shift();
-      for (const [ch, rate] of Object.entries(this.cfg.newPerMin)) if (CFG.chains.includes(ch) && rng() < rate) this.spawn(false, ch);
+      const sc = CFG.simScale || 1;   // market size: 1 = original demo (~470 new coins a day), bigger = closer to the real market (tens of thousands a day)
+      for (const [ch, rate] of Object.entries(this.cfg.newPerMin)) if (CFG.chains.includes(ch)) { if (sc === 1) { if (rng() < rate) this.spawn(false, ch) } else { let k = Math.floor(rate * sc); if (rng() < rate * sc - k) k++; for (let i = 0; i < k; i++) this.spawn(false, ch) } }
+      if (sc > 1 && this.G % 60 === 0) for (const k of Object.keys(this.toks)) { const t = this.toks[k]; if (!t.est && this.G - t.genG > 2880 && !(S && S.pf && S.pf.positions[t.chain + ":" + t.addr.toLowerCase()])) delete this.toks[k] }   // big markets: forget new coins after 2 days (most are dead by then)
       for (const t of Object.values(this.toks)) this.step(t);
     }
     if (mins) for (const k of Object.keys(this.toks)) { const t = this.toks[k]; if (t.dead && (this.G - t.genG) > 600 && !(S && S.pf && S.pf.positions[t.chain + ":" + t.addr.toLowerCase()])) delete this.toks[k] }
