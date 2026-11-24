@@ -96,6 +96,7 @@ function buildSet() {
   $h("h_set").innerHTML = `<div class="sub"><b>Mode for every desk</b></div><div class="chips" id="hs_mode" style="margin-top:6px">${PR.map(x => `<button class="chip" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
     ${HOST_SW ? `<div class="sub" style="margin-top:12px"><b>Market data</b></div><div class="chips" id="hs_live" style="margin-top:6px"><button class="chip" data-v="live">Live market</button><button class="chip" data-v="mock">Demo (simulated)</button></div>` : ""}
     <div class="sub" style="margin-top:12px"><b>Demo speed</b> (live trading always runs in real time)</div><div class="chips" id="hs_speed" style="margin-top:6px">${SP.map(s => `<button class="chip" data-v="${s}">${s >= 30000 ? "Max" : s.toLocaleString() + "x"}</button>`).join("")}</div>
+    ${HOST_SW ? "" : ""}<div class="sub" style="margin-top:12px"><b>Demo market size</b> (more coins to pick from: more trades and more coins open at once; uses more of your device)</div><div class="chips" id="hs_sim" style="margin-top:6px">${[[1, "1x small"], [5, "5x"], [10, "10x"], [20, "20x real-like"]].map(([v, n]) => `<button class="chip" data-v="${v}">${n}</button>`).join("")}</div>
     <div class="sub" style="margin-top:12px"><b>New trades</b></div><div class="chips" id="hs_pause" style="margin-top:6px"><button class="chip" data-v="0">Running</button><button class="chip" data-v="1">Paused</button></div>
     <div class="sub" style="margin-top:12px"><b>Number of desks</b> (more desks use more of your computer; on the live market they share the same coins and data limits)</div><div class="chips" id="hs_n" style="margin-top:6px">${[5, 10, 15, 20, 25].map(k => `<button class="chip ${k === NDESK ? "on" : ""}" data-v="${k}">${k}</button>`).join("")}</div>
     <div class="sub" style="margin-top:12px"><b>Start over</b>: starting balance for each desk</div><div class="chips" id="hs_cap" style="margin-top:6px">${CAP.map(c => `<button class="chip" data-v="${c}">$${c.toLocaleString()}</button>`).join("")}</div>
@@ -125,6 +126,7 @@ function buildSet() {
   $h("hs_n").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v && +v !== NDESK) { try { localStorage.setItem("pt_host_n", v) } catch (e) {} location.reload() } };
   $h("hs_mode").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("preset", v); mark() } };
   if ($h("hs_live")) $h("hs_live").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("mode", v) };
+  $h("hs_sim").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("simscale", +v); hist.length = 0 } };
   $h("hs_speed").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("speed", +v) };
   $h("hs_pause").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v != null) send("pause", v === "1") };
   $h("hs_cap").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { capPick = +v; mark() } };
@@ -134,6 +136,7 @@ function buildSet() {
 function mark() {
   const rs = Object.values(R), all = (k, v) => rs.length && rs.every(r => String(r[k]) === String(v));
   document.querySelectorAll("#hs_mode .chip").forEach(b => b.classList.toggle("on", all("mode", b.dataset.v)));
+  document.querySelectorAll("#hs_sim .chip").forEach(b => b.classList.toggle("on", all("simScale", b.dataset.v)));
   document.querySelectorAll("#hs_speed .chip").forEach(b => b.classList.toggle("on", all("speed", b.dataset.v)));
   document.querySelectorAll("#hs_live .chip").forEach(b => b.classList.toggle("on", all("live", b.dataset.v === "live")));
   document.querySelectorAll("#hs_pause .chip").forEach(b => b.classList.toggle("on", all("paused", b.dataset.v === "1")));

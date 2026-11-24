@@ -83,11 +83,11 @@ const LIVE = {
   async discoverNew(chains) {
     const cs = chains || CFG.chains; let o = []; const cyc = this._cycle++;
     // GeckoTerminal: three pages of newest pools per chain, rotated so the free rate limit is shared (page 1 every time, 2 and 3 alternate)
-    const pages = cyc % 2 ? [1, 2] : [1, 3];
+    const pages = [1, 2 + (cyc % 4)];   // page 1 every time, pages 2-5 in rotation: deeper into the list of brand-new pools
     for (const c of cs) for (const pg of pages) o = o.concat(await this.pools(c, `new_pools?page=${pg}`, "new"));
     // DexScreener: newest profiles and boosted tokens (id lists), then keyword searches that return full pair data for up to 30 pairs each
     for (const u of ["token-profiles/latest/v1", "token-boosts/latest/v1", "token-boosts/top/v1"]) { const pr = await getJSON("https://api.dexscreener.com/" + u); for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" }) }
-    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold"];
+    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold", "shib", "floki", "popcat", "brett", "mog", "toshi", "goat", "pnut", "neiro", "mew", "bome", "slerf", "panda", "bear", "ape", "monkey", "penguin", "hamster", "cash", "money", "lambo", "pepe2", "wojak", "turbo", "kitty", "doge2", "sun", "moon2", "x", "grok", "agent", "bot", "fi", "dao"];
     // DexScreener allows ~300 calls/min (GeckoTerminal ~30), so most of the extra scanning goes here: 16 searches x up to 30 pairs per cycle
     for (let i = 0, N = DESK ? 6 : 16; i < N; i++) { const q = KW[(cyc * N + i + DESK * 5) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
     return o;
