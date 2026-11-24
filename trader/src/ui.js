@@ -276,8 +276,17 @@ if(DESK){const d=DESKS[DESK-1];CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.tre
 // every second, tell the Master board how this desk is doing
 function deskReport(){if(!DESK||!window.parent||window.parent===window)return;try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
   window.parent.postMessage({pt:1,desk:DESK,name:DESKS[DESK-1].n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
-    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
+    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),speed:SPEED,live:MODE==="live",paused:!!paused,status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
 setInterval(deskReport,1000);
+// Master settings: the Master board sends one command to every desk
+function resetAccount(c){LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);seedPretrained();resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),totalEquity()]];render()}}
+window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.source!==window.parent)return;
+  if(m.ptcmd==="preset"){savePreset(m.v);render()}
+  else if(m.ptcmd==="speed"){SPEED=+m.v||300;LS.set("pt_speed",SPEED)}
+  else if(m.ptcmd==="mode"&&!DEMO_ONLY&&(m.v==="live"||m.v==="mock")&&m.v!==MODE){MODE=m.v;LS.set("pt_mode",MODE);boot()}
+  else if(m.ptcmd==="reset"){resetAccount(Math.max(1,+m.v||2000))}
+  else if(m.ptcmd==="pause"){paused=!!m.v;render()}
+  deskReport()});
 function render(){if(AUTOTRAIN!=null)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
