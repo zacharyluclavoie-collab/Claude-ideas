@@ -68,7 +68,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-24 00:04";
+const BUILD = "2026-11-24 00:13";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -842,7 +842,7 @@ const BACKTEST = { seeds: 24, days: 7, med: "-0.13", worst: "-0.52", best: "0.21
  * It lives in its own sub-account so its swings never trip the memecoin kill switches, and it never touches memecoin cash after setup.
  * Honest expectation: a few % a month in good trends, flat or small losses in choppy markets. It does not get rich quick.
  */
-CFG.core = { on: true, share: 0.4, lookbacks: [10, 20, 50], volTarget: 0.3, fee: 0.3, slip: 0.05, checkH: 72, band: 0.35, yieldApr: 3, ids: ["bitcoin", "ethereum", "solana"] };
+CFG.core = { cashYield: true, on: true, share: 0.4, lookbacks: [10, 20, 50], volTarget: 0.3, fee: 0.3, slip: 0.05, checkH: 72, band: 0.35, yieldApr: 3, ids: ["bitcoin", "ethereum", "solana"] };
 const CORE_SYM = { bitcoin: "BTC", ethereum: "ETH", solana: "SOL" };
 const coreValue = () => { const c = S && S.core; if (!c) return 0; let v = c.cash; for (const id in c.qty) v += c.qty[id] * (c.px[id] || 0); return v };
 const totalEquity = () => equity() + coreValue();
@@ -904,7 +904,11 @@ function coreTrade(id, usd, t, why) {
   c.fees += cost; c.trades.unshift({ t, sym: CORE_SYM[id], side: usd > 0 ? "buy" : "sell", usd: Math.abs(usd), px, why }); if (c.trades.length > 100) c.trades.length = 100;
   ev("info", "core_" + (usd > 0 ? "buy" : "sell"), CORE_SYM[id], `${why}: ${usd > 0 ? "buy" : "sell"} ${fmt(Math.abs(usd), 0)} @ ${px.toPrecision(5)}`);
 }
+// idle trading cash earns a stablecoin-lending rate too (Aave-style, about 2-5% a year): small, but money is never just sitting still
+function cashYield(t) { const pf = S.pf; if (!CFG.core.cashYield) { pf.lastYield = t; return } const dt = Math.max(0, t - (pf.lastYield || t)); pf.lastYield = t; if (dt <= 0 || dt > 7 * 86400 || pf.cash <= 0) return;
+  const y = pf.cash * CFG.core.yieldApr / 100 * dt / (365 * 86400); pf.cash += y; pf.realized += y; pf.yieldEarned = (pf.yieldEarned || 0) + y; dayAdd(y, t) }
 async function coreStep(t) {
+  cashYield(t);
   if (!CFG.core.on) { if (S.core) coreOff(); return } coreInit(t); const c = S.core; if (!c) return;
   if (t - (c.lastPx || 0) < (MODE === "live" ? 600 : 3600)) return; c.lastPx = t;
   // stablecoin-lending yield on the sleeve's idle cash
