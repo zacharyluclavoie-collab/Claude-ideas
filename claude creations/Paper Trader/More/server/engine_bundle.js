@@ -11,6 +11,7 @@ const CFG = {
   nwFill:{minAgeMin:3,minTx:15,minBP:0.5,minScore:25,minVlr:0,minUniq:0.3,minChg1h:-30,maxChg1h:400,maxFdvLiq:200,maxAgeH:48},
   trFill:{minScore:20,minAccel:1.0,minBP:0.5,minVol:50000},
   lenient:{sec:true,regime:true},
+  flt:{minBuyers:0,minUniq:0},
   quick:{on:false,stop:6,tp1:8,tp2:16,trail:4}, agentProbation:0.6, committeeMin:2, agentHourly:8, watchdog:true, autoRearmMin:20,
   secMode:"balanced",
   keep:{on:true,target:10,sizeMult:0.5,reentrySec:0},
@@ -68,13 +69,13 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-24 00:24";
+const BUILD = "2026-11-24 01:19";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
-  CFG.wdSafe = false;
-  if (k === "recommended") { applyPreset("safe"); return }
-  if (k === "easy") { applyPreset("safe"); CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
+  CFG.wdSafe = false; CFG.flt.minBuyers = 0; CFG.flt.minUniq = 0;
+  if (k === "recommended") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; return }   // research scam filters: ~12x fewer scam buys in testing at similar profit
+  if (k === "easy") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
   if (k === "risky") { applyPreset("safe"); CFG.risk.perTradePct = 0.3; CFG.risk.posNew = 0.8; CFG.risk.posTrend = 1.2; CFG.risk.totalExp = 45; CFG.risk.dailyLoss = 2.5; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; return }
   if (k === "most") { applyPreset("safe"); CFG.risk.perTradePct = 0.45; CFG.risk.posNew = 1.2; CFG.risk.posTrend = 1.8; CFG.risk.totalExp = 50; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 10; return }   // the best-tested size: 5x was worse (pool impact)
   if (k === "lots") { applyPreset("most"); applyActivity("active"); return }   // ~2.5x the trades of Most money in testing, similar average profit, more losers
@@ -960,6 +961,9 @@ function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr
   S.feed.unshift(Object.assign({t:now(),sym:snap.sym,chain:snap.chain,src,outcome,detail,truth:tr},extra||{}));if(S.feed.length>80)S.feed.length=80}
 function reject(k,snap,src,why,min,stage,extra){rejected[k]=now()+60*(min||(src==="new"?CFG.rejectNewMin:CFG.rejectTrendMin));feedAdd(snap,src,stage||"strategy",why,extra)}
 async function evaluate(k,snap,src,t,agentId){
+  {const F=CFG.flt,age=ageH(snap,t);if(age!=null&&age<48&&snap.buyers1h!=null){   // research filters for young tokens: enough distinct buyers, and not wash-traded
+    if(F.minBuyers&&snap.buyers1h<F.minBuyers)return reject(k,snap,src,"too few distinct buyers ("+snap.buyers1h+")",5);
+    const u=snap.buys1h>=20?snap.buyers1h/snap.buys1h:null;if(F.minUniq&&u!=null&&u<F.minUniq)return reject(k,snap,src,"looks wash-traded (few wallets, many trades)",15)}}
   const pk=pickAll(snap,t,src);
   if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
   let hits=pk.hits;

@@ -73,9 +73,9 @@ const BUILD = "__BUILD__";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
-  CFG.wdSafe = false;
-  if (k === "recommended") { applyPreset("safe"); return }
-  if (k === "easy") { applyPreset("safe"); CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
+  CFG.wdSafe = false; CFG.flt.minBuyers = 0; CFG.flt.minUniq = 0;
+  if (k === "recommended") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; return }   // research scam filters: ~12x fewer scam buys in testing at similar profit
+  if (k === "easy") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
   if (k === "risky") { applyPreset("safe"); CFG.risk.perTradePct = 0.3; CFG.risk.posNew = 0.8; CFG.risk.posTrend = 1.2; CFG.risk.totalExp = 45; CFG.risk.dailyLoss = 2.5; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; return }
   if (k === "most") { applyPreset("safe"); CFG.risk.perTradePct = 0.45; CFG.risk.posNew = 1.2; CFG.risk.posTrend = 1.8; CFG.risk.totalExp = 50; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 10; return }   // the best-tested size: 5x was worse (pool impact)
   if (k === "lots") { applyPreset("most"); applyActivity("active"); return }   // ~2.5x the trades of Most money in testing, similar average profit, more losers
