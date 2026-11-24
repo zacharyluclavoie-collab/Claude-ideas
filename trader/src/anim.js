@@ -1,14 +1,18 @@
-/* ---- money animations: numbers count smoothly to their new value and flash green/red when they move ----
- * anim(id, value, format): the element with that id shows `value`, animated from what it showed before. Works even when the
- * element is re-created by innerHTML (state is kept by id). Respects "reduce motion".
+/* ---- money animations: numbers slide smoothly to their new value; a short, soft color glow marks a real move ----
+ * anim(id, value, format, flashMin): the element with that id shows `value`, animated from what it showed before. Works even when the
+ * element is re-created by innerHTML (state is kept by id). Glow only when the change is at least `flashMin` (default $0.50, 0 = never)
+ * and at most once every 4 seconds, so live prices ticking never make a number unreadable. Respects "reduce motion".
  */
 const ANIM = {}, ANIM_RM = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion:reduce)").matches;
 let animRaf = 0;
-function anim(id, v, f) {
-  if (!isFinite(v)) return; let a = ANIM[id];
-  if (!a) { a = ANIM[id] = { shown: v, from: v, to: v, t0: 0, f, dir: 0, flash: 0 } }
+function anim(id, v, f, flashMin) {
+  if (!isFinite(v)) return; let a = ANIM[id]; const fm = flashMin == null ? 0.5 : flashMin;
+  if (!a) { a = ANIM[id] = { shown: v, from: v, to: v, t0: 0, f, dir: 0, flash: 0, base: v, lastFlash: 0 } }
   a.f = f;
-  if (Math.abs(v - a.to) > 1e-9) { a.from = a.shown; a.to = v; a.t0 = performance.now(); if (Math.abs(v - a.from) >= 0.005) { a.dir = v > a.from ? 1 : -1; a.flash = a.t0 + 900 } }
+  if (Math.abs(v - a.to) > 1e-9) {
+    a.from = a.shown; a.to = v; a.t0 = performance.now();
+    if (fm > 0 && Math.abs(v - a.base) >= fm && a.t0 - a.lastFlash > 4000) { a.dir = v > a.base ? 1 : -1; a.flash = a.t0 + 1200; a.lastFlash = a.t0; a.base = v }
+  }
   const el = typeof document !== "undefined" && document.getElementById(id); if (el) el.textContent = f(a.shown);
   if (!animRaf) animRaf = requestAnimationFrame(animTick);
 }

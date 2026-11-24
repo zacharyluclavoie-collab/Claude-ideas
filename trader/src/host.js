@@ -1,19 +1,20 @@
 /* Master board: runs the app 5 times (one iframe per desk) and adds their results together. Each desk reports once a second. */
-const DN = ["Solana", "Base", "BSC", "Ethereum", "Big coins"], R = {}, hist = [], MODEN = { recommended: "Recommended", easy: "Easy", risky: "Risky", most: "Most money", lots: "Lots of trades", max: "Max trades", safe: "Recommended" };
+const AREAS = ["Solana", "Base", "BSC", "Ethereum", "Big coins"]; let NDESK = 5; try { NDESK = Math.max(1, Math.min(25, +localStorage.getItem("pt_host_n") || 5)) } catch (e) {}
+const DN = [...Array(NDESK)].map((_, i) => AREAS[i % 5] + (i >= 5 ? " " + (Math.floor(i / 5) + 1) : "")), R = {}, hist = [], MODEN = { recommended: "Recommended", easy: "Easy", risky: "Risky", most: "Most money", lots: "Lots of trades", max: "Max trades", safe: "Recommended" };
 const $h = id => document.getElementById(id), escH = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const money = (n, d = 2) => (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 const sg = (n, d = 2) => (n >= 0 ? "+" : "-") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 let cur = 0;
-for (let i = 1; i <= 5; i++) {
+for (let i = 1; i <= NDESK; i++) {
   const f = document.createElement("iframe"); f.title = DN[i - 1] + " desk"; f.className = "hframe"; f.hidden = true;
-  f.srcdoc = APP_DOC.replace("<!--DESK-->", "<script>window.DESK=" + i + "<\/script>"); $h("hframes").appendChild(f);
+  f.srcdoc = APP_DOC.replace("<!--DESK-->", "<script>window.DESK=" + i + ";window.DESKN=" + NDESK + "<\/script>"); $h("hframes").appendChild(f);
 }
-const bar = $h("deskbar");
+const bar = $h("deskbar"); if (NDESK > 5) bar.classList.add("many");
 bar.innerHTML = ["Master"].concat(DN).map((n, i) => `<button data-d="${i}" class="${i === 0 ? "on" : ""}"><span class="dot" id="hd_${i}"></span>${n}</button>`).join("");
 bar.onclick = e => { const b = e.target.closest("button"); if (b) show(+b.dataset.d) };
 function show(d) { cur = d; $h("hmaster").hidden = d !== 0; document.querySelectorAll(".hframe").forEach((f, i) => f.hidden = i + 1 !== d); bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.d === d)); if (d === 0) draw() }
 window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
-function dots() { for (let i = 1; i <= 5; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
+function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
 function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
 setInterval(() => { const t = totals(); if (Object.keys(R).length) { hist.push(t.eq); if (hist.length > 1500) hist.shift() } }, 2000);
 let built = false; const lastSeen = {};
@@ -30,15 +31,15 @@ function buildBoard() {
 function draw() {
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
-  anim("h_eq", t.eq, v => money(v));
-  $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of 5 desks running` : "Starting 5 desks…";
+  anim("h_eq", t.eq, v => money(v), 0);
+  $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
-  anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v)); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
+  anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
   const pc = (k, w) => k + (k === 1 ? " " + w : " " + w + "s");
   $h("hk_wn").textContent = pc(t.wn, "coin"); $h("hk_ln").textContent = pc(t.ln, "coin"); $h("hk_on").textContent = pc(t.open, "coin");
   $h("hk_td").textContent = String(t.todayN); $h("hk_wr").textContent = t.wn + t.ln ? Math.round(100 * t.wn / (t.wn + t.ln)) + "%" : "–"; $h("hk_sc").textContent = t.scanned.toLocaleString();
-  for (let i = 1; i <= 5; i++) { const r = R[i]; if (!r) continue; const p = r.eq - r.start;
-    anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v));
+  for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const p = r.eq - r.start;
+    anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v), 0);
     $h("dki" + i).textContent = `${MODEN[r.mode] || r.mode} · ${r.status}${r.clock ? " · " + r.clock : ""}`;
     $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today`;
     $h("dkl" + i).textContent = r.lastSym ? `Last: ${r.lastSym} ${String(r.last).slice(0, 70)}` : "";
@@ -60,14 +61,16 @@ function buildSet() {
     ${HOST_SW ? `<div class="sub" style="margin-top:12px"><b>Market data</b></div><div class="chips" id="hs_live" style="margin-top:6px"><button class="chip" data-v="live">Live market</button><button class="chip" data-v="mock">Demo (simulated)</button></div>` : ""}
     <div class="sub" style="margin-top:12px"><b>Demo speed</b> (live trading always runs in real time)</div><div class="chips" id="hs_speed" style="margin-top:6px">${SP.map(s => `<button class="chip" data-v="${s}">${s >= 30000 ? "Max" : s.toLocaleString() + "x"}</button>`).join("")}</div>
     <div class="sub" style="margin-top:12px"><b>New trades</b></div><div class="chips" id="hs_pause" style="margin-top:6px"><button class="chip" data-v="0">Running</button><button class="chip" data-v="1">Paused</button></div>
+    <div class="sub" style="margin-top:12px"><b>Number of desks</b> (more desks use more of your computer; on the live market they share the same coins and data limits)</div><div class="chips" id="hs_n" style="margin-top:6px">${[5, 10, 15, 20, 25].map(k => `<button class="chip ${k === NDESK ? "on" : ""}" data-v="${k}">${k}</button>`).join("")}</div>
     <div class="sub" style="margin-top:12px"><b>Start over</b>: starting balance for each desk</div><div class="chips" id="hs_cap" style="margin-top:6px">${CAP.map(c => `<button class="chip" data-v="${c}">$${c.toLocaleString()}</button>`).join("")}</div>
-    <button class="btn red" id="hs_reset" style="margin-top:10px">Reset all 5 desks</button><div class="sub" id="hs_note" style="margin-top:6px"></div>`;
+    <button class="btn red" id="hs_reset" style="margin-top:10px">Reset all desks</button><div class="sub" id="hs_note" style="margin-top:6px"></div>`;
+  $h("hs_n").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v && +v !== NDESK) { try { localStorage.setItem("pt_host_n", v) } catch (e) {} location.reload() } };
   $h("hs_mode").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("preset", v); mark() } };
   if ($h("hs_live")) $h("hs_live").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("mode", v) };
   $h("hs_speed").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("speed", +v) };
   $h("hs_pause").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v != null) send("pause", v === "1") };
   $h("hs_cap").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { capPick = +v; mark() } };
-  $h("hs_reset").onclick = () => { if (Date.now() - resetArm > 4000) { resetArm = Date.now(); $h("hs_reset").textContent = "Tap again to reset all 5 desks to $" + capPick.toLocaleString() + " each"; return } resetArm = 0; send("reset", capPick); $h("hs_reset").textContent = "Reset all 5 desks"; hist.length = 0 };
+  $h("hs_reset").onclick = () => { if (Date.now() - resetArm > 4000) { resetArm = Date.now(); $h("hs_reset").textContent = "Tap again to reset all " + NDESK + " desks to $" + capPick.toLocaleString() + " each"; return } resetArm = 0; send("reset", capPick); $h("hs_reset").textContent = "Reset all desks"; hist.length = 0 };
   mark();
 }
 function mark() {
@@ -77,7 +80,7 @@ function mark() {
   document.querySelectorAll("#hs_live .chip").forEach(b => b.classList.toggle("on", all("live", b.dataset.v === "live")));
   document.querySelectorAll("#hs_pause .chip").forEach(b => b.classList.toggle("on", all("paused", b.dataset.v === "1")));
   document.querySelectorAll("#hs_cap .chip").forEach(b => b.classList.toggle("on", +b.dataset.v === capPick));
-  if ($h("hs_note")) $h("hs_note").textContent = "Resets every desk's paper account to $" + capPick.toLocaleString() + " (total $" + (capPick * 5).toLocaleString() + ").";
+  if ($h("hs_note")) $h("hs_note").textContent = "Resets every desk's paper account to $" + capPick.toLocaleString() + " (total $" + (capPick * NDESK).toLocaleString() + ").";
 }
 buildSet();
 draw(); setInterval(() => { if (cur === 0) { draw(); mark() } }, 1000);

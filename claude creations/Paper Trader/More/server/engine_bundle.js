@@ -70,7 +70,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-24 05:43";
+const BUILD = "2026-11-24 05:46";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -527,7 +527,7 @@ let health = { ok: 0, fail: 0, lastErr: "", byHost: {} };
 const hostStat = h => health.byHost[h] || (health.byHost[h] = { ok: 0, fail: 0 });
 
 async function getJSON(url) {
-  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK && host !== "api.dexscreener.com" ? 2.5 : 1),   // 5 desks share the free rate limits
+  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK ? (host !== "api.dexscreener.com" ? 0.5 : 0.2) * ((typeof window !== "undefined" && window.DESKN) || 5) : 1),   // 5 desks share the free rate limits
     st = hostStat(host);
   if ((coolUntil[host] || 0) > Date.now()) { health.fail++; st.fail++; return null }                      // backing off after a rate limit
   const wait = Math.max(0, (nextAt[host] || 0) - Date.now());

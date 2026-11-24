@@ -1,7 +1,8 @@
 /* ============================ UI ============================ */
 /* trading desks: the same app runs 5 times side by side (one per market area), each with its own account; the Master board adds them up */
 const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Ethereum",chains:["ethereum"]},{n:"Big coins",chains:["solana","base","bsc","ethereum"],trend:true}];
-if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset","lots");LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
+const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:["lots","most","risky","recommended","lots"][v]||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
+if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const sgn=(n,d=2)=>(n>=0?"+":"-")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -46,7 +47,7 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast("Cop
 
 /* ---------- header + toasts ---------- */
 let shownEq=null,eqRaf=0;
-function tweenEq(v){anim("eq",v,x=>fmt(x));return;const el=$("eq");if(shownEq==null||matchMedia("(prefers-reduced-motion:reduce)").matches||Math.abs(v-shownEq)<0.005){shownEq=v;el.textContent=fmt(v);return}const from=shownEq,t0=performance.now();cancelAnimationFrame(eqRaf);const step=n=>{const k=Math.max(0,Math.min(1,(n-t0)/450)),e=1-Math.pow(1-k,3);shownEq=from+(v-from)*e;el.textContent=fmt(shownEq);if(k<1)eqRaf=requestAnimationFrame(step)};eqRaf=requestAnimationFrame(step)}
+function tweenEq(v){anim("eq",v,x=>fmt(x),0);return;const el=$("eq");if(shownEq==null||matchMedia("(prefers-reduced-motion:reduce)").matches||Math.abs(v-shownEq)<0.005){shownEq=v;el.textContent=fmt(v);return}const from=shownEq,t0=performance.now();cancelAnimationFrame(eqRaf);const step=n=>{const k=Math.max(0,Math.min(1,(n-t0)/450)),e=1-Math.pow(1-k,3);shownEq=from+(v-from)*e;el.textContent=fmt(shownEq);if(k<1)eqRaf=requestAnimationFrame(step)};eqRaf=requestAnimationFrame(step)}
 const hue=id=>{let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))%360;return h};
 const ringSVG=(f,col,sw=7)=>{const r=18,c=2*Math.PI*r;return`<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--soft)" stroke-width="${sw}"/><circle cx="22" cy="22" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${(c*clamp(f,0,1)).toFixed(1)} ${c.toFixed(1)}"/></svg>`};
 function header(){const pf=S.pf,eq=totalEquity(),rt=(eq/totalStart()-1)*100,td=equity()-pf.dayStart+(S.core?coreValue()-(S.core.dayStart??coreValue()):0);tweenEq(eq);
@@ -55,7 +56,7 @@ function header(){const pf=S.pf,eq=totalEquity(),rt=(eq/totalStart()-1)*100,td=e
   if(pf.shutdown){cls="st bad";tx="Shutdown"}else if(now()<pf.pauseUntil){cls="st warn";tx="Cooling down"}else if(regime==="danger"||regime==="crash"){cls="st warn";tx="Market danger"}
   else if(AUTOTRAIN!=null){cls="st dim";tx="Training "+Math.round(AUTOTRAIN*100)+"%"}else if(ffUntil>vnow){cls="st dim";tx="Skipping ahead"}else if(paused){cls="st dim";tx="Entries paused"}else if(MODE==="live"&&health.ok===0&&health.fail>2){cls="st bad";tx="No data"}else if(regime==="unknown"){cls="st dim";tx="Waiting for data"}
   c.className=cls;c.textContent=tx;
-  $("clock").textContent=(DESK?DESKS[DESK-1].n+" desk · ":"")+(MODE==="mock"?`Demo ·${tlabel(vnow)} · ${(()=>{const h=header.sp||(header.sp=[]),n=performance.now();h.push([n,vnow]);while(h.length>2&&n-h[0][0]>4000)h.shift();const r=h.length>1?(h[h.length-1][1]-h[0][1])/((n-h[0][0])/1000):SPEED;return Math.round(r).toLocaleString()})()}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`)}
+  $("clock").textContent=(DESK?deskInfo().n+" desk · ":"")+(MODE==="mock"?`Demo ·${tlabel(vnow)} · ${(()=>{const h=header.sp||(header.sp=[]),n=performance.now();h.push([n,vnow]);while(h.length>2&&n-h[0][0]>4000)h.shift();const r=h.length>1?(h[h.length-1][1]-h[0][1])/((n-h[0][0])/1000):SPEED;return Math.round(r).toLocaleString()})()}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`)}
 function drainToasts(){const box=$("toasts");let n=0;while(toastQ.length&&n<2){const j=toastQ.shift();
   const show=j.level==="crit"||j.level==="warn"||j.kind==="note"||((j.kind==="buy"||j.kind==="closed")&&SPEED<=60);if(!show)continue;n++;
   const d=document.createElement("div");d.className="toast "+(j.level==="crit"?"bad":j.level==="warn"?"warn":"");d.textContent=j.kind==="note"?j.msg:(j.kind==="buy"?"Bought ":j.kind==="closed"?"Closed ":j.kind.replace(/_/g," ")+" ")+j.tok+" · "+String(j.msg).split(" · ")[0].slice(0,60);box.appendChild(d);setTimeout(()=>d.remove(),4500)}
@@ -90,7 +91,7 @@ function rPnl(){const el=$("pnlbox");if(!el)return;const pf=S.pf;if(!pf.tot){con
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Total profit / loss</b><b id="a_tot" class="num ${tot>=0?"g":"r"}" style="font-size:22px"></b></div>
   <div class="kv"><div><span>Won</span><b id="a_won" class="num g"></b><span>${T.wn} coins</span></div><div><span>Lost</span><b id="a_lost" class="num r"></b><span>${T.ln} coins</span></div><div><span>Open now</span><b id="a_open" class="num ${op>=0?"g":"r"}"></b><span>${Object.keys(pf.positions).length} coins</span></div>
   <div><span>BTC/ETH/SOL</span><b class="${co>=0?"g":"r"}">${S.core?sgn(co):"off"}</b></div><div><span>Cash interest</span><b class="g">${sgn((pf.yieldEarned||0)+(S.core?S.core.yieldEarned:0))}</b></div><div><span>Fees (included)</span><b>${fmt(pf.feesPaid+(S.core?S.core.fees:0))}</b></div><div><span>Win rate</span><b>${T.wn+T.ln?Math.round(100*T.wn/(T.wn+T.ln))+"%":"–"}</b></div></div>
-  ${tops?`<div class="sub" style="margin-top:10px"><b>By agent</b></div>${tops}`:""}</div>`;anim("a_tot",tot,v=>sgn(v));anim("a_won",T.w,v=>sgn(v));anim("a_lost",T.l,v=>sgn(v));anim("a_open",op,v=>sgn(v))}
+  ${tops?`<div class="sub" style="margin-top:10px"><b>By agent</b></div>${tops}`:""}</div>`;anim("a_tot",tot,v=>sgn(v));anim("a_won",T.w,v=>sgn(v));anim("a_lost",T.l,v=>sgn(v));anim("a_open",op,v=>sgn(v),0)}
 function rHome(){rPnl();rCore();rNow();rMode();{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
 const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
   const dd=Math.max(0,(pf.peak-eq)/pf.peak*100),day=Math.max(0,(pf.dayStart-eq)/pf.dayStart*100),ex=exposure()/eq*100;
@@ -273,10 +274,10 @@ if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1
 if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set("pt_core","1");LS.set("pt_swarm","1")}
 {const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","max","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){}}}
-if(DESK){const d=DESKS[DESK-1];CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
+if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
 // every second, tell the Master board how this desk is doing
 function deskReport(){if(!DESK||!window.parent||window.parent===window)return;try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
-  window.parent.postMessage({pt:1,desk:DESK,name:DESKS[DESK-1].n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
+  window.parent.postMessage({pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
     today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),speed:SPEED,live:MODE==="live",paused:!!paused,status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
 setInterval(deskReport,1000);
 // Master settings: the Master board sends one command to every desk
