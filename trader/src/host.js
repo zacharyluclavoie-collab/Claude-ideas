@@ -113,6 +113,32 @@ function mark() {
   document.querySelectorAll("#hs_cap .chip").forEach(b => b.classList.toggle("on", +b.dataset.v === capPick));
   if ($h("hs_note")) $h("hs_note").textContent = "Resets every desk's paper account to $" + capPick.toLocaleString() + " (total $" + (capPick * NDESK).toLocaleString() + ").";
 }
+/* ---- Autopilot: looks at every desk on its own and adjusts it ----
+ * - a desk whose last 20 trades lost money steps DOWN one mode (Max trades > Lots of trades > Most money > Recommended)
+ * - a desk whose last 20 trades made money with a win rate of 55%+ steps back UP (never above Lots of trades by itself)
+ * - a desk that stopped itself after losses is restarted when a new trading day begins
+ * Each desk needs 20 new finished trades between changes, so it never flips back and forth on noise. Every action is logged. */
+const LADDER = ["recommended", "most", "lots", "max"], AP = { on: false, last: {}, log: [] };
+try { const a = JSON.parse(localStorage.getItem("pt_host_auto") || "{}"); AP.on = !!a.on; AP.log = a.log || [] } catch (e) {}
+const apSave = () => { try { localStorage.setItem("pt_host_auto", JSON.stringify({ on: AP.on, log: AP.log.slice(0, 40) })) } catch (e) {} };
+const apLog = msg => { AP.log.unshift({ t: Date.now(), msg }); AP.log.length = Math.min(AP.log.length, 40); apSave(); apDraw() };
+function apTick() {
+  if (!AP.on) return;
+  for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const st = AP.last[i] || (AP.last[i] = { n: r.wn + r.ln, day: r.day }), name = DN[i - 1];
+    if (r.shutdown && r.day && st.day && r.day !== st.day) { sendTo(i, "rearm"); apLog(`${name}: new trading day, restarted after yesterday's stop`) }
+    st.day = r.day;
+    if (r.wn + r.ln - st.n < 20 || !r.r20 || r.r20.n < 20) continue;
+    const k = LADDER.indexOf(r.mode), wr = r.r20.w / r.r20.n;
+    if (r.r20.pnl < 0 && k > 0) { sendTo(i, "preset", LADDER[k - 1]); st.n = r.wn + r.ln; apLog(`${name}: last 20 trades ${sg(r.r20.pnl)}, stepped down to ${MODEN[LADDER[k - 1]]}`) }
+    else if (r.r20.pnl > 0 && wr >= 0.55 && k >= 0 && k < 2) { sendTo(i, "preset", LADDER[k + 1]); st.n = r.wn + r.ln; apLog(`${name}: last 20 trades ${sg(r.r20.pnl)} (${Math.round(wr * 100)}% won), stepped up to ${MODEN[LADDER[k + 1]]}`) }
+    else st.n = r.wn + r.ln;
+  }
+}
+function apDraw() { const el = $h("ap_log"); if (!el) return; el.innerHTML = AP.log.length ? AP.log.slice(0, 8).map(l => `<div class="sub" style="margin-top:4px">${new Date(l.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${escH(l.msg)}</div>`).join("") : `<div class="sub" style="margin-top:4px">${AP.on ? "Watching every desk. Nothing needed changing yet." : "Off."}</div>`;
+  document.querySelectorAll("#ap_sel .chip").forEach(b => b.classList.toggle("on", (b.dataset.v === "1") === AP.on)) }
+setInterval(apTick, 5000);
 buildSet();
+{ const box = document.createElement("div"); box.innerHTML = `<div class="sub"><b>Autopilot</b>: steps a losing desk down to a safer mode, steps a steady winner back up, restarts desks that stopped themselves when a new day starts</div><div class="chips" id="ap_sel" style="margin-top:6px"><button class="chip" data-v="1">On</button><button class="chip" data-v="0">Off</button></div><div id="ap_log" style="margin:4px 0 14px"></div>`;
+  $h("h_set").prepend(box); $h("ap_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v == null) return; AP.on = v === "1"; AP.last = {}; apSave(); apLog(AP.on ? "Autopilot switched on" : "Autopilot switched off") }; apDraw() }
 draw(); setInterval(() => { if (cur === 0) { draw(); mark() } }, 1000);
 if (typeof HOST_SW !== "undefined" && HOST_SW && "serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
