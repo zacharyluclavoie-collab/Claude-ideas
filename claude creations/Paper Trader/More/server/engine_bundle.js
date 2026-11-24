@@ -69,15 +69,16 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-24 01:19";
+const BUILD = "2026-11-24 02:58";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
-  CFG.wdSafe = false; CFG.flt.minBuyers = 0; CFG.flt.minUniq = 0;
+  CFG.deepPerScan = 40; CFG.risk.cooldownH = 12; CFG.risk.streakPause = 3; CFG.wdSafe = false; CFG.flt.minBuyers = 0; CFG.flt.minUniq = 0;
   if (k === "recommended") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; return }   // research scam filters: ~12x fewer scam buys in testing at similar profit
   if (k === "easy") { applyPreset("safe"); CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; CFG.risk.perTradePct = 0.08; CFG.risk.posNew = 0.25; CFG.risk.posTrend = 0.4; CFG.risk.totalExp = 15; CFG.agentHourly = 3; CFG.risk.dailyLoss = 1; CFG.risk.maxDD = 4; return }
   if (k === "risky") { applyPreset("safe"); CFG.risk.perTradePct = 0.3; CFG.risk.posNew = 0.8; CFG.risk.posTrend = 1.2; CFG.risk.totalExp = 45; CFG.risk.dailyLoss = 2.5; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; return }
   if (k === "most") { applyPreset("safe"); CFG.risk.perTradePct = 0.45; CFG.risk.posNew = 1.2; CFG.risk.posTrend = 1.8; CFG.risk.totalExp = 50; CFG.risk.dailyLoss = 3; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 10; return }   // the best-tested size: 5x was worse (pool impact)
+  if (k === "max") { applyPreset("lots"); CFG.risk.cooldownH = 0.1; CFG.risk.streakPause = 99; CFG.risk.perHour = 2000; CFG.risk.perDay = 20000; CFG.committeeMin = 1; CFG.agentHourly = 60; CFG.deepPerScan = 120; return }   // no cooldowns, no pause after losses, deepest scan
   if (k === "lots") { applyPreset("most"); applyActivity("active"); return }   // ~2.5x the trades of Most money in testing, similar average profit, more losers
   if (k === "safe") { applyPreset("protect"); CFG.learn.probation = false; CFG.swarmOff = true; CFG.core.on = true; CFG.wdSafe = true; applySecMode("balanced"); return }   // no real money for any agent until it has proven itself
   if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
@@ -167,12 +168,16 @@ function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({
   {const lim=agentId?agentLimit(agentId,t):"";if(lim)return no(lim)}
   if(agentId)caps.agent=eq*R.totalExp/100*agentShare(agentId)*1.6-agentExposure(agentId);
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
+  // small accounts (e.g. $10): percentage limits would make every trade a few cents and fees would eat it, so trade ~10% of the account per position
+  // on cheap chains only (the cost check below still blocks chains whose network fee is too big for the trade)
+  const small=eq<500,minT=small?Math.max(0.5,Math.min(R.minTrade,eq*0.05)):R.minTrade;
+  if(small){const s=eq*0.20;caps.share=s;caps.risk=s*Math.max(0.5,riskMult());caps.pos=s;if(caps.agent!=null)caps.agent=Math.max(caps.agent,s-agentExposure(agentId));delete caps.newExp;caps.chain=eq*R.totalExp/100-(expBy(p=>p.chain)[snap.chain]||0)}
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
-  if(usd<R.minTrade)return no(`size ${usd.toFixed(0)} below min (${name})`);
+  if(usd<minT)return no(`size ${usd.toFixed(2)} below min (${name})`);
   {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),fee=2*CFG.ex.fee/100,cap=R.maxCostPct/100;
    const fit=Math.max(0,cap-fee)*res/2*0.9;                      // biggest size whose price impact stays inside the cost limit
    if(usd>fit){usd=fit;name="pool depth (cost limit)"}
-   if(usd<R.minTrade)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
+   if(usd<minT)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
    const cost=gasRT/usd+fee+2*usd/res;
    if(cost>cap)return no(`network fees ${(gasRT/usd*100).toFixed(1)}% of a ${usd.toFixed(0)}$ trade are too high on ${snap.chain}`)}
   if(false)return no(`size ${usd.toFixed(0)} below min (${name})`);return{ok:true,usd,why:`size ${usd.toFixed(0)} (${name})`}}
@@ -669,6 +674,10 @@ const LIVE = {
  * (rug, honeypot, ...) is only used for the demo's reveal labels and for the security-feed model.
  * Fixed assumptions are listed in MODEL_NOTES and shown in the app.
  */
+// demo coin names: built from the token number only (no random draws, so the market itself is unchanged)
+const _NA = ["PEPE", "DOGE", "WIF", "BONK", "MOON", "FROG", "CAT", "SHIB", "NEKO", "BASED", "CHAD", "GIGA", "TURBO", "MOG", "POPCAT", "SLERF", "WOJAK", "BRETT", "TOSHI", "MIGGLES", "PONKE", "BOME", "MEW", "GOAT", "PNUT", "HAMSTER", "BEAR", "BULL", "LAMBO", "ROCKET", "APE", "PANDA", "OTTER", "DUCK", "SNEK", "KOALA", "TIGER", "WHALE", "PUP", "ZEUS"];
+const _NB = ["", "AI", "INU", "X", "COIN", "KING", "DAO", "2", "PRO", "LORD", "BABY", "MAX", "SUN", "GPT", "WIF", "FI"];
+const simName = n => { const a = _NA[(n * 7 + 3) % _NA.length], b = _NB[Math.floor(n / _NA.length + n * 3) % _NB.length]; const r = n >= 640 ? String(Math.floor(n / 640) + 1) : ""; return (b === "BABY" ? "BABY" + a : a + b) + r };
 const KIND_LABEL = { dud: "dud", modest: "short pump", runner: "runner", moon: "moonshot", dead: "dead pool", rug_i: "rug pull", rug_s: "slow rug",
   honey: "honeypot", stealth: "stealth honeypot", est: "established" };
 const SCAM_KINDS = new Set(["rug_i", "rug_s", "honey", "stealth"]);
@@ -716,7 +725,7 @@ const MOCK = {
     const kind = est ? "est" : this.pickKind(), ar = MK_ARCH[kind] || { A: [0.5, 2], rise: [100, 400], fall: [1000, 5000], sUp: 0.05, sDn: -0.03 };
     const liq = est ? clamp(mkLogN(500e3, 0.9), 120e3, 6e6) : clamp(mkLogN(8e3, 1.05), 2500, 700e3);
     const q = liq / 2, p0 = Math.pow(10, -7 + rng() * 7), b = q / p0;
-    const t = { chain, addr, sym: "T" + n, kind, est, created: est ? vnow - (80 + rng() * 800) * 3600 : vnow, genG: est ? -MK_RING - 1 : this.G, q, b, p0, price: p0,
+    const t = { chain, addr, sym: simName(n), kind, est, created: est ? vnow - (80 + rng() * 800) * 3600 : vnow, genG: est ? -MK_RING - 1 : this.G, q, b, p0, price: p0,
       A: est ? mkU(0.3, 1.6) : mkU(...ar.A), rise: mkU(...ar.rise), fall: est ? mkU(...this.cfg.estFall) : mkU(...ar.fall), sUp: ar.sUp, sDn: ar.sDn, h: est ? 0.15 : 0.02, peak: 0, waveUntil: 0,
       noise: 0, sigN: est ? 0.04 : 0.09, tax0: rng() < 0.7 ? 0 : mkU(0, 3), sellTax: 0, flow: 0, rugged: false, dead: false, insIdx: 0,
       holders: Math.floor(est ? mkU(3e3, 8e4) : mkU(25, 300)), launchHolders: 0, soph: SCAM_KINDS.has(kind) && rng() < 0.25, wash: 1,
@@ -1005,7 +1014,7 @@ function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qt
     if(p.attempts>=3&&!p.emergency){p.emergency="sell failing repeatedly (possible hidden restriction)";ev("crit","emergency",p.sym,p.emergency)}return false}
   const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;p.attempts=0;
   tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
-  if(p.qty<=1e-12||p.qty*snap.price<1)closePos(p,reason,0,t);return true}
+  if(p.qty<=1e-12||p.qty*snap.price<Math.min(1,(p.size0||1)*0.03))closePos(p,reason,0,t);return true}
 function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
