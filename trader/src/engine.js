@@ -33,6 +33,9 @@ function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr
   S.feed.unshift(Object.assign({t:now(),sym:snap.sym,chain:snap.chain,src,outcome,detail,truth:tr},extra||{}));if(S.feed.length>80)S.feed.length=80}
 function reject(k,snap,src,why,min,stage,extra){rejected[k]=now()+60*(min||(src==="new"?CFG.rejectNewMin:CFG.rejectTrendMin));feedAdd(snap,src,stage||"strategy",why,extra)}
 async function evaluate(k,snap,src,t,agentId){
+  {const F=CFG.flt,age=ageH(snap,t);if(age!=null&&age<48&&snap.buyers1h!=null){   // research filters for young tokens: enough distinct buyers, and not wash-traded
+    if(F.minBuyers&&snap.buyers1h<F.minBuyers)return reject(k,snap,src,"too few distinct buyers ("+snap.buyers1h+")",5);
+    const u=snap.buys1h>=20?snap.buyers1h/snap.buys1h:null;if(F.minUniq&&u!=null&&u<F.minUniq)return reject(k,snap,src,"looks wash-traded (few wallets, many trades)",15)}}
   const pk=pickAll(snap,t,src);
   if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
   let hits=pk.hits;
