@@ -5,6 +5,10 @@
  * (rug, honeypot, ...) is only used for the demo's reveal labels and for the security-feed model.
  * Fixed assumptions are listed in MODEL_NOTES and shown in the app.
  */
+// demo coin names: built from the token number only (no random draws, so the market itself is unchanged)
+const _NA = ["PEPE", "DOGE", "WIF", "BONK", "MOON", "FROG", "CAT", "SHIB", "NEKO", "BASED", "CHAD", "GIGA", "TURBO", "MOG", "POPCAT", "SLERF", "WOJAK", "BRETT", "TOSHI", "MIGGLES", "PONKE", "BOME", "MEW", "GOAT", "PNUT", "HAMSTER", "BEAR", "BULL", "LAMBO", "ROCKET", "APE", "PANDA", "OTTER", "DUCK", "SNEK", "KOALA", "TIGER", "WHALE", "PUP", "ZEUS"];
+const _NB = ["", "AI", "INU", "X", "COIN", "KING", "DAO", "2", "PRO", "LORD", "BABY", "MAX", "SUN", "GPT", "WIF", "FI"];
+const simName = n => { const a = _NA[(n * 7 + 3) % _NA.length], b = _NB[Math.floor(n / _NA.length + n * 3) % _NB.length]; const r = n >= 640 ? String(Math.floor(n / 640) + 1) : ""; return (b === "BABY" ? "BABY" + a : a + b) + r };
 const KIND_LABEL = { dud: "dud", modest: "short pump", runner: "runner", moon: "moonshot", dead: "dead pool", rug_i: "rug pull", rug_s: "slow rug",
   honey: "honeypot", stealth: "stealth honeypot", est: "established" };
 const SCAM_KINDS = new Set(["rug_i", "rug_s", "honey", "stealth"]);
@@ -52,7 +56,7 @@ const MOCK = {
     const kind = est ? "est" : this.pickKind(), ar = MK_ARCH[kind] || { A: [0.5, 2], rise: [100, 400], fall: [1000, 5000], sUp: 0.05, sDn: -0.03 };
     const liq = est ? clamp(mkLogN(500e3, 0.9), 120e3, 6e6) : clamp(mkLogN(8e3, 1.05), 2500, 700e3);
     const q = liq / 2, p0 = Math.pow(10, -7 + rng() * 7), b = q / p0;
-    const t = { chain, addr, sym: "T" + n, kind, est, created: est ? vnow - (80 + rng() * 800) * 3600 : vnow, genG: est ? -MK_RING - 1 : this.G, q, b, p0, price: p0,
+    const t = { chain, addr, sym: simName(n), kind, est, created: est ? vnow - (80 + rng() * 800) * 3600 : vnow, genG: est ? -MK_RING - 1 : this.G, q, b, p0, price: p0,
       A: est ? mkU(0.3, 1.6) : mkU(...ar.A), rise: mkU(...ar.rise), fall: est ? mkU(...this.cfg.estFall) : mkU(...ar.fall), sUp: ar.sUp, sDn: ar.sDn, h: est ? 0.15 : 0.02, peak: 0, waveUntil: 0,
       noise: 0, sigN: est ? 0.04 : 0.09, tax0: rng() < 0.7 ? 0 : mkU(0, 3), sellTax: 0, flow: 0, rugged: false, dead: false, insIdx: 0,
       holders: Math.floor(est ? mkU(3e3, 8e4) : mkU(25, 300)), launchHolders: 0, soph: SCAM_KINDS.has(kind) && rng() < 0.25, wash: 1,

@@ -17,12 +17,16 @@ function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({
   {const lim=agentId?agentLimit(agentId,t):"";if(lim)return no(lim)}
   if(agentId)caps.agent=eq*R.totalExp/100*agentShare(agentId)*1.6-agentExposure(agentId);
   if(cat==="new")caps.newExp=eq*R.newExp/100-(expBy(p=>p.cat).new||0);
+  // small accounts (e.g. $10): percentage limits would make every trade a few cents and fees would eat it, so trade ~10% of the account per position
+  // on cheap chains only (the cost check below still blocks chains whose network fee is too big for the trade)
+  const small=eq<500,minT=small?Math.max(0.5,Math.min(R.minTrade,eq*0.05)):R.minTrade;
+  if(small){const s=eq*0.20;caps.share=s;caps.risk=s*Math.max(0.5,riskMult());caps.pos=s;if(caps.agent!=null)caps.agent=Math.max(caps.agent,s-agentExposure(agentId));delete caps.newExp;caps.chain=eq*R.totalExp/100-(expBy(p=>p.chain)[snap.chain]||0)}
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
-  if(usd<R.minTrade)return no(`size ${usd.toFixed(0)} below min (${name})`);
+  if(usd<minT)return no(`size ${usd.toFixed(2)} below min (${name})`);
   {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),fee=2*CFG.ex.fee/100,cap=R.maxCostPct/100;
    const fit=Math.max(0,cap-fee)*res/2*0.9;                      // biggest size whose price impact stays inside the cost limit
    if(usd>fit){usd=fit;name="pool depth (cost limit)"}
-   if(usd<R.minTrade)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
+   if(usd<minT)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
    const cost=gasRT/usd+fee+2*usd/res;
    if(cost>cap)return no(`network fees ${(gasRT/usd*100).toFixed(1)}% of a ${usd.toFixed(0)}$ trade are too high on ${snap.chain}`)}
   if(false)return no(`size ${usd.toFixed(0)} below min (${name})`);return{ok:true,usd,why:`size ${usd.toFixed(0)} (${name})`}}
