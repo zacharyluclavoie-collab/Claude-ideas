@@ -20,7 +20,7 @@ function animTick(n) {
   animRaf = 0; let busy = false;
   for (const id in ANIM) {
     const a = ANIM[id], el = document.getElementById(id); if (!el) continue;
-    const k = ANIM_RM ? 1 : Math.max(0, Math.min(1, (n - a.t0) / 650)), e = 1 - Math.pow(1 - k, 3);
+    const k = ANIM_RM ? 1 : Math.max(0, Math.min(1, (n - a.t0) / 900)), e = 1 - Math.pow(1 - k, 3);
     a.shown = a.from + (a.to - a.from) * e; el.textContent = a.f(a.shown);
     const on = n < a.flash; el.classList.toggle("fl-up", on && a.dir > 0); el.classList.toggle("fl-dn", on && a.dir < 0);
     if (k < 1 || on) busy = true;

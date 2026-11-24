@@ -304,7 +304,11 @@ window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.s
   else if(m.ptcmd==="skip"&&MODE==="mock"){ffUntil=vnow+(+m.v||3600)}
   else if(m.ptcmd==="risk"){if(m.v)LS.set("pt_mrisk",JSON.stringify(m.v));else LS.del("pt_mrisk");savePreset(curPreset());render()}
   deskReport()});
-function render(){if(AUTOTRAIN!=null)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
+// a desk that is not on screen skips drawing (its trading keeps running), so the Master board's animations stay smooth
+const deskHidden=()=>{try{return !!(DESK&&window.frameElement&&window.frameElement.hidden)}catch(e){return false}};
+// time each desk may spend simulating per 250 ms: the visible desk gets more, hidden desks share ~120 ms so the page never freezes
+const deskBudget=()=>!DESK?190:deskHidden()?Math.max(4,120/((window.DESKN)||5)):120;
+function render(){if(AUTOTRAIN!=null||deskHidden())return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
 $("ranges").onclick=e=>{if(e.target.dataset.r!=null){range=+e.target.dataset.r;document.querySelectorAll("#ranges .chip").forEach(b=>b.classList.toggle("on",b===e.target));render()}};
@@ -324,7 +328,7 @@ async function wake(){try{if(navigator.wakeLock)await navigator.wakeLock.request
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){wake();if(MODE==="live"){stepFast(now());stepSlow(now());stepScan(now())}}});
 function boot(){timers.forEach(clearInterval);timers=[];SEED=MODE==="mock"?(Math.random()*1e9|0):(Date.now()&0xffffff);rng=mulberry(SEED);load();last={};rejected={};stats=freshStats();regime="unknown";rows.clear();$("plist").innerHTML="";
   if(MODE==="mock"){LS.del("pt_kill_mock");vnow=1.76e9;MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]];let acc=0;
-    timers.push(setInterval(async()=>{if(busyUI||holdLoops)return;busyUI=true;try{if(ffUntil>vnow){let n=0;while(vnow<ffUntil&&n++<700){vnow+=10;await tick()}if(vnow>=ffUntil){ffUntil=0;toast("Caught up")}render();return}acc=Math.min(acc+SPEED*0.25,SPEED*2);const stp=SPEED>=30000?60:SPEED>=3000?30:SPEED>=1000?15:CFG.tick,t0=performance.now();while(acc>=stp&&performance.now()-t0<190){acc-=stp;vnow+=stp;await tick()}}finally{busyUI=false}render()},250))}
+    timers.push(setInterval(async()=>{if(busyUI||holdLoops)return;busyUI=true;try{if(ffUntil>vnow){let n=0;while(vnow<ffUntil&&n++<700){vnow+=10;await tick()}if(vnow>=ffUntil){ffUntil=0;toast("Caught up")}render();return}acc=Math.min(acc+SPEED*0.25,SPEED*2);const stp=SPEED>=30000?60:SPEED>=3000?30:SPEED>=1000?15:CFG.tick,t0=performance.now();const bud=deskBudget();while(acc>=stp&&performance.now()-t0<bud){acc-=stp;vnow+=stp;await tick()}}finally{busyUI=false}render()},250))}
   else{regimeOk=now();if(!S.curve.length)S.curve=[[now(),totalEquity()]];
     const lastRun=+LS.get("pt_last_"+MODE)||0,gap=now()-lastRun;
     if(lastRun&&gap>300&&Object.keys(S.pf.positions).length){const d=gap<5400?Math.round(gap/60)+" minutes":(gap/3600).toFixed(1)+" hours";ev("warn","away","","The app was closed for "+d+". Open positions had no stops running meanwhile; prices are being checked now.")}
