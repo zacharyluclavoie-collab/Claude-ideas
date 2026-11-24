@@ -16,9 +16,9 @@ function show(d) { cur = d; $h("hmaster").hidden = d !== 0; document.querySelect
 window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
 function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
 function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0, ch1h: 0, ch24h: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
-try { const h = JSON.parse(localStorage.getItem("pt_host_hist") || "null"); if (h && h.n === NDESK && Array.isArray(h.v)) hist.push(...h.v.slice(-1500)) } catch (e) {}   // the Master chart survives reloads
-setInterval(() => { const t = totals(); if (Object.keys(R).length === NDESK) { hist.push(t.eq); if (hist.length > 1500) hist.shift() } }, 2000);
-setInterval(() => { try { localStorage.setItem("pt_host_hist", JSON.stringify({ n: NDESK, v: hist.slice(-1500) })) } catch (e) {} }, 20000);
+try { const h = JSON.parse(localStorage.getItem("pt_host_hist2") || "null"); if (h && h.n === NDESK && Array.isArray(h.v)) hist.push(...h.v.slice(-1500)) } catch (e) {}   // the Master chart survives reloads
+setInterval(() => { const t = totals(); if (Object.keys(R).length) { hist.push(t.eq - t.start); if (hist.length > 1800) hist.shift() } }, 1000);   // total profit/loss, so a desk joining late never makes the line jump
+setInterval(() => { try { localStorage.setItem("pt_host_hist2", JSON.stringify({ n: NDESK, v: hist.slice(-1800) })) } catch (e) {} }, 20000);
 let built = false; const lastSeen = {};
 function buildBoard() {
   built = true;
@@ -38,18 +38,25 @@ function buildBoard() {
 }
 const CHN = { solana: "SOL", base: "BASE", bsc: "BSC", ethereum: "ETH", arbitrum: "ARB" };
 function drawRates(t) {
-  const pl = t.eq - t.start, hrs = Math.max(0, ...Object.values(R).map(r => r.hours || 0)), perH = hrs > 0.05 ? pl / hrs : 0;
-  const cell = (k, v, cls, sub) => `<div><span>${k}</span><b class="num ${cls}">${v}</b>${sub ? `<span>${sub}</span>` : ""}</div>`, c = v => v >= 0 ? "g" : "r";
-  $h("h_rate").innerHTML = cell("Last hour", sg(t.ch1h), c(t.ch1h)) + cell("Last 24 hours", sg(t.ch24h), c(t.ch24h)) + cell("Coins open", String(t.open), "", (t.open === 1 ? "1 coin" : t.open + " coins") + " in all desks") +
-    cell("Average per hour", sg(perH), c(perH)) + (hrs >= 6 ? cell("Average per day", sg(perH * 24), c(perH)) : cell("Average per day", "–", "", "after 6 h of data")) + cell("Running for", hrs < 48 ? hrs.toFixed(1) + " h" : (hrs / 24).toFixed(1) + " days", "", Object.values(R).some(r => !r.live) ? "demo time" : "");
+  const pl = t.eq - t.start, hrs = Math.max(0, ...Object.values(R).map(r => r.hours || 0)), perH = hrs > 0.05 ? pl / hrs : 0, c = v => v >= 0 ? "num g" : "num r";
+  if (!$h("hr_1h")) $h("h_rate").innerHTML = [["Last hour", "hr_1h"], ["Last 24 hours", "hr_24h"], ["Coins open", "hr_open", "hr_opens"], ["Average per hour", "hr_ph"], ["Average per day", "hr_pd", "hr_pds"], ["Running for", "hr_run", "hr_runs"]]
+    .map(x => `<div><span>${x[0]}</span><b id="${x[1]}" class="num">–</b>${x[2] ? `<span id="${x[2]}"></span>` : ""}</div>`).join("");
+  anim("hr_1h", t.ch1h, v => sg(v)); $h("hr_1h").className = c(t.ch1h); anim("hr_24h", t.ch24h, v => sg(v)); $h("hr_24h").className = c(t.ch24h);
+  anim("hr_open", t.open, v => String(Math.round(v)), 1); $h("hr_opens").textContent = "in all desks";
+  anim("hr_ph", perH, v => sg(v), 0); $h("hr_ph").className = c(perH);
+  if (hrs >= 6) { anim("hr_pd", perH * 24, v => sg(v), 0); $h("hr_pd").className = c(perH); $h("hr_pds").textContent = "" } else { $h("hr_pd").textContent = "–"; $h("hr_pds").textContent = "after 6 h of data" }
+  $h("hr_run").textContent = hrs < 48 ? hrs.toFixed(1) + " h" : (hrs / 24).toFixed(1) + " days"; $h("hr_runs").textContent = Object.values(R).some(r => !r.live) ? "demo time" : "";
 }
+let openSeen = new Set();
 function drawOpen() {
   const all = []; for (let i = 1; i <= NDESK; i++) for (const p of ((R[i] && R[i].pos) || [])) all.push(Object.assign({ desk: DN[i - 1], d: i }, p));
   all.sort((a, b) => b.pnl - a.pnl); $h("h_opencount").textContent = all.length ? all.length + " across " + new Set(all.map(a => a.d)).size + " desks" : "";
   const fmtH = h => h < 1 ? Math.round(h * 60) + "m" : h.toFixed(1) + "h";
-  $h("h_open").innerHTML = all.length ? all.slice(0, 60).map(a => `<div class="orow" data-d="${a.d}"><div><b>${escH(a.sym)}</b> <span class="sub">${CHN[a.chain] || a.chain} · ${escH(a.desk)} · ${fmtH(a.held)}${a.exit ? " · exiting" : ""}</span></div><div class="oval"><b class="${a.pnl >= 0 ? "g" : "r"}">${a.pct >= 0 ? "+" : ""}${a.pct.toFixed(1)}%</b><span class="sub">${sg(a.pnl)} · ${money(a.val)}</span></div></div>`).join("") + (all.length > 60 ? `<div class="sub" style="margin-top:6px">and ${all.length - 60} more</div>` : "")
+  const nowKeys = new Set(all.map(a => a.d + a.sym));
+  $h("h_open").innerHTML = all.length ? all.slice(0, 60).map(a => `<div class="orow${openSeen.size && !openSeen.has(a.d + a.sym) ? " new" : ""}" data-d="${a.d}"><div><b>${escH(a.sym)}</b> <span class="sub">${CHN[a.chain] || a.chain} · ${escH(a.desk)} · ${fmtH(a.held)}${a.exit ? " · exiting" : ""}</span></div><div class="oval"><b class="${a.pnl >= 0 ? "g" : "r"}">${a.pct >= 0 ? "+" : ""}${a.pct.toFixed(1)}%</b><span class="sub">${sg(a.pnl)} · ${money(a.val)}</span></div></div>`).join("") + (all.length > 60 ? `<div class="sub" style="margin-top:6px">and ${all.length - 60} more</div>` : "")
     : '<div class="sub">No coins open right now. The desks buy when a coin passes every check.</div>';
   $h("h_open").querySelectorAll(".orow").forEach(el => el.onclick = () => show(+el.dataset.d));
+  openSeen = nowKeys.size ? nowKeys : new Set(["-"]);
 }
 function draw() {
   if (!built) buildBoard();
@@ -68,10 +75,13 @@ function draw() {
     { const sel = document.querySelector(`.dkctl[data-d="${i}"] select`); if (sel && document.activeElement !== sel && sel.value !== r.mode) sel.value = r.mode; const pz = $h("dkpz" + i); if (pz) { pz.textContent = r.shutdown ? "Stopped" : r.paused ? "Resume" : "Pause"; pz.classList.toggle("on", !!r.paused || !!r.shutdown) } }
     $h("dkl" + i).textContent = r.lastSym ? `Last: ${r.lastSym} ${String(r.last).slice(0, 70)}` : "";
     const key = r.lastSym + "|" + r.last; if (lastSeen[i] !== undefined && lastSeen[i] !== key) { const c = $h("dk" + i); c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse") } lastSeen[i] = key }
-  const ch = $h("h_chart"), pts = Object.keys(R).length === NDESK ? hist.concat([t.eq]) : hist; if (pts.length > 1) { const lo = Math.min(...pts, t.start), hi = Math.max(...pts, t.start), pd = (hi - lo) * 0.12 || t.start * 0.001 || 1, w = 340, h = 120, X = i => 4 + i / (pts.length - 1) * (w - 8), Y = v => h - 4 - (v - lo + pd) / (hi - lo + 2 * pd) * (h - 8);
-    const d = pts.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(""), up = pts[pts.length - 1] >= t.start, c = up ? "var(--g)" : "var(--r)", lx = X(pts.length - 1), ly = Y(pts[pts.length - 1]);
-    ch.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="120" preserveAspectRatio="none"><defs><linearGradient id="hg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
-      <line x1="0" x2="${w}" y1="${Y(t.start)}" y2="${Y(t.start)}" stroke="var(--mut)" stroke-dasharray="3 4" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="${d}L${lx} ${h}L4 ${h}Z" fill="url(#hg)"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><span class="livedot ${up ? "g" : "r"}" style="left:${(lx / w * 100).toFixed(2)}%;top:${(ly / h * 100).toFixed(2)}%"></span>` }
+  const ch = $h("h_chart"), pts = Object.keys(R).length ? hist.concat([t.eq - t.start]) : []; if (pts.length > 1) { const lo = Math.min(...pts, 0), hi = Math.max(...pts, 0), pd = (hi - lo) * 0.12 || 1, w = 340, h = 120, X = i => 4 + i / (pts.length - 1) * (w - 8), Y = v => h - 4 - (v - lo + pd) / (hi - lo + 2 * pd) * (h - 8);
+    const d = pts.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(""), up = pts[pts.length - 1] >= 0, c = up ? "var(--g)" : "var(--r)", lx = X(pts.length - 1), ly = Y(pts[pts.length - 1]);
+    if (!ch.firstElementChild || ch.firstElementChild.tagName !== "svg") ch.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="120" preserveAspectRatio="none"><defs><linearGradient id="hg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".28"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><line id="hc_base" x1="0" x2="${w}" stroke="var(--mut)" stroke-dasharray="3 4" stroke-width="1" vector-effect="non-scaling-stroke"/><path id="hc_area" fill="url(#hg)"/><path id="hc_line" class="drawin" fill="none" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><span class="livedot" id="hc_dot"></span><span class="hc_lab" id="hc_lab"></span>`;
+    const svg = ch.firstElementChild; svg.style.color = c; $h("hc_base").setAttribute("y1", Y(0)); $h("hc_base").setAttribute("y2", Y(0));
+    $h("hc_area").setAttribute("d", d + `L${lx} ${h}L4 ${h}Z`); $h("hc_line").setAttribute("d", d); $h("hc_line").setAttribute("stroke", c);
+    const dot = $h("hc_dot"); dot.className = "livedot " + (up ? "g" : "r"); dot.style.left = (lx / w * 100).toFixed(2) + "%"; dot.style.top = (ly / h * 100).toFixed(2) + "%";
+    $h("hc_lab").textContent = "profit/loss " + sg(pts[pts.length - 1]) + " · last " + (pts.length < 120 ? pts.length + " s" : Math.round(pts.length / 60) + " min") }
   else ch.innerHTML = '<div class="sub" style="padding:46px 0;text-align:center">Collecting data…</div>';
 }
 
