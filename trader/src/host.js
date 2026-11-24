@@ -15,7 +15,7 @@ bar.onclick = e => { const b = e.target.closest("button"); if (b) show(+b.datase
 function show(d) { cur = d; $h("hmaster").hidden = d !== 0; document.querySelectorAll(".hframe").forEach((f, i) => f.hidden = i + 1 !== d); bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.d === d)); if (d === 0) draw() }
 window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
 function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
-function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
+function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0, ch1h: 0, ch24h: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
 try { const h = JSON.parse(localStorage.getItem("pt_host_hist") || "null"); if (h && h.n === NDESK && Array.isArray(h.v)) hist.push(...h.v.slice(-1500)) } catch (e) {}   // the Master chart survives reloads
 setInterval(() => { const t = totals(); if (Object.keys(R).length === NDESK) { hist.push(t.eq); if (hist.length > 1500) hist.shift() } }, 2000);
 setInterval(() => { try { localStorage.setItem("pt_host_hist", JSON.stringify({ n: NDESK, v: hist.slice(-1500) })) } catch (e) {} }, 20000);
@@ -36,10 +36,25 @@ function buildBoard() {
       else if (a === "close") { if (b.dataset.arm) { delete b.dataset.arm; b.textContent = "Sell all"; sendTo(d, "closeall") } else { b.dataset.arm = 1; b.textContent = "Tap again"; setTimeout(() => { delete b.dataset.arm; b.textContent = "Sell all" }, 3500) } } }) });
   document.querySelectorAll(".hdesk").forEach(el => el.onclick = () => show(+el.dataset.d));
 }
+const CHN = { solana: "SOL", base: "BASE", bsc: "BSC", ethereum: "ETH", arbitrum: "ARB" };
+function drawRates(t) {
+  const pl = t.eq - t.start, hrs = Math.max(0, ...Object.values(R).map(r => r.hours || 0)), perH = hrs > 0.05 ? pl / hrs : 0;
+  const cell = (k, v, cls, sub) => `<div><span>${k}</span><b class="num ${cls}">${v}</b>${sub ? `<span>${sub}</span>` : ""}</div>`, c = v => v >= 0 ? "g" : "r";
+  $h("h_rate").innerHTML = cell("Last hour", sg(t.ch1h), c(t.ch1h)) + cell("Last 24 hours", sg(t.ch24h), c(t.ch24h)) + cell("Coins open", String(t.open), "", (t.open === 1 ? "1 coin" : t.open + " coins") + " in all desks") +
+    cell("Average per hour", sg(perH), c(perH)) + (hrs >= 6 ? cell("Average per day", sg(perH * 24), c(perH)) : cell("Average per day", "–", "", "after 6 h of data")) + cell("Running for", hrs < 48 ? hrs.toFixed(1) + " h" : (hrs / 24).toFixed(1) + " days", "", Object.values(R).some(r => !r.live) ? "demo time" : "");
+}
+function drawOpen() {
+  const all = []; for (let i = 1; i <= NDESK; i++) for (const p of ((R[i] && R[i].pos) || [])) all.push(Object.assign({ desk: DN[i - 1], d: i }, p));
+  all.sort((a, b) => b.pnl - a.pnl); $h("h_opencount").textContent = all.length ? all.length + " across " + new Set(all.map(a => a.d)).size + " desks" : "";
+  const fmtH = h => h < 1 ? Math.round(h * 60) + "m" : h.toFixed(1) + "h";
+  $h("h_open").innerHTML = all.length ? all.slice(0, 60).map(a => `<div class="orow" data-d="${a.d}"><div><b>${escH(a.sym)}</b> <span class="sub">${CHN[a.chain] || a.chain} · ${escH(a.desk)} · ${fmtH(a.held)}${a.exit ? " · exiting" : ""}</span></div><div class="oval"><b class="${a.pnl >= 0 ? "g" : "r"}">${a.pct >= 0 ? "+" : ""}${a.pct.toFixed(1)}%</b><span class="sub">${sg(a.pnl)} · ${money(a.val)}</span></div></div>`).join("") + (all.length > 60 ? `<div class="sub" style="margin-top:6px">and ${all.length - 60} more</div>` : "")
+    : '<div class="sub">No coins open right now. The desks buy when a coin passes every check.</div>';
+  $h("h_open").querySelectorAll(".orow").forEach(el => el.onclick = () => show(+el.dataset.d));
+}
 function draw() {
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
-  anim("h_eq", t.eq, v => money(v), 0);
+  anim("h_eq", t.eq, v => money(v), 0); drawRates(t); drawOpen();
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
   anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
