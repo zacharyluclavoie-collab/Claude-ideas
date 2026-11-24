@@ -112,3 +112,11 @@ h2{margin-top:30px}
 
 .modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.mbtn{border:1px solid var(--line);background:var(--soft);color:var(--tx);border-radius:14px;padding:12px 8px;font:600 14px/1.2 inherit;cursor:pointer}.mbtn.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
 details.more{margin-top:18px}details.more>summary{cursor:pointer;font-weight:600;padding:12px 0;color:var(--mut);list-style:none}details.more>summary::before{content:"▸ "}details.more[open]>summary::before{content:"▾ "}
+
+/* ---- Master board host (5 desks) ---- */
+body.hostbody{padding-block:0 84px}
+.hframe{position:fixed;left:0;top:0;width:100%;height:calc(100% - 64px - env(safe-area-inset-bottom,0px));border:0;background:var(--bg);z-index:5}
+.deskbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);overflow-x:auto}
+.deskbar button{flex:1 1 0;min-width:0;border:0;border-radius:14px;background:none;color:var(--mut);font:650 11.5px/1.1 inherit;padding:10px 3px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap}
+.deskbar button.on{background:var(--tx);color:var(--bg)}
+.deskbar .dot{width:7px;height:7px;border-radius:50%;background:var(--mut);opacity:.5}.deskbar .dot.g{background:var(--g);opacity:1}.deskbar .dot.r{background:var(--r);opacity:1}

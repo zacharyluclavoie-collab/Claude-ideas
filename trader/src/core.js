@@ -20,7 +20,8 @@ const CFG = {
   em:{liqTotal:0.5, liqStep:0.3, priceStep:0.3, staleMin:20, staleHaircut:0.5, maxAttempts:12, danger:-3, crash:-8, regimeUnknownMin:15},
   ex:{fee:0.30, gas:{ethereum:5,base:0.04,bsc:0.12,solana:0.01,arbitrum:0.08}, fail:0.04, newFail:0.05, partial:0.10, buyTolNew:4, buyTolTrend:1.5, maxSellSlip:8, maxEmSlip:30}
 };
-const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const DESK=(typeof window!=="undefined"&&window.DESK)||0,LSP=DESK?"d"+DESK+"_":"";   // each trading desk keeps its own account and settings
+const LS={get(k){try{return localStorage.getItem(LSP+k)}catch(e){return null}},set(k,v){try{localStorage.setItem(LSP+k,v)}catch(e){}},del(k){try{localStorage.removeItem(LSP+k)}catch(e){}}};
 const DEMO_ONLY=false;
 const freshStats=()=>({uniq:0,scanned:0,strat:0,sec:0,vetoed:0,bought:0,scamSeen:0,scamBought:0,junkSeen:0,seen:{}});
 const $ = id => document.getElementById(id);

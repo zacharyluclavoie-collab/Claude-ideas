@@ -10,7 +10,8 @@ let health = { ok: 0, fail: 0, lastErr: "", byHost: {} };
 const hostStat = h => health.byHost[h] || (health.byHost[h] = { ok: 0, fail: 0 });
 
 async function getJSON(url) {
-  const host = new URL(url).host, gap = MIN_GAP[host] || 1000, st = hostStat(host);
+  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK && host !== "api.dexscreener.com" ? 2.5 : 1),   // 5 desks share the free rate limits
+    st = hostStat(host);
   if ((coolUntil[host] || 0) > Date.now()) { health.fail++; st.fail++; return null }                      // backing off after a rate limit
   const wait = Math.max(0, (nextAt[host] || 0) - Date.now());
   nextAt[host] = Math.max(Date.now(), nextAt[host] || 0) + gap;
@@ -88,7 +89,7 @@ const LIVE = {
     for (const u of ["token-profiles/latest/v1", "token-boosts/latest/v1", "token-boosts/top/v1"]) { const pr = await getJSON("https://api.dexscreener.com/" + u); for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" }) }
     const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold"];
     // DexScreener allows ~300 calls/min (GeckoTerminal ~30), so most of the extra scanning goes here: 16 searches x up to 30 pairs per cycle
-    for (let i = 0; i < 16; i++) { const q = KW[(cyc * 16 + i) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
+    for (let i = 0, N = DESK ? 6 : 16; i < N; i++) { const q = KW[(cyc * N + i + DESK * 5) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
     return o;
   },
   async discoverTrending(chains) {

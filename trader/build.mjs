@@ -60,6 +60,56 @@ self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Pr
 self.addEventListener("fetch", e => { const u = new URL(e.request.url); if (e.request.method !== "GET" || u.origin !== location.origin) return;
   e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(V).then(x => x.put(e.request, c)); return r }).catch(() => caches.match(e.request).then(r => r || caches.match("index.html")))) });
 `);
+// ---- the shipped page is the Master board: it runs the single app 5 times (one desk per market area) and adds them up ----
+fs.writeFileSync(path.join(dir, "app.html"), html);   // the single app on its own
+const J = x => JSON.stringify(x).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+const appLive = html.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<!--DESK-->\n');
+const appDemo = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<!--DESK-->\n<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n${art}\n</body>\n</html>\n`;
+const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("host.js");
+const hostPage = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper Trader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paper Trader">
+<meta name="theme-color" content="#0b0f17">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+${hostCss}
+</style>
+</head>
+<body class="hostbody">
+${hostBody}
+<script>
+"use strict";
+const HOST_SW = true;
+const APP_DOC = ${J(appLive)};
+${hostJs}
+</script>
+</body>
+</html>
+`;
+fs.writeFileSync(path.join(dir, "index.html"), hostPage);
+const hostArt = `<title>Paper Trader</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+${hostCss}
+</style>
+<div class="hostbody-wrap"></div>
+${hostBody}
+<script>
+"use strict";
+document.body.classList.add("hostbody");
+const HOST_SW = false;
+const APP_DOC = ${J(appDemo)};
+${hostJs}
+</script>
+`;
 const out = process.argv[2];
-if (out) fs.writeFileSync(out, art);
+if (out) fs.writeFileSync(out, hostArt);
 console.log("built", html.length, "bytes", out ? "artifact " + art.length : "");

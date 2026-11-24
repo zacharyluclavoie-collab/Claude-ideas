@@ -1,4 +1,7 @@
 /* ============================ UI ============================ */
+/* trading desks: the same app runs 5 times side by side (one per market area), each with its own account; the Master board adds them up */
+const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Ethereum",chains:["ethereum"]},{n:"Big coins",chains:["solana","base","bsc","ethereum"],trend:true}];
+if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset","lots");LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const sgn=(n,d=2)=>(n>=0?"+":"-")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -52,7 +55,7 @@ function header(){const pf=S.pf,eq=totalEquity(),rt=(eq/totalStart()-1)*100,td=e
   if(pf.shutdown){cls="st bad";tx="Shutdown"}else if(now()<pf.pauseUntil){cls="st warn";tx="Cooling down"}else if(regime==="danger"||regime==="crash"){cls="st warn";tx="Market danger"}
   else if(AUTOTRAIN!=null){cls="st dim";tx="Training "+Math.round(AUTOTRAIN*100)+"%"}else if(ffUntil>vnow){cls="st dim";tx="Skipping ahead"}else if(paused){cls="st dim";tx="Entries paused"}else if(MODE==="live"&&health.ok===0&&health.fail>2){cls="st bad";tx="No data"}else if(regime==="unknown"){cls="st dim";tx="Waiting for data"}
   c.className=cls;c.textContent=tx;
-  $("clock").textContent=MODE==="mock"?`Demo · ${tlabel(vnow)} · ${(()=>{const h=header.sp||(header.sp=[]),n=performance.now();h.push([n,vnow]);while(h.length>2&&n-h[0][0]>4000)h.shift();const r=h.length>1?(h[h.length-1][1]-h[0][1])/((n-h[0][0])/1000):SPEED;return Math.round(r).toLocaleString()})()}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`}
+  $("clock").textContent=(DESK?DESKS[DESK-1].n+" desk · ":"")+(MODE==="mock"?`Demo ·${tlabel(vnow)} · ${(()=>{const h=header.sp||(header.sp=[]),n=performance.now();h.push([n,vnow]);while(h.length>2&&n-h[0][0]>4000)h.shift();const r=h.length>1?(h[h.length-1][1]-h[0][1])/((n-h[0][0])/1000):SPEED;return Math.round(r).toLocaleString()})()}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`)}
 function drainToasts(){const box=$("toasts");let n=0;while(toastQ.length&&n<2){const j=toastQ.shift();
   const show=j.level==="crit"||j.level==="warn"||j.kind==="note"||((j.kind==="buy"||j.kind==="closed")&&SPEED<=60);if(!show)continue;n++;
   const d=document.createElement("div");d.className="toast "+(j.level==="crit"?"bad":j.level==="warn"?"warn":"");d.textContent=j.kind==="note"?j.msg:(j.kind==="buy"?"Bought ":j.kind==="closed"?"Closed ":j.kind.replace(/_/g," ")+" ")+j.tok+" · "+String(j.msg).split(" · ")[0].slice(0,60);box.appendChild(d);setTimeout(()=>d.remove(),4500)}
@@ -269,6 +272,12 @@ if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1
 if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set("pt_core","1");LS.set("pt_swarm","1")}
 {const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","max","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){}}}
+if(DESK){const d=DESKS[DESK-1];CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
+// every second, tell the Master board how this desk is doing
+function deskReport(){if(!DESK||!window.parent||window.parent===window)return;try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
+  window.parent.postMessage({pt:1,desk:DESK,name:DESKS[DESK-1].n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
+    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
+setInterval(deskReport,1000);
 function render(){if(AUTOTRAIN!=null)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
@@ -294,7 +303,7 @@ function boot(){timers.forEach(clearInterval);timers=[];SEED=MODE==="mock"?(Math
     const lastRun=+LS.get("pt_last_"+MODE)||0,gap=now()-lastRun;
     if(lastRun&&gap>300&&Object.keys(S.pf.positions).length){const d=gap<5400?Math.round(gap/60)+" minutes":(gap/3600).toFixed(1)+" hours";ev("warn","away","","The app was closed for "+d+". Open positions had no stops running meanwhile; prices are being checked now.")}
     timers.push(setInterval(()=>{if(!holdLoops)stepFast(now())},2000),setInterval(()=>{if(!holdLoops)stepSlow(now())},5000),setInterval(()=>{if(!holdLoops)stepScan(now())},3000),setInterval(()=>render(),500));stepFast(now());stepSlow(now());stepScan(now())}
-  if(tab==="set")buildSettings();render();wake();setTimeout(()=>autoTrain(false),4000)}
+  if(tab==="set")buildSettings();render();wake();setTimeout(()=>autoTrain(false),4000+DESK*90000)}
 $("intro").hidden=!!LS.get("pt_intro_v3");$("introok").onclick=()=>{LS.set("pt_intro_v3","1");$("intro").hidden=true};
 boot();
 if(!DEMO_ONLY&&"serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
