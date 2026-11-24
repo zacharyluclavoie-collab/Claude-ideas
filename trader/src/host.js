@@ -25,7 +25,13 @@ function buildBoard() {
   $h("h_desks").innerHTML = DN.map((name, i) => `<div class="panel hdesk rise" data-d="${i + 1}" id="dk${i + 1}" style="margin:10px 0;cursor:pointer;animation-delay:${i * 70}ms">
     <div class="row"><b>${name}</b><b id="dkp${i + 1}" class="num">starting…</b></div>
     <div class="sub" style="margin-top:4px"><span id="dke${i + 1}" class="num"></span> · <span id="dki${i + 1}"></span></div>
-    <div class="sub" style="margin-top:4px" id="dkw${i + 1}"></div><div class="sub" style="margin-top:4px;opacity:.75" id="dkl${i + 1}"></div></div>`).join("");
+    <div class="sub" style="margin-top:4px" id="dkw${i + 1}"></div><div class="sub" style="margin-top:4px;opacity:.75" id="dkl${i + 1}"></div>
+    <div class="dkctl" data-d="${i + 1}"><select data-act="mode" aria-label="Mode for ${DN[i]}">${PRM.map(x => `<option value="${x[0]}">${x[1]}</option>`).join("")}</select><button class="chip" data-act="pause" id="dkpz${i + 1}">Pause</button><button class="chip" data-act="close">Sell all</button><button class="chip" data-act="open">Open ›</button></div></div>`).join("");
+  document.querySelectorAll(".dkctl").forEach(el => { el.onclick = e => e.stopPropagation(); const d = +el.dataset.d;
+    el.querySelector("select").onchange = e => sendTo(d, "preset", e.target.value);
+    el.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation(); const a = b.dataset.act, r = R[d];
+      if (a === "pause") sendTo(d, "pause", !(r && r.paused)); else if (a === "open") show(d);
+      else if (a === "close") { if (b.dataset.arm) { delete b.dataset.arm; b.textContent = "Sell all"; sendTo(d, "closeall") } else { b.dataset.arm = 1; b.textContent = "Tap again"; setTimeout(() => { delete b.dataset.arm; b.textContent = "Sell all" }, 3500) } } }) });
   document.querySelectorAll(".hdesk").forEach(el => el.onclick = () => show(+el.dataset.d));
 }
 function draw() {
@@ -42,6 +48,7 @@ function draw() {
     anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v), 0);
     $h("dki" + i).textContent = `${MODEN[r.mode] || r.mode} · ${r.status}${r.clock ? " · " + r.clock : ""}`;
     $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today`;
+    { const sel = document.querySelector(`.dkctl[data-d="${i}"] select`); if (sel && document.activeElement !== sel && sel.value !== r.mode) sel.value = r.mode; const pz = $h("dkpz" + i); if (pz) { pz.textContent = r.shutdown ? "Stopped" : r.paused ? "Resume" : "Pause"; pz.classList.toggle("on", !!r.paused || !!r.shutdown) } }
     $h("dkl" + i).textContent = r.lastSym ? `Last: ${r.lastSym} ${String(r.last).slice(0, 70)}` : "";
     const key = r.lastSym + "|" + r.last; if (lastSeen[i] !== undefined && lastSeen[i] !== key) { const c = $h("dk" + i); c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse") } lastSeen[i] = key }
   const ch = $h("h_chart"); if (hist.length > 1) { const lo = Math.min(...hist, t.start), hi = Math.max(...hist, t.start), pd = (hi - lo) * 0.12 || t.start * 0.001 || 1, w = 340, h = 120, X = i => 4 + i / (hist.length - 1) * (w - 8), Y = v => h - 4 - (v - lo + pd) / (hi - lo + 2 * pd) * (h - 8);
@@ -52,6 +59,8 @@ function draw() {
 }
 
 /* ---- Master settings: one tap changes every desk ---- */
+const PRM = [["recommended", "Recommended"], ["easy", "Easy"], ["risky", "Risky"], ["most", "Most money"], ["lots", "Lots of trades"], ["max", "Max trades"]];
+const sendTo = (d, ptcmd, v) => { const f = document.querySelectorAll(".hframe")[d - 1]; try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} };
 const send = (ptcmd, v) => document.querySelectorAll(".hframe").forEach(f => { try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} });
 let capPick = 2000, resetArm = 0;
 function buildSet() {
@@ -63,7 +72,29 @@ function buildSet() {
     <div class="sub" style="margin-top:12px"><b>New trades</b></div><div class="chips" id="hs_pause" style="margin-top:6px"><button class="chip" data-v="0">Running</button><button class="chip" data-v="1">Paused</button></div>
     <div class="sub" style="margin-top:12px"><b>Number of desks</b> (more desks use more of your computer; on the live market they share the same coins and data limits)</div><div class="chips" id="hs_n" style="margin-top:6px">${[5, 10, 15, 20, 25].map(k => `<button class="chip ${k === NDESK ? "on" : ""}" data-v="${k}">${k}</button>`).join("")}</div>
     <div class="sub" style="margin-top:12px"><b>Start over</b>: starting balance for each desk</div><div class="chips" id="hs_cap" style="margin-top:6px">${CAP.map(c => `<button class="chip" data-v="${c}">$${c.toLocaleString()}</button>`).join("")}</div>
-    <button class="btn red" id="hs_reset" style="margin-top:10px">Reset all desks</button><div class="sub" id="hs_note" style="margin-top:6px"></div>`;
+    <button class="btn red" id="hs_reset" style="margin-top:10px">Reset all desks</button><div class="sub" id="hs_note" style="margin-top:6px"></div>
+    <div class="sub" style="margin-top:16px"><b>Risk for every desk</b> (on top of each desk's mode)</div>
+    ${[["Trade size", "mr_size", 0.5, 2, 0.1, 1, "x"], ["Sell a loser at", "mr_stop", 2, 15, 0.5, 0, "%"], ["First take-profit at", "mr_tp1", 4, 30, 1, 0, "%"], ["Most coins open at once (per desk)", "mr_max", 5, 100, 5, 0, ""], ["Stop for the day after losing", "mr_dl", 1, 10, 0.5, 0, "%"]]
+      .map(x => `<div class="mrow"><label for="${x[1]}">${x[0]}</label><input type="range" id="${x[1]}" min="${x[2]}" max="${x[3]}" step="${x[4]}" value="${x[5] || x[2]}"><b id="${x[1]}_v"></b><button class="chip" data-off="${x[1]}" title="Back to the mode's own value">Reset</button></div>`).join("")}
+    <button class="btn pri" id="mr_apply" style="margin-top:8px">Apply risk to all desks</button><button class="btn" id="mr_clear">Use each mode's own risk</button>
+    <div class="sub" style="margin-top:16px"><b>Quick actions</b></div>
+    <div class="chips" style="margin-top:6px"><button class="chip" id="qa_best">Copy best desk's mode to all</button>${HOST_SW ? "" : `<button class="chip" data-skip="3600">Skip 1 hour</button><button class="chip" data-skip="86400">Skip 1 day</button><button class="chip" data-skip="259200">Skip 3 days</button>`}</div>
+    <button class="btn" id="qa_close" style="margin-top:8px">Sell every open coin (all desks)</button>
+    <button class="btn red" id="qa_kill">Emergency stop: sell everything and halt all desks</button>
+    <button class="btn" id="qa_rearm">Restart all desks after a stop</button>`;
+  const MR = { mr_size: 0, mr_stop: 0, mr_tp1: 0, mr_max: 0, mr_dl: 0 }; try { Object.assign(MR, JSON.parse(localStorage.getItem("pt_host_mr") || "{}")) } catch (e) {}
+  const lab = id => { const el = $h(id), v = MR[id]; $h(id + "_v").textContent = v ? (id === "mr_size" ? "x" + (+v).toFixed(1) : id === "mr_max" ? String(v) : v + "%") : "auto"; if (v) el.value = v; el.classList.toggle("off", !v) };
+  for (const id in MR) { lab(id); $h(id).oninput = e => { MR[id] = +e.target.value; lab(id) } }
+  document.querySelectorAll("[data-off]").forEach(b => b.onclick = () => { MR[b.dataset.off] = 0; lab(b.dataset.off) });
+  const pack = () => ({ size: MR.mr_size || 0, stop: MR.mr_stop || 0, tp1: MR.mr_tp1 || 0, maxPos: MR.mr_max || 0, dailyLoss: MR.mr_dl || 0 });
+  $h("mr_apply").onclick = () => { try { localStorage.setItem("pt_host_mr", JSON.stringify(MR)) } catch (e) {} send("risk", pack()); $h("mr_apply").textContent = "Applied ✓"; setTimeout(() => $h("mr_apply").textContent = "Apply risk to all desks", 1500) };
+  $h("mr_clear").onclick = () => { for (const id in MR) { MR[id] = 0; lab(id) } try { localStorage.removeItem("pt_host_mr") } catch (e) {} send("risk", null) };
+  $h("qa_best").onclick = () => { const b = Object.values(R).sort((x, y) => (y.eq - y.start) - (x.eq - x.start))[0]; if (b) send("preset", b.mode) };
+  document.querySelectorAll("[data-skip]").forEach(b => b.onclick = () => send("skip", +b.dataset.skip));
+  const two = (id, label, fn) => { const b = $h(id), o = b.textContent; let arm = 0; b.onclick = () => { if (arm) { arm = 0; b.textContent = o; fn(); return } arm = 1; b.textContent = label; setTimeout(() => { arm = 0; b.textContent = o }, 4000) } };
+  two("qa_close", "Tap again to sell every open coin", () => send("closeall"));
+  two("qa_kill", "Tap again: sell everything and halt", () => send("kill"));
+  $h("qa_rearm").onclick = () => send("rearm");
   $h("hs_n").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v && +v !== NDESK) { try { localStorage.setItem("pt_host_n", v) } catch (e) {} location.reload() } };
   $h("hs_mode").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("preset", v); mark() } };
   if ($h("hs_live")) $h("hs_live").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("mode", v) };

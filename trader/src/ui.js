@@ -262,7 +262,7 @@ function rAgents(){rLessons();const rows=AGENTS.filter(a=>!a.swarm||agentProven(
 document.addEventListener("change",e=>{const id=e.target&&e.target.dataset&&e.target.dataset.ag;if(!id)return;CFG.agentsOff=CFG.agentsOff||{};if(e.target.checked)delete CFG.agentsOff[id];else CFG.agentsOff[id]=1;LS.set("pt_agents",JSON.stringify(CFG.agentsOff));render()});
 try{CFG.agentsOff=JSON.parse(LS.get("pt_agents")||"{}")}catch(e){CFG.agentsOff={}}
 CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";
-function savePreset(k){applyPreset(k);LS.set("pt_preset",k);LS.set("pt_lessons",CFG.lessons.on?"1":"0");LS.set("pt_core",CFG.core.on?"1":"0");LS.set("pt_swarm",CFG.swarmOff?"0":"1");LS.set("pt_learn",JSON.stringify({on:CFG.learn.on,probation:CFG.learn.probation}));LS.set("pt_cm",JSON.stringify({c:CFG.committeeMin,h:CFG.agentHourly}));LS.set("pt_agents",JSON.stringify(CFG.agentsOff||{}));LS.set("pt_keep",JSON.stringify({on:CFG.keep.on,target:CFG.keep.target}));LS.set("pt_activity",ACT);saveRisk()}
+function savePreset(k){applyPreset(k);LS.set("pt_preset",k);LS.set("pt_lessons",CFG.lessons.on?"1":"0");LS.set("pt_core",CFG.core.on?"1":"0");LS.set("pt_swarm",CFG.swarmOff?"0":"1");LS.set("pt_learn",JSON.stringify({on:CFG.learn.on,probation:CFG.learn.probation}));LS.set("pt_cm",JSON.stringify({c:CFG.committeeMin,h:CFG.agentHourly}));LS.set("pt_agents",JSON.stringify(CFG.agentsOff||{}));LS.set("pt_keep",JSON.stringify({on:CFG.keep.on,target:CFG.keep.target}));LS.set("pt_activity",ACT);saveRisk();if(typeof applyMasterRisk==="function")applyMasterRisk()}
 if(!LS.get("pt_preset_v6")){applyPreset("protect");LS.set("pt_preset_v6","1");LS.set("pt_preset","protect");LS.set("pt_agents",JSON.stringify(CFG.agentsOff));LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}));LS.set("pt_activity","selective");LS.set("pt_quick","1");saveRisk()}
 else if(LS.get("pt_quick")==="1"||LS.get("pt_preset")==="protect"||LS.get("pt_preset")==="turbo")applyQuick(true);
 try{const c=JSON.parse(LS.get("pt_cm")||"{}");if(c.c)CFG.committeeMin=c.c;if(c.h)CFG.agentHourly=c.h}catch(e){}
@@ -278,8 +278,17 @@ if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;
 // every second, tell the Master board how this desk is doing
 function deskReport(){if(!DESK||!window.parent||window.parent===window)return;try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
   window.parent.postMessage({pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
-    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),speed:SPEED,live:MODE==="live",paused:!!paused,status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
+    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,mrisk:LS.get("pt_mrisk")||"",status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
 setInterval(deskReport,1000);
+// Master risk controls: applied on top of the desk's mode (size multiplier, stop-loss, take-profit, max open coins, daily loss limit)
+function applyMasterRisk(){let r=null;try{r=JSON.parse(LS.get("pt_mrisk")||"null")}catch(e){}if(!r)return;const R=CFG.risk;
+  if(r.size){R.perTradePct*=r.size;R.posNew*=r.size;R.posTrend*=r.size}if(r.stop){CFG.quick.stop=r.stop}if(r.tp1){CFG.quick.tp1=Math.max(r.tp1,CFG.quick.stop*0.8);CFG.quick.tp2=Math.max(CFG.quick.tp2,r.tp1*2.5)}
+  if(r.maxPos)R.maxPos=r.maxPos;if(r.dailyLoss)R.dailyLoss=r.dailyLoss}
+applyMasterRisk();
+// sell every open coin now (keeps the desk running)
+async function closeAllPositions(){const ps=Object.values(S.pf.positions);if(!ps.length)return;const by={};for(const p of ps)(by[p.chain]=by[p.chain]||[]).push(p.addr);const snaps={};
+  for(const ch in by){const r=await P().snapshots(ch,by[ch]);for(const a in r)snaps[ch+":"+a]=r[a]}
+  for(const p of ps){const s=snaps[p.chain+":"+p.addr.toLowerCase()];if(s&&s.price>0)sellPos(p,s,1,"closed from Master",true,now())}save();render()}
 // Master settings: the Master board sends one command to every desk
 function resetAccount(c){LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);seedPretrained();resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),totalEquity()]];render()}}
 window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.source!==window.parent)return;
@@ -288,6 +297,11 @@ window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.s
   else if(m.ptcmd==="mode"&&!DEMO_ONLY&&(m.v==="live"||m.v==="mock")&&m.v!==MODE){MODE=m.v;LS.set("pt_mode",MODE);boot()}
   else if(m.ptcmd==="reset"){resetAccount(Math.max(1,+m.v||2000))}
   else if(m.ptcmd==="pause"){paused=!!m.v;render()}
+  else if(m.ptcmd==="kill"){LS.set("pt_kill_"+MODE,"1");tick()}
+  else if(m.ptcmd==="rearm"){LS.del("pt_kill_"+MODE);S.pf.shutdown=false;S.pf.why="";S.pf.peak=equity();S.pf.streak=0;save();render()}
+  else if(m.ptcmd==="closeall"){closeAllPositions()}
+  else if(m.ptcmd==="skip"&&MODE==="mock"){ffUntil=vnow+(+m.v||3600)}
+  else if(m.ptcmd==="risk"){if(m.v)LS.set("pt_mrisk",JSON.stringify(m.v));else LS.del("pt_mrisk");savePreset(curPreset());render()}
   deskReport()});
 function render(){if(AUTOTRAIN!=null)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
