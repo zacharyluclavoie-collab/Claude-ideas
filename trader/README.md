@@ -38,11 +38,20 @@ node test/calib.mjs 4 1                             # how do tokens that pass th
 ## Findings from the realistic simulator
 See `RESULTS.md`.
 
+## Desks and the Master board
+`index.html` is the Master board: it runs the app several times side by side (5 by default, 5-25 in Master settings), one "desk" per market area, each with its own account, settings and agents, and adds up their profit and loss. Master settings change every desk at once (mode, live/demo, speed, pause, risk sliders, sell all, emergency stop, number of desks, starting balance). `app.html` is the single app on its own.
+
+## Settings found by self-search
+`test/search.mjs` / `test/search2.mjs` try many random settings in the simulator (training seeds), then `test/holdout2.mjs` re-tests the best on seeds they never saw. "Lots of trades" uses the round-1 winner (stop 4%, half sold at +8%, rest at +24% or a 6% trailing stop, larger size, lessons filter off): +1.18%/day on 8 unseen simulated markets vs +0.11% for the earlier setting. Simulated results only.
+
 ## Running 24/7 without your phone (always-on runner)
 An iPhone web app cannot run in the background: iOS freezes it when the screen locks. For continuous paper trading, run the same engine headless on any always-on machine (home computer, Raspberry Pi, cheap VPS, a container). It needs only Node 20+ and internet access to the data providers.
 ```
-node server/run.mjs --port 8787 --token CHOOSE_A_SECRET     # live data, state in ./state/state.json
+node server/run.mjs --port 8787 --token CHOOSE_A_SECRET     # 5 desks (Solana, Base, BSC, Ethereum, Big coins), live data, state in ./state/
+node server/run.mjs --desks 10 --preset most                 # 10 desks, every desk in "Most money" mode
+node server/run.mjs --desks 1                                # one bot trading every chain (state/state.json)
 ```
+Each desk has its own paper account ($2,000 by default) and its own state file (`state/state_desk1.json`, ...); the status page adds them up and lists each desk with its positions and recent events. Desks practise in simulation one at a time every 3 days. They share the free data-provider limits, so more desks means each scans a little slower.
 Open `http://<machine>:8787/?token=CHOOSE_A_SECRET` on your phone to watch equity, positions and events (refreshes every 3 s). State survives restarts and reboots; stops, take-profits and emergency exits run all the time. `POST /stop?token=...` sets the emergency stop. Run `node build.mjs` first if you changed the source (it refreshes `server/engine_bundle.js`).
 
 systemd example (`/etc/systemd/system/papertrader.service`):
