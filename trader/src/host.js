@@ -123,7 +123,7 @@ function buildSet() {
   $h("h_set").innerHTML = `<div class="sub"><b>Mode for every desk</b></div><div class="chips" id="hs_mode" style="margin-top:6px">${PR.map(x => `<button class="chip" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
     ${HOST_SW ? `<div class="sub" style="margin-top:12px"><b>Market data</b></div><div class="chips" id="hs_live" style="margin-top:6px"><button class="chip" data-v="live">Live market</button><button class="chip" data-v="mock">Demo (simulated)</button></div>` : ""}
     <div class="sub" style="margin-top:12px"><b>Demo speed</b> (live trading always runs in real time)</div><div class="chips" id="hs_speed" style="margin-top:6px">${SP.map(s => `<button class="chip" data-v="${s}">${s >= 30000 ? "Max" : s.toLocaleString() + "x"}</button>`).join("")}</div>
-    ${HOST_SW ? "" : ""}<div class="sub" style="margin-top:12px"><b>Demo market size</b> (more coins to pick from: more trades and more coins open at once; uses more of your device)</div><div class="chips" id="hs_sim" style="margin-top:6px">${[[1, "1x small"], [5, "5x"], [10, "10x"], [20, "20x real-like"]].map(([v, n]) => `<button class="chip" data-v="${v}">${n}</button>`).join("")}</div>
+    ${HOST_SW ? "" : ""}<div class="sub" style="margin-top:12px"><b>Demo market size</b> (more coins to pick from: more trades and more coins open at once; uses more of your device)</div><div class="chips" id="hs_sim" style="margin-top:6px">${[[1, "1x small"], [5, "5x"], [10, "10x"], [20, "20x real-like"]].map(([v, n]) => `<button class="chip" data-v="${v}">${n}</button>`).join("")}<button class="chip" data-v="auto" id="hs_simauto">Auto</button></div><div class="sub" id="hs_simnote" style="margin-top:4px"></div>
     <div class="sub" style="margin-top:12px"><b>New trades</b></div><div class="chips" id="hs_pause" style="margin-top:6px"><button class="chip" data-v="0">Running</button><button class="chip" data-v="1">Paused</button></div>
     <div class="sub" style="margin-top:12px"><b>Number of desks</b> (more desks use more of your computer; on the live market they share the same coins and data limits)</div><div class="chips" id="hs_n" style="margin-top:6px">${[5, 10, 15, 20, 25].map(k => `<button class="chip ${k === NDESK ? "on" : ""}" data-v="${k}">${k}</button>`).join("")}</div>
     <div class="sub" style="margin-top:12px"><b>Start over</b>: starting balance for each desk</div><div class="chips" id="hs_cap" style="margin-top:6px">${CAP.map(c => `<button class="chip" data-v="${c}">$${c.toLocaleString()}</button>`).join("")}</div>
@@ -153,7 +153,7 @@ function buildSet() {
   $h("hs_n").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v && +v !== NDESK) { try { localStorage.setItem("pt_host_n", v) } catch (e) {} location.reload() } };
   $h("hs_mode").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("preset", v); mark() } };
   if ($h("hs_live")) $h("hs_live").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("mode", v) };
-  $h("hs_sim").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("simscale", +v); hist.length = 0 } };
+  $h("hs_sim").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; if (v === "auto") { autoSize = !autoSize } else { autoSize = false; send("simscale", +v) } try { localStorage.setItem("pt_host_autosize", autoSize ? "1" : "0") } catch (e) {} mark() };
   $h("hs_speed").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("speed", +v) };
   $h("hs_pause").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v != null) send("pause", v === "1") };
   $h("hs_cap").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { capPick = +v; mark() } };
@@ -163,7 +163,8 @@ function buildSet() {
 function mark() {
   const rs = Object.values(R), all = (k, v) => rs.length && rs.every(r => String(r[k]) === String(v));
   document.querySelectorAll("#hs_mode .chip").forEach(b => b.classList.toggle("on", all("mode", b.dataset.v)));
-  document.querySelectorAll("#hs_sim .chip").forEach(b => b.classList.toggle("on", all("simScale", b.dataset.v)));
+  document.querySelectorAll("#hs_sim .chip").forEach(b => b.classList.toggle("on", b.dataset.v === "auto" ? autoSize : !autoSize && all("simScale", b.dataset.v)));
+  if ($h("hs_simnote")) $h("hs_simnote").textContent = autoSize ? "Auto: the biggest market your device runs smoothly (now " + ((Object.values(R)[0] || {}).simScale || "?") + "x, " + lastFps + " fps)" : "";
   document.querySelectorAll("#hs_speed .chip").forEach(b => b.classList.toggle("on", all("speed", b.dataset.v)));
   document.querySelectorAll("#hs_live .chip").forEach(b => b.classList.toggle("on", all("live", b.dataset.v === "live")));
   document.querySelectorAll("#hs_pause .chip").forEach(b => b.classList.toggle("on", all("paused", b.dataset.v === "1")));
@@ -194,6 +195,11 @@ function apTick() {
 function apDraw() { const el = $h("ap_log"); if (!el) return; el.innerHTML = AP.log.length ? AP.log.slice(0, 8).map(l => `<div class="sub" style="margin-top:4px">${new Date(l.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${escH(l.msg)}</div>`).join("") : `<div class="sub" style="margin-top:4px">${AP.on ? "Watching every desk. Nothing needed changing yet." : "Off."}</div>`;
   document.querySelectorAll("#ap_sel .chip").forEach(b => b.classList.toggle("on", (b.dataset.v === "1") === AP.on)) }
 setInterval(apTick, 5000);
+/* ---- Auto market size: the biggest demo market this device runs smoothly (more coins = more trades), checked every 20 s ---- */
+const SIZES = [1, 5, 10, 20]; let autoSize = true, lastFps = 0, fpsOk = 0; try { autoSize = localStorage.getItem("pt_host_autosize") !== "0" } catch (e) {}
+function measureFps(ms) { return new Promise(res => { let n = 0; const t0 = performance.now(); const f = t => { n++; if (t - t0 < ms) requestAnimationFrame(f); else res(Math.round(n * 1000 / (t - t0))) }; requestAnimationFrame(f) }) }
+setInterval(async () => { if (!autoSize || document.hidden || Object.values(R).some(r => r.live)) return; lastFps = await measureFps(1500); const cur = (Object.values(R)[0] || {}).simScale || 5, k = SIZES.indexOf(cur);
+  if (lastFps >= 52) { if (++fpsOk >= 2 && k >= 0 && k < SIZES.length - 1) { send("simscale", SIZES[k + 1]); fpsOk = 0 } } else { fpsOk = 0; if (lastFps < 35 && k > 0) send("simscale", SIZES[k - 1]) } }, 20000);
 buildSet();
 { const box = document.createElement("div"); box.innerHTML = `<div class="sub"><b>Autopilot</b>: steps a losing desk down to a safer mode, steps a steady winner back up, restarts desks that stopped themselves when a new day starts</div><div class="chips" id="ap_sel" style="margin-top:6px"><button class="chip" data-v="1">On</button><button class="chip" data-v="0">Off</button></div><div id="ap_log" style="margin:4px 0 14px"></div>`;
   $h("h_set").prepend(box); $h("ap_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v == null) return; AP.on = v === "1"; AP.last = {}; apSave(); apLog(AP.on ? "Autopilot switched on" : "Autopilot switched off") }; apDraw() }
