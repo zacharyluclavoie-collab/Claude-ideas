@@ -25,7 +25,7 @@ function buildBoard() {
   $h("h_kv").innerHTML = [["Won", "hk_w", "g", "hk_wn"], ["Lost", "hk_l", "r", "hk_ln"], ["Open now", "hk_o", "", "hk_on"], ["Trades today", "hk_td", "", ""], ["Win rate", "hk_wr", "", ""], ["Coins scanned", "hk_sc", "", ""]]
     .map(x => `<div><span>${x[0]}</span><b id="${x[1]}" class="num ${x[2]}">–</b>${x[3] ? `<span id="${x[3]}"></span>` : ""}</div>`).join("");
   $h("h_desks").innerHTML = DN.map((name, i) => `<div class="panel hdesk rise" data-d="${i + 1}" id="dk${i + 1}" style="margin:10px 0;cursor:pointer;animation-delay:${i * 70}ms">
-    <div class="row"><b>${name}</b><b id="dkp${i + 1}" class="num">starting…</b></div>
+    <div class="row"><span class="dkname"><span class="cb cb-${(AREAS[i % 5] || "").split(" ")[0].toLowerCase()}">${["SOL", "BASE", "BSC", "ETH", "ALL"][i % 5]}</span><b>${name}</b></span><b id="dkp${i + 1}" class="num">starting…</b></div><div class="spark" id="dks${i + 1}"></div>
     <div class="sub" style="margin-top:4px"><span id="dke${i + 1}" class="num"></span> · <span id="dki${i + 1}"></span></div>
     <div class="sub" style="margin-top:4px" id="dkw${i + 1}"></div><div class="sub" style="margin-top:4px;opacity:.75" id="dkl${i + 1}"></div>
     <div class="dkctl" data-d="${i + 1}"><select data-act="mode" aria-label="Mode for ${DN[i]}">${PRM.map(x => `<option value="${x[0]}">${x[1]}</option>`).join("")}</select><button class="chip" data-act="pause" id="dkpz${i + 1}">Pause</button><button class="chip" data-act="close">Sell all</button><button class="chip" data-act="open">Open</button></div></div>`).join("");
@@ -39,7 +39,7 @@ function buildBoard() {
 const CHN = { solana: "SOL", base: "BASE", bsc: "BSC", ethereum: "ETH", arbitrum: "ARB" };
 function drawRates(t) {
   const pl = t.eq - t.start, hrs = Math.max(0, ...Object.values(R).map(r => r.hours || 0)), perH = hrs > 0.05 ? pl / hrs : 0, c = v => v >= 0 ? "num g" : "num r";
-  if (!$h("hr_1h")) $h("h_rate").innerHTML = [["Last hour", "hr_1h"], ["Last 24 hours", "hr_24h"], ["Coins open", "hr_open", "hr_opens"], ["Average per hour", "hr_ph"], ["Average per day", "hr_pd", "hr_pds"], ["Running for", "hr_run", "hr_runs"]]
+  if (!$h("hr_1h")) $h("h_rate").innerHTML = [["⏱ Last hour", "hr_1h"], ["📅 Last 24 hours", "hr_24h"], ["🪙 Coins open", "hr_open", "hr_opens"], ["⚡ Per hour", "hr_ph"], ["📈 Per day", "hr_pd", "hr_pds"], ["⏳ Running for", "hr_run", "hr_runs"]]
     .map(x => `<div><span>${x[0]}</span><b id="${x[1]}" class="num">–</b>${x[2] ? `<span id="${x[2]}"></span>` : ""}</div>`).join("");
   anim("hr_1h", t.ch1h, v => sg(v)); $h("hr_1h").className = c(t.ch1h); anim("hr_24h", t.ch24h, v => sg(v)); $h("hr_24h").className = c(t.ch24h);
   anim("hr_open", t.open, v => String(Math.round(v)), 1); $h("hr_opens").textContent = "in all desks";
@@ -64,7 +64,7 @@ function draw() {
   if (performance.now() < touchHold) return;   // never swap a button out while it is being pressed
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
-  anim("h_eq", t.eq, v => money(v), 0); drawRates(t); drawOpen();
+  anim("h_eq", t.eq, v => money(v), 0); { const pc = t.start ? (t.eq / t.start - 1) * 100 : 0, el = $h("h_pct"); if (el) { el.textContent = (pc >= 0 ? "▲ +" : "▼ ") + pc.toFixed(2) + "%"; el.className = "hero-pct " + (pc >= 0 ? "up" : "dn") } } drawRates(t); drawOpen();
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
   anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
@@ -73,6 +73,8 @@ function draw() {
   $h("hk_td").textContent = String(t.todayN); $h("hk_wr").textContent = t.wn + t.ln ? Math.round(100 * t.wn / (t.wn + t.ln)) + "%" : "–"; $h("hk_sc").textContent = t.scanned.toLocaleString();
   for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const p = r.eq - r.start;
     anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v), 0);
+    { const sp = r.spark || [], el = $h("dks" + i); if (el && sp.length > 1) { const lo = Math.min(...sp, r.start), hi = Math.max(...sp, r.start), pd = (hi - lo) * 0.1 || 1, X = k => k / (sp.length - 1) * 100, Y = v => 28 - (v - lo + pd) / (hi - lo + 2 * pd) * 28;
+      el.innerHTML = `<svg viewBox="0 0 100 28" preserveAspectRatio="none"><line x1="0" x2="100" y1="${Y(r.start)}" y2="${Y(r.start)}" stroke="var(--mut)" stroke-dasharray="2 3" stroke-width="1" vector-effect="non-scaling-stroke" opacity=".6"/><path d="${sp.map((v, k) => (k ? "L" : "M") + X(k).toFixed(1) + " " + Y(v).toFixed(1)).join("")}" fill="none" stroke="${sp[sp.length - 1] >= r.start ? "var(--g)" : "var(--r)"}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>` } }
     $h("dki" + i).textContent = `${MODEN[r.mode] || r.mode} · ${r.status}${r.clock ? " · " + r.clock : ""}`;
     $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today`;
     { const sel = document.querySelector(`.dkctl[data-d="${i}"] select`); if (sel && document.activeElement !== sel && sel.value !== r.mode) sel.value = r.mode; const pz = $h("dkpz" + i); if (pz) { pz.textContent = r.shutdown ? "Stopped" : r.paused ? "Resume" : "Pause"; pz.classList.toggle("on", !!r.paused || !!r.shutdown) } }

@@ -186,3 +186,20 @@ button:active,.chip:active,.mbtn:active,.btn:active{transform:scale(.95)}
 @keyframes fadein{from{opacity:.0}to{opacity:1}}
 .deskbar button{transition:background .25s,color .25s,transform .12s}
 @media (prefers-reduced-motion:reduce){.tab.on,.hpane,.mbtn.on,.chip.on,.orow.new,.drawin,.panel{animation:none!important}.drawin{stroke-dasharray:none;stroke-dashoffset:0}#hc_area,#hc_line,.livedot{transition:none}}
+
+/* ---- Master board look: hero card, desk sparklines, chain badges ---- */
+.hero{margin:12px 0 0;padding:18px 18px 16px;border-radius:24px;color:#fff;background:radial-gradient(120% 140% at 0% 0%,#5b7cff 0%,#3c4fd6 35%,#1d2459 75%,#121636 100%);box-shadow:0 20px 40px -20px rgba(40,60,200,.55);position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
+.hero .eq{color:#fff;font-size:40px;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px}
+.hero-top{display:flex;justify-content:space-between;align-items:center}.hero-lab{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.8;font-weight:700}
+.hero .st{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)}
+.hero-sub{font-size:13px;opacity:.9}.hero-sub .g,.hero-sub .r{color:#fff;font-weight:700}
+.hero-pct{display:inline-block;margin-top:10px;padding:4px 10px;border-radius:999px;font-weight:800;font-size:13px;background:rgba(255,255,255,.15)}
+.hero-pct.up{background:rgba(52,211,153,.28)}.hero-pct.dn{background:rgba(248,113,113,.3)}
+.dkname{display:inline-flex;align-items:center;gap:8px}
+.cb{font:800 10px/1 inherit;letter-spacing:.04em;padding:4px 6px;border-radius:7px;color:#fff;background:#6b7280}
+.cb-solana{background:linear-gradient(135deg,#9945ff,#14f195)}.cb-base{background:#0052ff}.cb-bsc{background:#f0b90b;color:#1a1a1a}.cb-ethereum{background:#627eea}.cb-big{background:linear-gradient(135deg,#ff7a59,#ffb86c)}
+.spark{height:30px;margin:8px 0 2px}.spark svg{width:100%;height:30px;display:block}
+.hdesk{transition:transform .2s ease,box-shadow .2s ease}.hdesk:hover{transform:translateY(-2px)}
+@media (max-width:520px){.hero{padding:15px 15px 13px;border-radius:20px}.hero .eq{font-size:34px!important}}
+@media (prefers-color-scheme:dark){.hero{box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}}
