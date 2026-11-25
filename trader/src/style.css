@@ -215,3 +215,4 @@ body.simple .hdesk{padding-bottom:10px}
 .orow.one{align-items:center;padding:7px 0}.orow.one .ol{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.orow.one .oval{display:flex;gap:6px;align-items:baseline}.orow.one .oval span{display:inline}
 .chip.more{margin-top:8px;width:100%;justify-content:center;text-align:center}
 .cb-arbitrum{background:linear-gradient(135deg,#28a0f0,#12aaff)}
+.kv b em{font-style:normal}
