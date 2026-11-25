@@ -38,6 +38,9 @@ node test/calib.mjs 4 1                             # how do tokens that pass th
 ## Findings from the realistic simulator
 See `RESULTS.md`.
 
+## Full Auto
+On by default (Master settings). Every 10 s it puts any desk that is off ★ Lots of trades, or has hand-made risk/selling/chain overrides, back on the tested settings; keeps Auto market size on; restarts a desk that stopped after a bad day when a new day starts; replaces the Autopilot. Manual settings are locked while it is on. All actions are logged on the Master.
+
 ## Desks and the Master board
 `index.html` is the Master board: it runs the app several times side by side (5 by default, 5-25 in Master settings), one "desk" per market area, each with its own account, settings and agents, and adds up their profit and loss. Master settings change every desk at once (mode, live/demo, speed, pause, risk sliders, sell all, emergency stop, number of desks, starting balance). `app.html` is the single app on its own.
 

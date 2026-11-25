@@ -87,6 +87,7 @@ function draw() {
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
   { const el = $h("h_best"), rs = Object.values(R); if (el && rs.length) { const off = rs.filter(r => r.mode !== "lots"); el.innerHTML = off.length ? `⚠️ ${off.length} desk${off.length > 1 ? "s are" : " is"} not on the best mode <button id="fixbest">Fix</button>` : "★ All desks on the best tested mode"; el.className = "bestchk " + (off.length ? "warn" : "ok");
     const fb = $h("fixbest"); if (fb) fb.onclick = () => { for (let i = 1; i <= NDESK; i++) if (R[i] && R[i].mode !== "lots") sendTo(i, "preset", "lots") } } }
+  { const el = $h("h_fa"); if (el) { el.textContent = FA ? "🤖 Full Auto on" + (faLog.length ? " · " + faLog.filter(l => Date.now() - l.t < 3600e3 && !/switched/.test(l.msg)).length + " fixes this hour" : "") : "✋ Full Auto off"; el.classList.toggle("off", !FA) } }
   { const el = $h("h_auto"), r0 = Object.values(R)[0] || {}, live = Object.values(R).some(r => r.live); if (el) el.innerHTML = live ? "⚡ Live market" : `⚙️ Market <b>${r0.simScale || "?"}×</b> ${autoSize ? "· Auto" : "· fixed"}${lastFps ? " · " + lastFps + " fps" : ""}${AP.on ? " · Autopilot on" : ""}` }
   anim("h_eq", t.eq, v => money(v), 0); { const pc = t.start ? (t.eq / t.start - 1) * 100 : 0, el = $h("h_pct"); if (el) { el.textContent = (pc >= 0 ? "▲ +" : "▼ ") + pc.toFixed(2) + "%"; el.className = "hero-pct " + (pc >= 0 ? "up" : "dn") } } drawRates(t); drawOpen();
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
@@ -121,10 +122,27 @@ const PRM = [["recommended", "Recommended"], ["easy", "Easy"], ["risky", "Risky"
 const sendTo = (d, ptcmd, v) => { const f = document.querySelectorAll(".hframe")[d - 1]; try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} };
 const send = (ptcmd, v) => document.querySelectorAll(".hframe").forEach(f => { try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} });
 let capPick = 2000, resetArm = 0;
+/* ---- FULL AUTO: runs the whole app for the best tested results ----
+ * every 10 s: any desk off the best mode is put back on it; hand-made risk/selling/chain overrides are cleared (they tested worse);
+ * a desk that stopped itself after a bad day is restarted when a new day begins; Auto market size stays on. Every action is logged. */
+let FA = true; try { FA = localStorage.getItem("pt_host_fullauto") !== "0" } catch (e) {}
+const faLog = []; let faDay = {};
+const faNote = msg => { faLog.unshift({ t: Date.now(), msg }); faLog.length = Math.min(faLog.length, 30); const el = $h("fa_log"); if (el) drawFaLog() };
+function drawFaLog() { const el = $h("fa_log"); if (el) el.innerHTML = faLog.length ? faLog.slice(0, 6).map(l => `<div class="sub" style="margin-top:3px">${new Date(l.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${escH(l.msg)}</div>`).join("") : '<div class="sub" style="margin-top:3px">Everything is already on the best settings.</div>' }
+function faTick() {
+  if (!FA) return; if (!autoSize) { autoSize = true; try { localStorage.setItem("pt_host_autosize", "1") } catch (e) {} }
+  if (AP.on) { AP.on = false; apSave() }   // Full Auto replaces the Autopilot (which could move desks off the best mode)
+  for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const nm = DN[i - 1];
+    if (r.mode !== "lots" || r.custom) { sendTo(i, "fullauto"); faNote(`${nm}: back to ★ Lots of trades with the tested settings`) }
+    if (r.shutdown && faDay[i] && r.day && r.day !== faDay[i]) { sendTo(i, "rearm"); faNote(`${nm}: new day, restarted after yesterday's stop`) }
+    faDay[i] = r.day; sendTo(i, "fa", FA) }
+}
+setInterval(faTick, 10000); setTimeout(faTick, 4000);
+function setFA(v) { FA = v; try { localStorage.setItem("pt_host_fullauto", v ? "1" : "0") } catch (e) {} send("fa", v); document.body.classList.toggle("fullauto", v); faNote(v ? "Full Auto switched on" : "Full Auto switched off: settings can be changed by hand"); if (v) faTick(); mark() }
 function buildSet() {
   const PR = [["recommended", "Recommended"], ["easy", "Easy"], ["risky", "Risky"], ["most", "Most money"], ["lots", "Lots of trades"], ["max", "Max trades"]];
   const SP = [1, 15, 60, 300, 1000, 3000, 10000, 30000], CAP = [2, 10, 100, 1000, 2000, 10000];
-  $h("h_set").innerHTML = `<div class="sub"><b>Mode for every desk</b></div><div class="chips" id="hs_mode" style="margin-top:6px">${PR.map(x => `<button class="chip" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
+  $h("h_set").innerHTML = `<div class="fabox"><div class="row"><b>🤖 Full Auto</b><span class="chips" id="fa_sel"><button class="chip" data-v="1">On</button><button class="chip" data-v="0">Off</button></span></div><div class="sub" style="margin-top:4px">Runs everything for the best tested results: every desk on ★ Lots of trades with the tested settings, biggest market your device handles, desks restarted after a bad day. While it is on, the settings below are locked.</div><div id="fa_log"></div></div><div class="fa-lock"><div class="sub"><b>Mode for every desk</b></div><div class="chips" id="hs_mode" style="margin-top:6px">${PR.map(x => `<button class="chip" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>
     ${HOST_SW ? `<div class="sub" style="margin-top:12px"><b>Market data</b></div><div class="chips" id="hs_live" style="margin-top:6px"><button class="chip" data-v="live">Live market</button><button class="chip" data-v="mock">Demo (simulated)</button></div>` : ""}
     <div class="sub" style="margin-top:12px"><b>Demo speed</b> (live trading always runs in real time)</div><div class="chips" id="hs_speed" style="margin-top:6px">${SP.map(s => `<button class="chip" data-v="${s}">${s >= 30000 ? "Max" : s.toLocaleString() + "x"}</button>`).join("")}</div>
     ${HOST_SW ? "" : ""}<div class="sub" style="margin-top:12px"><b>Demo market size</b> (more coins to pick from: more trades and more coins open at once; uses more of your device)</div><div class="chips" id="hs_sim" style="margin-top:6px">${[[1, "1x small"], [5, "5x"], [10, "10x"], [20, "20x real-like"]].map(([v, n]) => `<button class="chip" data-v="${v}">${n}</button>`).join("")}<button class="chip" data-v="auto" id="hs_simauto">Auto</button></div><div class="sub" id="hs_simnote" style="margin-top:4px"></div>
@@ -140,7 +158,7 @@ function buildSet() {
     <div class="chips" style="margin-top:6px"><button class="chip" id="qa_best">Copy best desk's mode to all</button>${HOST_SW ? "" : `<button class="chip" data-skip="3600">Skip 1 hour</button><button class="chip" data-skip="86400">Skip 1 day</button><button class="chip" data-skip="259200">Skip 3 days</button>`}</div>
     <button class="btn" id="qa_close" style="margin-top:8px">Sell every open coin (all desks)</button>
     <button class="btn red" id="qa_kill">Emergency stop: sell everything and halt all desks</button>
-    <button class="btn" id="qa_rearm">Restart all desks after a stop</button>`;
+    <button class="btn" id="qa_rearm">Restart all desks after a stop</button></div>`;
   const MR = { mr_size: 0, mr_stop: 0, mr_tp1: 0, mr_max: 0, mr_dl: 0 }; try { Object.assign(MR, JSON.parse(localStorage.getItem("pt_host_mr") || "{}")) } catch (e) {}
   const lab = id => { const el = $h(id), v = MR[id]; $h(id + "_v").textContent = v ? (id === "mr_size" ? "x" + (+v).toFixed(1) : id === "mr_max" ? String(v) : v + "%") : "auto"; if (v) el.value = v; el.classList.toggle("off", !v) };
   for (const id in MR) { lab(id); $h(id).oninput = e => { MR[id] = +e.target.value; lab(id) } }
@@ -155,6 +173,7 @@ function buildSet() {
   two("qa_kill", "Tap again: sell everything and halt", () => send("kill"));
   $h("qa_rearm").onclick = () => send("rearm");
   $h("hs_n").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v && +v !== NDESK) { try { localStorage.setItem("pt_host_n", v) } catch (e) {} location.reload() } };
+  $h("fa_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v != null) setFA(v === "1") };
   $h("hs_mode").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { send("preset", v); mark() } };
   if ($h("hs_live")) $h("hs_live").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) send("mode", v) };
   $h("hs_sim").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; if (v === "auto") { autoSize = !autoSize } else { autoSize = false; send("simscale", +v) } try { localStorage.setItem("pt_host_autosize", autoSize ? "1" : "0") } catch (e) {} mark() };
@@ -166,6 +185,7 @@ function buildSet() {
 }
 function mark() {
   const rs = Object.values(R), all = (k, v) => rs.length && rs.every(r => String(r[k]) === String(v));
+  document.querySelectorAll("#fa_sel .chip").forEach(b => b.classList.toggle("on", (b.dataset.v === "1") === FA));
   document.querySelectorAll("#hs_mode .chip").forEach(b => b.classList.toggle("on", all("mode", b.dataset.v)));
   document.querySelectorAll("#hs_sim .chip").forEach(b => b.classList.toggle("on", b.dataset.v === "auto" ? autoSize : !autoSize && all("simScale", b.dataset.v)));
   if ($h("hs_simnote")) $h("hs_simnote").textContent = autoSize ? "Auto: the biggest market your device runs smoothly (now " + ((Object.values(R)[0] || {}).simScale || "?") + "x, " + lastFps + " fps)" : "";
@@ -223,8 +243,8 @@ setInterval(drawTicker, 12000); setTimeout(drawTicker, 3000);
 { const g = $h("guide"); let gs = null; try { gs = localStorage.getItem("pt_host_guide") } catch (e) {} if (gs === "hidden") g.hidden = true; else g.open = gs === "open";   // folded by default: one line, tap to read
   g.addEventListener("toggle", () => { try { localStorage.setItem("pt_host_guide", g.open ? "open" : "closed") } catch (e) {} });
   $h("guide_hide").onclick = () => { g.hidden = true; try { localStorage.setItem("pt_host_guide", "hidden") } catch (e) {} } }
-buildSet();
+buildSet(); document.body.classList.toggle("fullauto", FA); drawFaLog();
 { const box = document.createElement("div"); box.innerHTML = `<div class="sub"><b>Autopilot</b>: steps a losing desk down to a safer mode, steps a steady winner back up, restarts desks that stopped themselves when a new day starts</div><div class="chips" id="ap_sel" style="margin-top:6px"><button class="chip" data-v="1">On</button><button class="chip" data-v="0">Off</button></div><div id="ap_log" style="margin:4px 0 14px"></div>`;
-  $h("h_set").prepend(box); $h("ap_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v == null) return; AP.on = v === "1"; AP.last = {}; apSave(); apLog(AP.on ? "Autopilot switched on" : "Autopilot switched off") }; apDraw() }
+  box.className = "fa-lock"; const fb = document.querySelector("#h_set .fabox"); if (fb) fb.after(box); else $h("h_set").prepend(box); $h("ap_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v == null) return; AP.on = v === "1"; AP.last = {}; apSave(); apLog(AP.on ? "Autopilot switched on" : "Autopilot switched off") }; apDraw() }
 draw(); setInterval(() => { if (cur === 0) { draw(); mark() } }, 1000);
 if (typeof HOST_SW !== "undefined" && HOST_SW && "serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
