@@ -16,7 +16,7 @@ const DEMO = !!opt("demo", false), SPEED = +opt("speed", 60) || 60, PORT = +opt(
 const NDESK = Math.max(1, Math.min(25, +opt("desks", 5) || 5)), PRESET = opt("preset", "");
 fs.mkdirSync(STATE, { recursive: true });
 const bundle = fs.readFileSync(path.join(dir, "engine_bundle.js"), "utf8");
-const AREAS = [{ n: "Solana", chains: ["solana"] }, { n: "Base", chains: ["base"] }, { n: "BSC", chains: ["bsc"] }, { n: "Ethereum", chains: ["ethereum"] }, { n: "Big coins", chains: ["solana", "base", "bsc", "ethereum"], trend: true }];
+const AREAS = [{ n: "Solana", chains: ["solana"] }, { n: "Base", chains: ["base"] }, { n: "BSC", chains: ["bsc"] }, { n: "Arbitrum", chains: ["arbitrum"] }, { n: "Big coins", chains: ["solana", "base", "bsc", "arbitrum"], trend: true }];
 const MODES = ["lots", "most", "risky", "recommended", "lots"];
 
 function makeDesk(i) {   // i = 0 for the single all-chain bot, 1..N for desks

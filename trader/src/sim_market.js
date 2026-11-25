@@ -41,7 +41,7 @@ function mkPoisson(l) { if (l > 25) return Math.max(0, Math.round(l + Math.sqrt(
 
 const MOCK = {
   toks: {}, n: 0, t0: 0, G: 0, lastMin: 0, crashUntil: 0, major: { bitcoin: 0, ethereum: 0, solana: 0 }, majorHist: [], vol: 1,
-  cfg: { newPerMin: { solana: 0.16, base: 0.07, ethereum: 0.025, bsc: 0.07 }, lagNew: [60, 240], signal: 0.35, crashPerMin: 1 / 5500, estUp: 0.038, estRev: 0.004, estMR: 0.015, estFall: [200, 700] },
+  cfg: { newPerMin: { solana: 0.16, base: 0.07, ethereum: 0.025, bsc: 0.07, arbitrum: 0.05 }, lagNew: [60, 240], signal: 0.35, crashPerMin: 1 / 5500, estUp: 0.038, estRev: 0.004, estMR: 0.015, estFall: [200, 700] },
 
   init() {
     this.toks = {}; this.n = 0; this.t0 = vnow; this.G = 0; this.lastMin = vnow; this.crashUntil = 0; this.majorHist = []; this.vol = 1;

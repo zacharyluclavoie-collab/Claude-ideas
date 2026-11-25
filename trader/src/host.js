@@ -1,5 +1,6 @@
 /* Master board: runs the app 5 times (one iframe per desk) and adds their results together. Each desk reports once a second. */
-const AREAS = ["Solana", "Base", "BSC", "Ethereum", "Big coins"]; let NDESK = 5; try { NDESK = Math.max(1, Math.min(25, +localStorage.getItem("pt_host_n") || 5)) } catch (e) {}
+// Arbitrum replaced Ethereum: Ethereum network fees (~$5 a trade) blocked almost every trade
+const AREAS = ["Solana", "Base", "BSC", "Arbitrum", "Big coins"]; let NDESK = 5; try { NDESK = Math.max(1, Math.min(25, +localStorage.getItem("pt_host_n") || 5)) } catch (e) {}
 const DN = [...Array(NDESK)].map((_, i) => AREAS[i % 5] + (i >= 5 ? " " + (Math.floor(i / 5) + 1) : "")), R = {}, hist = [], MODEN = { recommended: "Recommended", easy: "Easy", risky: "Risky", most: "Most money", lots: "Lots of trades", max: "Max trades", safe: "Recommended" };
 const $h = id => document.getElementById(id), escH = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const money = (n, d = 2) => (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -25,7 +26,7 @@ function buildBoard() {
   $h("h_kv").innerHTML = [["Won", "hk_w", "g", "hk_wn"], ["Lost", "hk_l", "r", "hk_ln"], ["Open now", "hk_o", "", "hk_on"], ["Trades today", "hk_td", "", ""], ["Win rate", "hk_wr", "", ""], ["Coins scanned", "hk_sc", "", ""]]
     .map(x => `<div><span>${x[0]}</span><b id="${x[1]}" class="num ${x[2]}">–</b>${x[3] ? `<span id="${x[3]}"></span>` : ""}</div>`).join("");
   $h("h_desks").innerHTML = DN.map((name, i) => `<div class="panel hdesk rise" data-d="${i + 1}" id="dk${i + 1}" style="margin:10px 0;cursor:pointer;animation-delay:${i * 70}ms">
-    <div class="row"><span class="dkname"><span class="cb cb-${(AREAS[i % 5] || "").split(" ")[0].toLowerCase()}">${["SOL", "BASE", "BSC", "ETH", "ALL"][i % 5]}</span><b>${name}</b></span><b id="dkp${i + 1}" class="num">starting…</b></div><div class="spark" id="dks${i + 1}"></div>
+    <div class="row"><span class="dkname"><span class="cb cb-${(AREAS[i % 5] || "").split(" ")[0].toLowerCase()}">${["SOL", "BASE", "BSC", "ARB", "ALL"][i % 5]}</span><b>${name}</b></span><b id="dkp${i + 1}" class="num">starting…</b></div><div class="spark" id="dks${i + 1}"></div>
     <div class="sub" style="margin-top:4px"><span id="dke${i + 1}" class="num"></span> · <span id="dki${i + 1}"></span></div>
     <div class="sub" style="margin-top:4px" id="dkw${i + 1}"></div><div class="sub" style="margin-top:4px;opacity:.75" id="dkl${i + 1}"></div>
     <div class="dkctl" data-d="${i + 1}"><select data-act="mode" aria-label="Mode for ${DN[i]}">${PRM.map(x => `<option value="${x[0]}">${x[1]}</option>`).join("")}</select><button class="chip" data-act="pause" id="dkpz${i + 1}">Pause</button><button class="chip" data-act="close">Sell all</button><button class="chip" data-act="open">Open</button></div></div>`).join("");
@@ -47,14 +48,16 @@ function drawRates(t) {
   if (hrs >= 6) { anim("hr_pd", perH * 24, v => sg(v), 0); $h("hr_pd").className = c(perH); $h("hr_pds").textContent = "" } else { $h("hr_pd").textContent = "–"; $h("hr_pds").textContent = "after 6 h of data" }
   $h("hr_run").textContent = hrs < 48 ? hrs.toFixed(1) + " h" : (hrs / 24).toFixed(1) + " days"; $h("hr_runs").textContent = Object.values(R).some(r => !r.live) ? "demo time" : "";
 }
-let openSeen = new Set();
+let openSeen = new Set(), openAll = false;
 function drawOpen() {
   const all = []; for (let i = 1; i <= NDESK; i++) for (const p of ((R[i] && R[i].pos) || [])) all.push(Object.assign({ desk: DN[i - 1], d: i }, p));
   all.sort((a, b) => b.pnl - a.pnl); $h("h_opencount").textContent = all.length ? all.length + " across " + new Set(all.map(a => a.d)).size + " desks" : "";
   const fmtH = h => h < 1 ? Math.round(h * 60) + "m" : h.toFixed(1) + "h";
   const nowKeys = new Set(all.map(a => a.d + a.sym));
-  $h("h_open").innerHTML = all.length ? all.slice(0, 60).map(a => `<div class="orow${openSeen.size && !openSeen.has(a.d + a.sym) ? " new" : ""}" data-d="${a.d}"><div><b>${escH(a.sym)}</b> <span class="sub">${CHN[a.chain] || a.chain} · ${escH(a.desk)} · ${fmtH(a.held)}${a.exit ? " · exiting" : ""}</span></div><div class="oval"><b class="${a.pnl >= 0 ? "g" : "r"}">${a.pct >= 0 ? "+" : ""}${a.pct.toFixed(1)}%</b><span class="sub">${sg(a.pnl)} · ${money(a.val)}</span></div></div>`).join("") + (all.length > 60 ? `<div class="sub" style="margin-top:6px">and ${all.length - 60} more</div>` : "")
+  const lim = openAll ? 60 : 5, row = a => `<div class="orow one${openSeen.size && !openSeen.has(a.d + a.sym) ? " new" : ""}" data-d="${a.d}"><div class="ol"><b>${escH(a.sym)}</b> <span class="sub">${escH(a.desk)} · ${fmtH(a.held)}${a.exit ? " · exiting" : ""}</span></div><div class="oval"><b class="${a.pnl >= 0 ? "g" : "r"}">${a.pct >= 0 ? "+" : ""}${a.pct.toFixed(1)}%</b> <span class="sub">${sg(a.pnl)}</span></div></div>`;
+  $h("h_open").innerHTML = all.length ? all.slice(0, lim).map(row).join("") + (all.length > 5 ? `<button class="chip more" id="openmore">${openAll ? "Show less" : "Show all " + all.length}</button>` : "")
     : '<div class="sub">No coins open right now. The desks buy when a coin passes every check.</div>';
+  { const b = $h("openmore"); if (b) b.onclick = e => { e.stopPropagation(); openAll = !openAll; touchHold = 0; drawOpen() } }
   $h("h_open").querySelectorAll(".orow").forEach(el => el.onclick = () => show(+el.dataset.d));
   openSeen = nowKeys.size ? nowKeys : new Set(["-"]);
 }
@@ -68,11 +71,13 @@ function drawFeed() {
   const perMin = checkHist.length > 1 ? (tot - checkHist[0][1]) / ((now - checkHist[0][0]) / 60000) : 0;
   const watched = Object.values(R).reduce((a, r) => a + (r.scanned || 0), 0); $h("h_rate2").textContent = perMin > 0 ? watched.toLocaleString() + " coins watched · " + Math.round(perMin).toLocaleString() + " checks a minute" : "";
   const items = []; for (let i = 1; i <= NDESK; i++) for (const f of ((R[i] && R[i].feed) || [])) items.push(Object.assign({ desk: DN[i - 1], k: i + "|" + f.t + "|" + f.sym }, f));
-  items.sort((a, b) => b.t - a.t); const top = items.slice(0, 10), keys = new Set(top.map(x => x.k));
+  items.sort((a, b) => (b.o === "bought") - (a.o === "bought") || b.t - a.t);   // buys first, then newest
+  const seenSym = new Set(), perDesk = {}, top = []; for (const x of items) { const k2 = x.desk + x.sym; if (seenSym.has(k2) || (perDesk[x.desk] || 0) >= 2) continue; seenSym.add(k2); perDesk[x.desk] = (perDesk[x.desk] || 0) + 1; top.push(x); if (top.length >= 5) break }
+  const keys = new Set(top.map(x => x.k));
   $h("h_feed").innerHTML = top.length ? top.map(x => { const o = OUTN[x.o] || ["•", x.o]; return `<div class="frow${feedSeen.size && !feedSeen.has(x.k) ? " new" : ""}"><span class="fi">${o[0]}</span><div class="ft"><b>${escH(x.sym)}</b> <span class="sub">${escH(x.desk)} · ${o[1]}</span><div class="sub fd">${escH(x.d)}</div></div></div>` }).join("") : '<div class="sub">Starting the scanners…</div>';
   feedSeen = keys.size ? keys : new Set(["-"]);
 }
-const vsw = $h("viewsw"); let simple = false; try { simple = localStorage.getItem("pt_host_simple") === "1" } catch (e) {}
+const vsw = $h("viewsw"); let simple = true; try { simple = localStorage.getItem("pt_host_simple") !== "0" } catch (e) {}   // Simple view is the default: less to scroll
 const applyView = () => { document.body.classList.toggle("simple", simple); vsw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.v === "simple") === simple)) };
 vsw.onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; simple = v === "simple"; try { localStorage.setItem("pt_host_simple", simple ? "1" : "0") } catch (e) {} applyView() }; applyView();
 function draw() {

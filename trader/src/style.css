@@ -212,3 +212,6 @@ button:active,.chip:active,.mbtn:active,.btn:active{transform:scale(.95)}
 .viewsw button{border:0;background:none;color:#fff;font:700 12px inherit;padding:6px 11px;border-radius:999px;opacity:.75;cursor:pointer}.viewsw button.on{background:rgba(255,255,255,.95);color:#1d2459;opacity:1}
 body.simple .fullonly,body.simple .dkctl,body.simple [id^="dkl"],body.simple [id^="dkw"]{display:none!important}
 body.simple .hdesk{padding-bottom:10px}
+.orow.one{align-items:center;padding:7px 0}.orow.one .ol{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.orow.one .oval{display:flex;gap:6px;align-items:baseline}.orow.one .oval span{display:inline}
+.chip.more{margin-top:8px;width:100%;justify-content:center;text-align:center}
+.cb-arbitrum{background:linear-gradient(135deg,#28a0f0,#12aaff)}

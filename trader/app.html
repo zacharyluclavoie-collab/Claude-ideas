@@ -227,6 +227,9 @@ button:active,.chip:active,.mbtn:active,.btn:active{transform:scale(.95)}
 .viewsw button{border:0;background:none;color:#fff;font:700 12px inherit;padding:6px 11px;border-radius:999px;opacity:.75;cursor:pointer}.viewsw button.on{background:rgba(255,255,255,.95);color:#1d2459;opacity:1}
 body.simple .fullonly,body.simple .dkctl,body.simple [id^="dkl"],body.simple [id^="dkw"]{display:none!important}
 body.simple .hdesk{padding-bottom:10px}
+.orow.one{align-items:center;padding:7px 0}.orow.one .ol{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.orow.one .oval{display:flex;gap:6px;align-items:baseline}.orow.one .oval span{display:inline}
+.chip.more{margin-top:8px;width:100%;justify-content:center;text-align:center}
+.cb-arbitrum{background:linear-gradient(135deg,#28a0f0,#12aaff)}
 
 </style>
 </head>
@@ -384,7 +387,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-25 06:21";
+const BUILD = "2026-11-25 06:32";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1032,7 +1035,7 @@ function mkPoisson(l) { if (l > 25) return Math.max(0, Math.round(l + Math.sqrt(
 
 const MOCK = {
   toks: {}, n: 0, t0: 0, G: 0, lastMin: 0, crashUntil: 0, major: { bitcoin: 0, ethereum: 0, solana: 0 }, majorHist: [], vol: 1,
-  cfg: { newPerMin: { solana: 0.16, base: 0.07, ethereum: 0.025, bsc: 0.07 }, lagNew: [60, 240], signal: 0.35, crashPerMin: 1 / 5500, estUp: 0.038, estRev: 0.004, estMR: 0.015, estFall: [200, 700] },
+  cfg: { newPerMin: { solana: 0.16, base: 0.07, ethereum: 0.025, bsc: 0.07, arbitrum: 0.05 }, lagNew: [60, 240], signal: 0.35, crashPerMin: 1 / 5500, estUp: 0.038, estRev: 0.004, estMR: 0.015, estFall: [200, 700] },
 
   init() {
     this.toks = {}; this.n = 0; this.t0 = vnow; this.G = 0; this.lastMin = vnow; this.crashUntil = 0; this.majorHist = []; this.vol = 1;
@@ -1427,7 +1430,7 @@ function animTick(n) {
 
 /* ============================ UI ============================ */
 /* trading desks: the same app runs 5 times side by side (one per market area), each with its own account; the Master board adds them up */
-const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Ethereum",chains:["ethereum"]},{n:"Big coins",chains:["solana","base","bsc","ethereum"],trend:true}];
+const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Arbitrum",chains:["arbitrum"]},{n:"Big coins",chains:["solana","base","bsc","arbitrum"],trend:true}];
 const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:["lots","most","risky","recommended","lots"][v]||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
 if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
 if(DESK&&!["recommended","easy","risky","most","lots","max","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
@@ -1520,7 +1523,7 @@ function rPnl(){const el=$("pnlbox");if(!el)return;const pf=S.pf;if(!pf.tot){con
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Total profit / loss</b><b id="a_tot" class="num ${tot>=0?"g":"r"}" style="font-size:22px"></b></div>
   <div class="kv"><div><span>Won</span><b id="a_won" class="num g"></b><span>${T.wn} coin${T.wn===1?"":"s"}</span></div><div><span>Lost</span><b id="a_lost" class="num r"></b><span>${T.ln} coin${T.ln===1?"":"s"}</span></div><div><span>Open now</span><b id="a_open" class="num ${op>=0?"g":"r"}"></b><span>${Object.keys(pf.positions).length} coin${Object.keys(pf.positions).length===1?"":"s"}</span></div>
   ${S.core?`<div><span>BTC/ETH/SOL</span><b class="${co>=0?"g":"r"}">${sgn(co)}</b></div>`:""}<div><span>Cash interest</span><b class="g">${sgn((pf.yieldEarned||0)+(S.core?S.core.yieldEarned:0))}</b></div><div><span>Fees (included)</span><b>${fmt(pf.feesPaid+(S.core?S.core.fees:0))}</b></div><div><span>Win rate</span><b>${T.wn+T.ln?Math.round(100*T.wn/(T.wn+T.ln))+"%":"–"}</b></div></div>
-  ${tops?`<div class="sub" style="margin-top:10px"><b>By agent</b></div>${tops}`:""}</div>`;anim("a_tot",tot,v=>sgn(v));anim("a_won",T.w,v=>sgn(v));anim("a_lost",T.l,v=>sgn(v));anim("a_open",op,v=>sgn(v),0)}
+  ${tops&&!DESK?`<div class="sub" style="margin-top:10px"><b>By agent</b></div>${tops}`:""}</div>`;anim("a_tot",tot,v=>sgn(v));anim("a_won",T.w,v=>sgn(v));anim("a_lost",T.l,v=>sgn(v));anim("a_open",op,v=>sgn(v),0)}
 function rHome(){rPnl();rCore();rNow();rMode();{const d=diagnose()[0],el=$("blocked");el.innerHTML=d[0]==="ok"?"":`<div class="panel" style="margin-top:14px;cursor:pointer" onclick="switchTab('scan')"><span class="tag ${d[0]==="bad"?"bad":d[0]==="warn"?"warn":""}">${d[0]==="bad"?"NOT TRADING":d[0]==="warn"?"CHECK":"INFO"}</span><div style="font-size:13.5px;margin-top:6px">${esc(d[1])}</div><div class="sub" style="margin-top:4px">Tap for details</div></div>`}
 const pf=S.pf,eq=equity(),R=CFG.risk,ps=Object.values(pf.positions),n=ps.length,cl=pf.closed;
   const dd=Math.max(0,(pf.peak-eq)/pf.peak*100),day=Math.max(0,(pf.dayStart-eq)/pf.dayStart*100),ex=exposure()/eq*100;
@@ -1644,7 +1647,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   h+=`<h2>Strategies</h2><div class="panel"><label class="tg"><span><b>New tokens</b><small>Fresh pools after security checks. Around break-even in testing; profit depends on assumptions nobody can verify.</small></span><input type="checkbox" id="f_nw" ${CFG.nw.enabled?"checked":""}></label><label class="tg"><span><b>Established tokens (experimental)</b><small>Momentum on older tokens. No edge after costs in testing, so it is off by default. Scanning continues either way.</small></span><input type="checkbox" id="f_tr" ${CFG.tr.enabled?"checked":""}></label></div>`;
   h+=`<h2>Risk limits</h2><div class="panel">`+RK.map(([k,l,lo,hi,st])=>`<div class="sl"><div class="ml"><span>${l}</span><b id="v_${k}">${R[k]}</b></div><input type="range" id="s_${k}" min="${lo}" max="${hi}" step="${st}" value="${R[k]}" aria-label="${l}"></div>`).join("")+`<div class="sub">Changes apply to future decisions. Choosing a Mode resets these to that mode's tested values.</div></div>`;
   {const X=exitPrefs();h+=`<h2>Selling and holding</h2><div class="panel">`+EXK.map(([k,l,lo,hi,st,cur])=>`<div class="sl"><div class="ml"><span>${l}</span><b id="xv_${k}">${X[k]!=null?X[k]:cur()}</b></div><input type="range" id="xs_${k}" min="${lo}" max="${hi}" step="${st}" value="${X[k]!=null?X[k]:cur()}" aria-label="${l}"></div>`).join("")+`<button class="btn" id="xreset" style="margin-top:6px">Use the mode's own selling rules</button><div class="sub">New trades use these (open trades keep their own targets, except the trailing stop). The tested modes already have good values: change them only if you want to experiment.</div></div>`}
-  h+=`<h2>Chains this ${DESK?"desk":"bot"} trades</h2><div class="chips" id="chainsel">${["solana","base","bsc","ethereum"].map(c=>`<button class="chip ${CFG.chains.includes(c)?"on":""}" data-c="${c}">${CH[c]||c}</button>`).join("")}</div><div class="sub" style="margin-top:6px">Ethereum network fees are high, so small trades there are usually blocked.</div>`;
+  h+=`<h2>Chains this ${DESK?"desk":"bot"} trades</h2><div class="chips" id="chainsel">${["solana","base","bsc","arbitrum","ethereum"].map(c=>`<button class="chip ${CFG.chains.includes(c)?"on":""}" data-c="${c}">${CH[c]||c}</button>`).join("")}</div><div class="sub" style="margin-top:6px">Ethereum network fees are high, so small trades there are usually blocked.</div>`;
   if(MODE==="mock")h+=`<h2>Demo market size</h2><div class="chips" id="simsel">${[[1,"1x small"],[5,"5x"],[10,"10x"],[20,"20x real-like"]].map(([v,n])=>`<button class="chip ${CFG.simScale===v?"on":""}" data-v="${v}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:6px">How many new coins the demo market creates (1x is about 470 a day, 20x about 9,400). Bigger markets give more coins to pick from, so more trades and more coins open at once, but use more of your device. Changing it restarts the demo.</div>`;
   h+=`<h2>Sounds</h2><div class="chips" id="soundsel"><button class="chip ${LS.get("pt_sound")==="1"?"on":""}" data-v="1">Sound on buys and sells</button><button class="chip ${LS.get("pt_sound")==="1"?"":"on"}" data-v="0">Silent</button></div>`;
   h+=`<h2>Account</h2><div class="sub">Starting capital (used on reset)</div><input type="number" id="cap" inputmode="numeric" value="${LS.get("pt_cap")||10000}" aria-label="Starting capital" style="margin-top:6px"><div class="chips" id="capq" style="margin-top:8px">${[10,100,1000,10000].map(v=>`<button class="chip" data-c="${v}">$${v.toLocaleString()}</button>`).join("")}</div><div class="sub" style="margin-top:6px">Small balances work: under $500 each trade uses about 20% of the account, and only coins whose network fees are small enough get bought (mostly Solana).</div><button class="btn pri" id="toggle">${paused?"Resume new entries":"Pause new entries"}</button><button class="btn" id="exp">Copy account data (JSON)</button><button class="btn red" id="kill">Emergency stop: flatten everything</button><button class="btn" id="rearm">Re-arm after shutdown</button><button class="btn" id="reset">Reset paper account</button>`;
