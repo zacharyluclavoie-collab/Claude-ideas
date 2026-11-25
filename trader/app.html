@@ -219,6 +219,15 @@ button:active,.chip:active,.mbtn:active,.btn:active{transform:scale(.95)}
 @media (max-width:520px){.hero{padding:15px 15px 13px;border-radius:20px}.hero .eq{font-size:34px!important}}
 @media (prefers-color-scheme:dark){.hero{box-shadow:0 20px 40px -20px rgba(0,0,0,.7)}}
 
+/* ---- live scanner feed + simple view ---- */
+.frow{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}.frow:first-child{border-top:0;padding-top:0}
+.frow .fi{width:22px;text-align:center;flex:0 0 22px}.frow .ft{min-width:0;flex:1}.frow .fd{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;opacity:.8}
+.frow.new{animation:slidein .6s cubic-bezier(.2,.8,.2,1)}
+.viewsw{position:absolute;right:14px;bottom:14px;display:flex;background:rgba(255,255,255,.14);border-radius:999px;padding:3px;z-index:1}
+.viewsw button{border:0;background:none;color:#fff;font:700 12px inherit;padding:6px 11px;border-radius:999px;opacity:.75;cursor:pointer}.viewsw button.on{background:rgba(255,255,255,.95);color:#1d2459;opacity:1}
+body.simple .fullonly,body.simple .dkctl,body.simple [id^="dkl"],body.simple [id^="dkw"]{display:none!important}
+body.simple .hdesk{padding-bottom:10px}
+
 </style>
 </head>
 <body>
@@ -375,7 +384,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-25 06:17";
+const BUILD = "2026-11-25 06:21";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1708,7 +1717,7 @@ if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;
 // every second, tell the Master board how this desk is doing
 function deskReport(){if(!DESK||!window.parent||window.parent===window)return;try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
   window.parent.postMessage({pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
-    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),simScale:CFG.simScale,speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,
+    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),simScale:CFG.simScale,checks:stats.scanned||0,feed:S.feed.slice(0,6).map(f=>({t:f.t,sym:f.sym,chain:f.chain,o:f.outcome,d:String(f.detail||"").slice(0,64)})),speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,
     ...(()=>{const c=S.curve,tn=now(),eq=totalEquity(),at=sec=>{let v=null;for(let i=c.length-1;i>=0;i--){if(c[i][0]<=tn-sec){v=c[i][1];break}}return v==null?(c.length?c[0][1]:eq):v};
       return{spark:c.slice(-40).map(x=>+x[1].toFixed(2)).concat([+eq.toFixed(2)]),ch1h:eq-at(3600),ch24h:eq-at(86400),hours:c.length?Math.max(0,(tn-c[0][0])/3600):0}})(),
     pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}

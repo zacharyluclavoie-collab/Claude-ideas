@@ -60,8 +60,24 @@ function drawOpen() {
 }
 let touchHold = 0; ["pointerdown", "touchstart", "mousedown"].forEach(t => document.addEventListener(t, () => { touchHold = performance.now() + 700 }, { capture: true, passive: true }));
 ["pointerup", "touchend", "mouseup", "pointercancel"].forEach(t => document.addEventListener(t, () => { touchHold = Math.min(touchHold, performance.now() + 250) }, { capture: true, passive: true }));
+/* ---- live scanner feed: what every desk is checking right now, plus coins checked per minute ---- */
+const OUTN = { bought: ["🟢", "bought"], learning: ["🎓", "practice"], vetoed: ["✋", "skipped"], security: ["🛡", "failed safety"], strategy: ["🔍", "not good enough"], failed: ["⚠️", "buy failed"] };
+let feedSeen = new Set(), checkHist = [];
+function drawFeed() {
+  const tot = Object.values(R).reduce((a, r) => a + (r.checks || 0), 0), now = Date.now(); checkHist.push([now, tot]); while (checkHist.length > 2 && now - checkHist[0][0] > 60000) checkHist.shift();
+  const perMin = checkHist.length > 1 ? (tot - checkHist[0][1]) / ((now - checkHist[0][0]) / 60000) : 0;
+  const watched = Object.values(R).reduce((a, r) => a + (r.scanned || 0), 0); $h("h_rate2").textContent = perMin > 0 ? watched.toLocaleString() + " coins watched · " + Math.round(perMin).toLocaleString() + " checks a minute" : "";
+  const items = []; for (let i = 1; i <= NDESK; i++) for (const f of ((R[i] && R[i].feed) || [])) items.push(Object.assign({ desk: DN[i - 1], k: i + "|" + f.t + "|" + f.sym }, f));
+  items.sort((a, b) => b.t - a.t); const top = items.slice(0, 10), keys = new Set(top.map(x => x.k));
+  $h("h_feed").innerHTML = top.length ? top.map(x => { const o = OUTN[x.o] || ["•", x.o]; return `<div class="frow${feedSeen.size && !feedSeen.has(x.k) ? " new" : ""}"><span class="fi">${o[0]}</span><div class="ft"><b>${escH(x.sym)}</b> <span class="sub">${escH(x.desk)} · ${o[1]}</span><div class="sub fd">${escH(x.d)}</div></div></div>` }).join("") : '<div class="sub">Starting the scanners…</div>';
+  feedSeen = keys.size ? keys : new Set(["-"]);
+}
+const vsw = $h("viewsw"); let simple = false; try { simple = localStorage.getItem("pt_host_simple") === "1" } catch (e) {}
+const applyView = () => { document.body.classList.toggle("simple", simple); vsw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.v === "simple") === simple)) };
+vsw.onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; simple = v === "simple"; try { localStorage.setItem("pt_host_simple", simple ? "1" : "0") } catch (e) {} applyView() }; applyView();
 function draw() {
-  if (performance.now() < touchHold) return;   // never swap a button out while it is being pressed
+  if (performance.now() < touchHold) return;
+  drawFeed();   // never swap a button out while it is being pressed
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
   anim("h_eq", t.eq, v => money(v), 0); { const pc = t.start ? (t.eq / t.start - 1) * 100 : 0, el = $h("h_pct"); if (el) { el.textContent = (pc >= 0 ? "▲ +" : "▼ ") + pc.toFixed(2) + "%"; el.className = "hero-pct " + (pc >= 0 ? "up" : "dn") } } drawRates(t); drawOpen();
