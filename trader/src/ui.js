@@ -3,6 +3,7 @@
 const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Arbitrum",chains:["arbitrum"]},{n:"Big coins",chains:["solana","base","bsc","arbitrum"],trend:true}];
 const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:"lots"||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
 if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
+if(LS.get("pt_reset_pending")){LS.del("pt_reset_pending");LS.del("pt_state_live");LS.del("pt_state_mock");LS.del("pt_kill_live");LS.del("pt_kill_mock")}   // fresh account at the new starting balance (set by the $10 setup)
 if(DESK&&!["recommended","easy","risky","most","lots","max","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sum=a=>a.reduce((x,y)=>x+y,0);

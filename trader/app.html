@@ -269,6 +269,7 @@ body.fullauto .fa-lock{opacity:.45;pointer-events:none;filter:grayscale(.4)}
 .fabanner{margin:10px 0;border-color:color-mix(in srgb,var(--g) 40%,transparent)}
 .tipbar{margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--y) 14%,var(--card));border:1px solid color-mix(in srgb,var(--y) 40%,transparent);font-size:13px;line-height:1.45}
 .tipbar button{margin-left:6px;border:0;border-radius:999px;padding:4px 10px;font:700 12px inherit;background:var(--tx);color:var(--bg);cursor:pointer}
+#setup10{width:100%}
 
 </style>
 </head>
@@ -426,7 +427,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-25 22:14";
+const BUILD = "2026-11-25 23:56";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1473,6 +1474,7 @@ function animTick(n) {
 const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Arbitrum",chains:["arbitrum"]},{n:"Big coins",chains:["solana","base","bsc","arbitrum"],trend:true}];
 const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:"lots"||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
 if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
+if(LS.get("pt_reset_pending")){LS.del("pt_reset_pending");LS.del("pt_state_live");LS.del("pt_state_mock");LS.del("pt_kill_live");LS.del("pt_kill_mock")}   // fresh account at the new starting balance (set by the $10 setup)
 if(DESK&&!["recommended","easy","risky","most","lots","max","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sum=a=>a.reduce((x,y)=>x+y,0);
