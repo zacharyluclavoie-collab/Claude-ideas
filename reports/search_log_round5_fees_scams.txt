@@ -1,0 +1,11 @@
+lots now               ret/day 2.535% med 3.027 worst 0.023 trades/day 129 fees $259 scams 58 mdd 1.45% losing 0/6
+fee limit 3%           ret/day 3.580% med 3.316 worst 1.703 trades/day 164 fees $333 scams 102 mdd 1.96% losing 0/6
+fee limit 2%           ret/day 1.286% med 1.368 worst 0.191 trades/day 57 fees $125 scams 37 mdd 1.54% losing 0/6
+coin risk max 50       ret/day 1.872% med 2.072 worst 0.266 trades/day 57 fees $122 scams 24 mdd 1.27% losing 0/6
+scam filters           ret/day 3.862% med 4.593 worst 0.760 trades/day 149 fees $288 scams 34 mdd 1.33% losing 0/6
+fee 3% + risk 50       ret/day 1.777% med 1.441 worst 0.646 trades/day 51 fees $115 scams 26 mdd 1.19% losing 0/6
+fee 3% + scam filters  ret/day 4.379% med 4.438 worst 1.278 trades/day 149 fees $302 scams 30 mdd 1.59% losing 0/6
+HOLDOUT fee 3% + scam filters  ret/day 2.659% med 3.009 worst 0.980 trades/day 126 fees $258 scams 37 mdd 1.88% losing 0/8
+HOLDOUT scam filters           ret/day 3.949% med 3.801 worst 2.681 trades/day 167 fees $319 scams 49 mdd 0.98% losing 0/8
+HOLDOUT lots now               ret/day 3.798% med 3.777 worst 1.479 trades/day 210 fees $396 scams 172 mdd 2.01% losing 0/8
+DONE
