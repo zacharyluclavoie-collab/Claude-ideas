@@ -53,6 +53,10 @@ function makeDesk(i) {   // i = 0 for the single all-chain bot, 1..N for desks
 }
 const desks = NDESK === 1 ? [makeDesk(0)] : [...Array(NDESK)].map((_, k) => makeDesk(k + 1));
 if (!DEMO) { let k = 0; const nextTrain = async () => { const d = desks[k++ % desks.length]; if (d.train) await d.train() }; setTimeout(function loop() { nextTrain().finally(() => setTimeout(loop, 120000)) }, 15000) }
+// Full Auto (runner): a desk that stopped itself after a bad day is restarted when a new day begins
+const lastDay = {}; setInterval(() => { for (const d of desks) { try { const st = JSON.parse(d.E(`JSON.stringify({s:!!S.pf.shutdown,day:new Date(now()*1000).toISOString().slice(0,10)})`));
+  if (st.s && lastDay[d.name] && lastDay[d.name] !== st.day) { d.E(`LS.del("pt_kill_"+MODE);S.pf.shutdown=false;S.pf.why="";S.pf.peak=equity();S.pf.streak=0;save();ev("info","auto_restart","","new day: restarted after yesterday's stop")`); console.log(d.name, "restarted for the new day") }
+  lastDay[d.name] = st.day } catch (e) {} } }, 600000);
 const bye = () => { for (const d of desks) { try { d.E("save()") } catch (e) {} d.flush() } process.exit(0) }; process.on("SIGINT", bye); process.on("SIGTERM", bye);
 
 const snap = d => JSON.parse(d.E(`JSON.stringify((()=>{const pf=S.pf,cl=pf.closed;return{name:${JSON.stringify(d.name)},mode:MODE,preset:LS.get("pt_preset"),now:now(),equity:totalEquity(),start:totalStart(),cash:pf.cash,exposure:exposure(),realized:pf.realized,shutdown:pf.shutdown,why:pf.why,regime,paused,

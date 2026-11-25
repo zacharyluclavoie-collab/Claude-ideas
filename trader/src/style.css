@@ -252,3 +252,5 @@ body.simple .hdesk{padding-bottom:10px}
 body.fullauto .fa-lock{opacity:.45;pointer-events:none;filter:grayscale(.4)}
 .hero-auto.fa{background:rgba(52,211,153,.3);font-weight:700}.hero-auto.fa.off{background:rgba(255,255,255,.12);font-weight:400}
 .fabanner{margin:10px 0;border-color:color-mix(in srgb,var(--g) 40%,transparent)}
+.tipbar{margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--y) 14%,var(--card));border:1px solid color-mix(in srgb,var(--y) 40%,transparent);font-size:13px;line-height:1.45}
+.tipbar button{margin-left:6px;border:0;border-radius:999px;padding:4px 10px;font:700 12px inherit;background:var(--tx);color:var(--bg);cursor:pointer}

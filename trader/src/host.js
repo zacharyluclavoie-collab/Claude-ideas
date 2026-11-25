@@ -6,15 +6,16 @@ const $h = id => document.getElementById(id), escH = s => String(s == null ? "" 
 const money = (n, d = 2) => (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 const sg = (n, d = 2) => (n >= 0 ? "+" : "-") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 let cur = 0;
+function deskDoc(i) { return APP_DOC.replace("<!--DESK-->", "<script>window.DESK=" + i + ";window.DESKN=" + NDESK + "<\/script>") }
 for (let i = 1; i <= NDESK; i++) {
   const f = document.createElement("iframe"); f.title = DN[i - 1] + " desk"; f.className = "hframe"; f.hidden = true;
-  f.srcdoc = APP_DOC.replace("<!--DESK-->", "<script>window.DESK=" + i + ";window.DESKN=" + NDESK + "<\/script>"); $h("hframes").appendChild(f);
+  f.srcdoc = deskDoc(i); $h("hframes").appendChild(f);
 }
 const bar = $h("deskbar"); if (NDESK > 5) bar.classList.add("many");
 bar.innerHTML = ["Master"].concat(DN).map((n, i) => `<button data-d="${i}" class="${i === 0 ? "on" : ""}"><span class="dot" id="hd_${i}"></span>${n}</button>`).join("");
 bar.onclick = e => { const b = e.target.closest("button"); if (b) show(+b.dataset.d) };
 function show(d) { cur = d; $h("hmaster").hidden = d !== 0; document.querySelectorAll(".hframe").forEach((f, i) => f.hidden = i + 1 !== d); bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.d === d)); if (d === 0) draw() }
-window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
+window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk && !m.hb) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
 function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
 function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0, ch1h: 0, ch24h: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
 try { const h = JSON.parse(localStorage.getItem("pt_host_hist2") || "null"); if (h && h.n === NDESK && Array.isArray(h.v)) hist.push(...h.v.slice(-1500)) } catch (e) {}   // the Master chart survives reloads
@@ -129,7 +130,22 @@ let FA = true; try { FA = localStorage.getItem("pt_host_fullauto") !== "0" } cat
 const faLog = []; let faDay = {};
 const faNote = msg => { faLog.unshift({ t: Date.now(), msg }); faLog.length = Math.min(faLog.length, 30); const el = $h("fa_log"); if (el) drawFaLog() };
 function drawFaLog() { const el = $h("fa_log"); if (el) el.innerHTML = faLog.length ? faLog.slice(0, 6).map(l => `<div class="sub" style="margin-top:3px">${new Date(l.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${escH(l.msg)}</div>`).join("") : '<div class="sub" style="margin-top:3px">Everything is already on the best settings.</div>' }
+const faSeen = {}, faOnce = {}, faStart = Date.now();
+window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk) faSeen[m.desk] = Date.now() });
+const faEvery = (key, ms) => { const t = faOnce[key] || 0; if (Date.now() - t < ms) return false; faOnce[key] = Date.now(); return true };
+function faLive() {   // real-market checks: small balances, failing data, quiet desks
+  const rs = Object.values(R), live = rs.some(r => r.live), start = rs.reduce((a, r) => a + (r.start || 0), 0), tip = $h("fa_tip");
+  if (live && NDESK > 1 && start > 0 && start < 500) { tip.hidden = false; tip.innerHTML = `💡 With ${money(start, 0)} in total, network fees eat small trades when it is split over ${NDESK} desks. <b>1 desk on Solana</b> works best for small balances. <button id="fa_one">Use 1 Solana desk</button>`;
+    const b = $h("fa_one"); if (b) b.onclick = () => { try { localStorage.setItem("pt_host_n", "1") } catch (e) {} location.reload() } } else tip.hidden = true;
+  if (!live) return;
+  for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r || !r.live) continue; const nm = DN[i - 1];
+    if (r.data != null && r.data < 30 && faEvery("data" + i, 1800e3)) faNote(`${nm}: market data is failing (${r.data}% of requests work${r.dataErr ? ": " + r.dataErr : ""}); it keeps retrying by itself`);
+    const idleH = r.lastBuyT ? (r.nowT - r.lastBuyT) / 3600 : (Date.now() - faStart) / 3600e3;
+    if (idleH > 6 && faEvery("idle" + i, 6 * 3600e3)) faNote(`${nm}: no buys for ${Math.round(idleH)} h. Normal when few coins pass the safety checks; the live scanner shows why coins are skipped`) }
+}
 function faTick() {
+  faLive();
+  if (FA) for (let i = 1; i <= NDESK; i++) { const f = document.querySelectorAll(".hframe")[i - 1]; if (f && faSeen[i] && Date.now() - faSeen[i] > 60000 && faEvery("heal" + i, 120000)) { f.srcdoc = deskDoc(i); faSeen[i] = Date.now(); faNote(`${DN[i - 1]}: stopped responding, restarted it`) } }
   if (!FA) return; if (!autoSize) { autoSize = true; try { localStorage.setItem("pt_host_autosize", "1") } catch (e) {} }
   if (AP.on) { AP.on = false; apSave() }   // Full Auto replaces the Autopilot (which could move desks off the best mode)
   for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const nm = DN[i - 1];

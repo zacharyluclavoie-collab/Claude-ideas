@@ -267,6 +267,8 @@ body.simple .hdesk{padding-bottom:10px}
 body.fullauto .fa-lock{opacity:.45;pointer-events:none;filter:grayscale(.4)}
 .hero-auto.fa{background:rgba(52,211,153,.3);font-weight:700}.hero-auto.fa.off{background:rgba(255,255,255,.12);font-weight:400}
 .fabanner{margin:10px 0;border-color:color-mix(in srgb,var(--g) 40%,transparent)}
+.tipbar{margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--y) 14%,var(--card));border:1px solid color-mix(in srgb,var(--y) 40%,transparent);font-size:13px;line-height:1.45}
+.tipbar button{margin-left:6px;border:0;border-radius:999px;padding:4px 10px;font:700 12px inherit;background:var(--tx);color:var(--bg);cursor:pointer}
 
 </style>
 </head>
@@ -424,7 +426,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-25 21:45";
+const BUILD = "2026-11-25 22:14";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1758,12 +1760,13 @@ if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{const ao=LS.get("pt_agents");if(ao)CFG.agentsOff=JSON.parse(ao)}catch(e){}}}
 if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
 // every second, tell the Master board how this desk is doing
-function deskReport(){if(!DESK||!window.parent||window.parent===window)return;try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
+function deskReport(){if(!DESK||!window.parent||window.parent===window)return;if(AUTOTRAIN!=null){try{window.parent.postMessage({pt:1,desk:DESK,hb:1},"*")}catch(e){}return}   // training: just say "alive" (the account in memory is the practice one)
+  try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
   window.parent.postMessage({pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
     today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),simScale:CFG.simScale,checks:stats.scanned||0,feed:S.feed.slice(0,6).map(f=>({t:f.t,sym:f.sym,chain:f.chain,o:f.outcome,d:String(f.detail||"").slice(0,64)})),speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,
     ...(()=>{const c=S.curve,tn=now(),eq=totalEquity(),at=sec=>{let v=null;for(let i=c.length-1;i>=0;i--){if(c[i][0]<=tn-sec){v=c[i][1];break}}return v==null?(c.length?c[0][1]:eq):v};
       return{spark:c.slice(-40).map(x=>+x[1].toFixed(2)).concat([+eq.toFixed(2)]),ch1h:eq-at(3600),ch24h:eq-at(86400),hours:c.length?Math.max(0,(tn-c[0][0])/3600):0}})(),
-    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
+    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
 setInterval(deskReport,1000);
 // Master risk controls: applied on top of the desk's mode (size multiplier, stop-loss, take-profit, max open coins, daily loss limit)
 function applyMasterRisk(){let r=null;try{r=JSON.parse(LS.get("pt_mrisk")||"null")}catch(e){}if(!r)return;const R=CFG.risk;
