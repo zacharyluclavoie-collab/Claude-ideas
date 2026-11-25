@@ -17,7 +17,7 @@ const NDESK = Math.max(1, Math.min(25, +opt("desks", 5) || 5)), PRESET = opt("pr
 fs.mkdirSync(STATE, { recursive: true });
 const bundle = fs.readFileSync(path.join(dir, "engine_bundle.js"), "utf8");
 const AREAS = [{ n: "Solana", chains: ["solana"] }, { n: "Base", chains: ["base"] }, { n: "BSC", chains: ["bsc"] }, { n: "Arbitrum", chains: ["arbitrum"] }, { n: "Big coins", chains: ["solana", "base", "bsc", "arbitrum"], trend: true }];
-const MODES = ["lots", "most", "risky", "recommended", "lots"];
+const MODES = ["lots", "lots", "lots", "lots", "lots"]   // every desk on the best tested setting;
 
 function makeDesk(i) {   // i = 0 for the single all-chain bot, 1..N for desks
   const file = path.join(STATE, (DEMO ? "demo" : "state") + (i ? "_desk" + i : "") + ".json");

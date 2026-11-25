@@ -1,7 +1,7 @@
 /* ============================ UI ============================ */
 /* trading desks: the same app runs 5 times side by side (one per market area), each with its own account; the Master board adds them up */
 const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",chains:["bsc"]},{n:"Arbitrum",chains:["arbitrum"]},{n:"Big coins",chains:["solana","base","bsc","arbitrum"],trend:true}];
-const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:["lots","most","risky","recommended","lots"][v]||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
+const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:"lots"||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
 if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
 if(DESK&&!["recommended","easy","risky","most","lots","max","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -280,6 +280,7 @@ try{const c=JSON.parse(LS.get("pt_cm")||"{}");if(c.c)CFG.committeeMin=c.c;if(c.h
 if(!LS.get("pt_preset_v7")){savePreset("turbo");LS.set("pt_preset_v7","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
 if(!LS.get("pt_preset_v8")){savePreset("protect");LS.set("pt_preset_v8","1");LS.set("pt_keep",JSON.stringify({on:false,target:CFG.keep.target}))}
 if(!LS.get("pt_v13")){LS.set("pt_v13","1");const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","max"].includes(pk)){LS.del("pt_agents");LS.del("pt_risk")}}   // round-2 settings: refresh agents and risk from the mode once
+if(DESK&&!LS.get("pt_desk_lots_v14")){LS.set("pt_desk_lots_v14","1");if(["most","risky","recommended","safe","easy"].includes(LS.get("pt_preset")||"")){LS.set("pt_preset","lots");LS.set("pt_lessons","0");LS.del("pt_agents");LS.del("pt_risk")}}   // every desk on the best tested setting (older modes made less)
 if(!LS.get("pt_lots_v12")){if(LS.get("pt_preset")==="lots"||LS.get("pt_preset")==="max")LS.set("pt_lessons","0");LS.set("pt_lots_v12","1")}   // new self-searched Lots of trades runs without the lessons filter
 if(!LS.get("pt_swarm_v11")){LS.set("pt_swarm","0");LS.set("pt_swarm_v11","1")}   // testing: scouts lowered results even as practice-only, so they start off
 if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1");LS.set("pt_preset_v9","1")}
