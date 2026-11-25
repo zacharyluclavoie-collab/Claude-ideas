@@ -85,6 +85,8 @@ function draw() {
   drawFeed();   // never swap a button out while it is being pressed
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
+  { const el = $h("h_best"), rs = Object.values(R); if (el && rs.length) { const off = rs.filter(r => r.mode !== "lots"); el.innerHTML = off.length ? `⚠️ ${off.length} desk${off.length > 1 ? "s are" : " is"} not on the best mode <button id="fixbest">Fix</button>` : "★ All desks on the best tested mode"; el.className = "bestchk " + (off.length ? "warn" : "ok");
+    const fb = $h("fixbest"); if (fb) fb.onclick = () => { for (let i = 1; i <= NDESK; i++) if (R[i] && R[i].mode !== "lots") sendTo(i, "preset", "lots") } } }
   { const el = $h("h_auto"), r0 = Object.values(R)[0] || {}, live = Object.values(R).some(r => r.live); if (el) el.innerHTML = live ? "⚡ Live market" : `⚙️ Market <b>${r0.simScale || "?"}×</b> ${autoSize ? "· Auto" : "· fixed"}${lastFps ? " · " + lastFps + " fps" : ""}${AP.on ? " · Autopilot on" : ""}` }
   anim("h_eq", t.eq, v => money(v), 0); { const pc = t.start ? (t.eq / t.start - 1) * 100 : 0, el = $h("h_pct"); if (el) { el.textContent = (pc >= 0 ? "▲ +" : "▼ ") + pc.toFixed(2) + "%"; el.className = "hero-pct " + (pc >= 0 ? "up" : "dn") } } drawRates(t); drawOpen();
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
@@ -99,7 +101,7 @@ function draw() {
     anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v), 0);
     { const sp = r.spark || [], el = $h("dks" + i); if (el && sp.length > 1) { const lo = Math.min(...sp, r.start), hi = Math.max(...sp, r.start), pd = (hi - lo) * 0.1 || 1, X = k => k / (sp.length - 1) * 100, Y = v => 28 - (v - lo + pd) / (hi - lo + 2 * pd) * 28;
       el.innerHTML = `<svg viewBox="0 0 100 28" preserveAspectRatio="none"><line x1="0" x2="100" y1="${Y(r.start)}" y2="${Y(r.start)}" stroke="var(--mut)" stroke-dasharray="2 3" stroke-width="1" vector-effect="non-scaling-stroke" opacity=".6"/><path d="${sp.map((v, k) => (k ? "L" : "M") + X(k).toFixed(1) + " " + Y(v).toFixed(1)).join("")}" fill="none" stroke="${sp[sp.length - 1] >= r.start ? "var(--g)" : "var(--r)"}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>` } }
-    $h("dki" + i).textContent = `${MODEN[r.mode] || r.mode} · ${r.status}${r.clock ? " · " + r.clock : ""}`;
+    $h("dki" + i).textContent = `${r.mode === "lots" ? "★ " : ""}${MODEN[r.mode] || r.mode} · ${r.status}${r.clock ? " · " + r.clock : ""}`;
     $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today`;
     { const sel = document.querySelector(`.dkctl[data-d="${i}"] select`); if (sel && document.activeElement !== sel && sel.value !== r.mode) sel.value = r.mode; const pz = $h("dkpz" + i); if (pz) { pz.textContent = r.shutdown ? "Stopped" : r.paused ? "Resume" : "Pause"; pz.classList.toggle("on", !!r.paused || !!r.shutdown) } }
     $h("dkl" + i).textContent = r.lastSym ? `Last: ${r.lastSym} ${String(r.last).slice(0, 70)}` : "";
@@ -218,6 +220,9 @@ function drawTicker() {
   const tr = $h("tk_track"); tr.innerHTML = html + html; tr.style.animationDuration = Math.max(18, items.length * 3.5) + "s";
 }
 setInterval(drawTicker, 12000); setTimeout(drawTicker, 3000);
+{ const g = $h("guide"); let gs = null; try { gs = localStorage.getItem("pt_host_guide") } catch (e) {} if (gs === "hidden") g.hidden = true; else g.open = gs === "open";   // folded by default: one line, tap to read
+  g.addEventListener("toggle", () => { try { localStorage.setItem("pt_host_guide", g.open ? "open" : "closed") } catch (e) {} });
+  $h("guide_hide").onclick = () => { g.hidden = true; try { localStorage.setItem("pt_host_guide", "hidden") } catch (e) {} } }
 buildSet();
 { const box = document.createElement("div"); box.innerHTML = `<div class="sub"><b>Autopilot</b>: steps a losing desk down to a safer mode, steps a steady winner back up, restarts desks that stopped themselves when a new day starts</div><div class="chips" id="ap_sel" style="margin-top:6px"><button class="chip" data-v="1">On</button><button class="chip" data-v="0">Off</button></div><div id="ap_log" style="margin:4px 0 14px"></div>`;
   $h("h_set").prepend(box); $h("ap_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v == null) return; AP.on = v === "1"; AP.last = {}; apSave(); apLog(AP.on ? "Autopilot switched on" : "Autopilot switched off") }; apDraw() }

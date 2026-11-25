@@ -237,3 +237,12 @@ body.simple .hdesk{padding-bottom:10px}
 .hero{background-size:140% 140%;animation:herobg 14s ease-in-out infinite alternate}
 @keyframes herobg{from{background-position:0% 0%}to{background-position:100% 100%}}
 @media (prefers-reduced-motion:reduce){.tk-track,.bgfx i,.hero{animation:none!important}}
+
+/* ---- beginner help + best-mode badges ---- */
+.bestchk{display:inline-flex;align-items:center;gap:8px;margin:8px 0 0 6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:rgba(52,211,153,.28)}
+.bestchk.warn{background:rgba(251,191,36,.3)}.bestchk button{border:0;border-radius:999px;padding:3px 10px;font:800 12px inherit;background:#fff;color:#1d2459;cursor:pointer}
+@media (max-width:520px){.bestchk{margin-left:0;display:flex;width:max-content;max-width:62%}}
+.guide{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 14px}
+.guide summary{cursor:pointer;font-weight:700;padding:12px 0;list-style:none}.guide summary::-webkit-details-marker{display:none}
+.gbody{padding-bottom:12px;font-size:13.5px;line-height:1.5;color:var(--tx)}.gbody p{margin:0 0 9px}.gbody i{font-style:normal;color:var(--mut)}
+.bestline{margin-top:8px;font-size:12.5px;font-weight:700}.bestline.ok{color:var(--g)}.bestline.warn{color:var(--y)}
