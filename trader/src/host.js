@@ -58,7 +58,10 @@ function drawOpen() {
   $h("h_open").querySelectorAll(".orow").forEach(el => el.onclick = () => show(+el.dataset.d));
   openSeen = nowKeys.size ? nowKeys : new Set(["-"]);
 }
+let touchHold = 0; ["pointerdown", "touchstart", "mousedown"].forEach(t => document.addEventListener(t, () => { touchHold = performance.now() + 700 }, { capture: true, passive: true }));
+["pointerup", "touchend", "mouseup", "pointercancel"].forEach(t => document.addEventListener(t, () => { touchHold = Math.min(touchHold, performance.now() + 250) }, { capture: true, passive: true }));
 function draw() {
+  if (performance.now() < touchHold) return;   // never swap a button out while it is being pressed
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
   anim("h_eq", t.eq, v => money(v), 0); drawRates(t); drawOpen();

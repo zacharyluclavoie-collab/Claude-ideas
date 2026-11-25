@@ -83,8 +83,9 @@ function rNow(){const el=$("nowbox");if(!el)return;const K={buy:"🟢",closed:"�
   const d0=new Date(now()*1000).toISOString().slice(0,10),td=S.pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0),tw=td.filter(c=>c.pnl>0).length,tp=td.reduce((a,c)=>a+c.pnl,0);
   el.innerHTML=`<div class="panel" style="margin-top:14px"><div class="row"><b>Right now</b><span class="sub">${op.length} open · open P/L <b class="${u>=0?"g":"r"}">${sgn(u)}</b> · ${sh} practice trades</span></div><div class="sub" style="margin-top:4px">Today: <b class="g">${tw} won</b> · <b class="r">${td.length-tw} lost</b> · <b class="${tp>=0?"g":"r"}">${sgn(tp)}</b>${S.lessons&&S.lessons.seen?` · learned from ${S.lessons.seen.toLocaleString()} trades`:""}</div>${L.length?L.map(j=>`<div class="sub" style="margin-top:6px">${K[j.kind]} ${esc(j.tok||"")} ${esc(j.msg.slice(0,90))} <span style="opacity:.6">· ${ago(j.t)}</span></div>`).join(""):`<div class="sub" style="margin-top:6px">Scanning coins. Agents only buy when a proven agent and the safety checks agree, so quiet periods are normal.</div>`}</div>`}
 function rMode(){const el=$("modebox");if(!el)return;const c=curPreset(),d=PRESETS.find(x=>x[0]===c);
-  el.innerHTML=`<div class="panel" style="margin-top:14px"><b>Mode</b><div class="modes">${PRESETS.map(x=>`<button class="mbtn ${c===x[0]?"on":""}" data-p="${x[0]}">${x[1]}</button>`).join("")}</div><div class="sub mdesc" style="margin-top:8px">${d?esc(d[2]):"Custom settings."}</div></div>`;
-  el.querySelectorAll(".mbtn").forEach(b=>b.onclick=()=>{savePreset(b.dataset.p);toast("Mode: "+b.textContent);render()})}
+  if(!el.firstElementChild){el.innerHTML=`<div class="panel" style="margin-top:14px"><b>Mode</b><div class="modes">${PRESETS.map(x=>`<button class="mbtn" data-p="${x[0]}">${x[1]}</button>`).join("")}</div><div class="sub mdesc" id="mdesc" style="margin-top:8px"></div></div>`;
+    el.querySelectorAll(".mbtn").forEach(b=>b.onclick=()=>{savePreset(b.dataset.p);toast("Mode: "+b.textContent);touchHold=0;render()})}
+  el.querySelectorAll(".mbtn").forEach(b=>b.classList.toggle("on",b.dataset.p===c));const t=d?d[2]:"Custom settings.";if($("mdesc").textContent!==t)$("mdesc").textContent=t}
 function rPnl(){const el=$("pnlbox");if(!el)return;const pf=S.pf;if(!pf.tot){const T=pf.tot={w:0,wn:0,l:0,ln:0};for(const c of pf.closed){if(c.pnl>0){T.w+=c.pnl;T.wn++}else{T.l+=c.pnl;T.ln++}}}
   const T=pf.tot,tot=totalEquity()-totalStart(),op=Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),co=S.core?coreValue()-S.core.start:0,ag={};
   for(const c of pf.closed.slice(-500)){const k=c.agent||"launch";ag[k]=(ag[k]||0)+c.pnl}
@@ -332,7 +333,10 @@ window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.s
 const deskHidden=()=>{try{return !!(DESK&&window.frameElement&&window.frameElement.hidden)}catch(e){return false}};
 // time each desk may spend simulating per 250 ms: the visible desk gets more, hidden desks share ~120 ms so the page never freezes
 const deskBudget=()=>!DESK?190:deskHidden()?Math.max(4,120/((window.DESKN)||5)):120;
-function render(){if(AUTOTRAIN!=null||deskHidden())return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
+// while a finger or mouse button is down, the screen is not redrawn, so the button being pressed is never swapped out mid-tap
+let touchHold=0;["pointerdown","touchstart","mousedown"].forEach(t=>document.addEventListener(t,()=>{touchHold=performance.now()+700},{capture:true,passive:true}));
+["pointerup","touchend","mouseup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{touchHold=Math.min(touchHold,performance.now()+250)},{capture:true,passive:true}));
+function render(){if(AUTOTRAIN!=null||deskHidden()||performance.now()<touchHold)return;header();drainToasts();({home:rHome,pos:rPos,agents:rAgents,scan:rScan,stats:rStats,set:()=>{}})[tab]()}
 function switchTab(t){tab=t;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="t-"+t));if(t==="set")buildSettings();render();scrollTo(0,0)}
 $("nav").onclick=e=>{const b=e.target.closest("button");if(b)switchTab(b.dataset.t)};
 $("ranges").onclick=e=>{if(e.target.dataset.r!=null){range=+e.target.dataset.r;document.querySelectorAll("#ranges .chip").forEach(b=>b.classList.toggle("on",b===e.target));render()}};
