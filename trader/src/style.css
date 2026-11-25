@@ -219,3 +219,21 @@ body.simple .hdesk{padding-bottom:10px}
 .hero-auto{display:inline-block;margin:10px 0 0 6px;padding:4px 10px;border-radius:999px;font-size:12px;background:rgba(255,255,255,.12);color:#fff}
 .hero-auto b{font-weight:800}
 @media (max-width:520px){.hero-auto{margin-left:0;display:block;width:max-content;max-width:62%}}
+
+/* ---- pro look: theme switch, ticker tape, win ring, glowing background ---- */
+.themesw{display:flex;gap:2px;background:rgba(255,255,255,.14);border-radius:999px;padding:3px}
+.themesw button{border:0;background:none;color:#fff;font:700 12px inherit;width:30px;height:26px;border-radius:999px;cursor:pointer;opacity:.7}.themesw button.on{background:rgba(255,255,255,.92);color:#1d2459;opacity:1}
+.ticker{margin:12px -2px 0;overflow:hidden;border-radius:14px;background:var(--card);border:1px solid var(--line);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.tk-track{display:flex;gap:22px;width:max-content;padding:9px 14px;animation:tkmove 30s linear infinite;white-space:nowrap}
+.tk{font-size:13px;color:var(--mut)}.tk b{color:var(--tx)}.tk.g{color:var(--g)}.tk.r{color:var(--r)}.tk.b{color:var(--tx)}
+@keyframes tkmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.totl{display:flex;align-items:center;gap:10px}.ring{width:40px;height:40px;transform:rotate(-90deg);flex:0 0 40px}
+.rg-bg{fill:none;stroke:var(--soft);stroke-width:4}.rg-fg{fill:none;stroke:var(--g);stroke-width:4;stroke-linecap:round;stroke-dasharray:0 100;transition:stroke-dasharray .9s ease}
+.bgfx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.bgfx i{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(60px);opacity:.18;animation:blob 26s ease-in-out infinite alternate}
+.bgfx i:nth-child(1){background:#4f7cff;left:-20vmax;top:-25vmax}.bgfx i:nth-child(2){background:#35d39a;right:-25vmax;top:20vmax;animation-delay:-8s}.bgfx i:nth-child(3){background:#7c5cff;left:10vmax;bottom:-35vmax;animation-delay:-16s}
+@keyframes blob{to{transform:translate(6vmax,-4vmax) scale(1.12)}}
+:root[data-theme="dark"] .bgfx i{opacity:.22}
+.hero{background-size:140% 140%;animation:herobg 14s ease-in-out infinite alternate}
+@keyframes herobg{from{background-position:0% 0%}to{background-position:100% 100%}}
+@media (prefers-reduced-motion:reduce){.tk-track,.bgfx i,.hero{animation:none!important}}

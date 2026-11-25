@@ -59,7 +59,7 @@ function header(){const pf=S.pf,eq=totalEquity(),rt=(eq/totalStart()-1)*100,td=e
   c.className=cls;c.textContent=tx;
   $("clock").textContent=(DESK?deskInfo().n+" desk · ":"")+(MODE==="mock"?`Demo ·${tlabel(vnow)} · ${(()=>{const h=header.sp||(header.sp=[]),n=performance.now();h.push([n,vnow]);while(h.length>2&&n-h[0][0]>4000)h.shift();const r=h.length>1?(h[h.length-1][1]-h[0][1])/((n-h[0][0])/1000):SPEED;return Math.round(r).toLocaleString()})()}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`)}
 function drainToasts(){const box=$("toasts");let n=0;while(toastQ.length&&n<2){const j=toastQ.shift();if(j.kind==="buy")beep(true);else if(j.kind==="closed")beep(/total \+/.test(j.msg||""));
-  const show=j.level==="crit"||j.level==="warn"||j.kind==="note"||((j.kind==="buy"||j.kind==="closed")&&SPEED<=60);if(!show)continue;n++;
+  const show=DESK?(j.level==="crit"||j.kind==="note"):(j.level==="crit"||j.level==="warn"||j.kind==="note"||((j.kind==="buy"||j.kind==="closed")&&SPEED<=60));   // desks: only critical pop-ups (the Master shows the rest)if(!show)continue;n++;
   const d=document.createElement("div");d.className="toast "+(j.level==="crit"?"bad":j.level==="warn"?"warn":"");d.textContent=j.kind==="note"?j.msg:(j.kind==="buy"?"Bought ":j.kind==="closed"?"Closed ":j.kind.replace(/_/g," ")+" ")+j.tok+" · "+String(j.msg).split(" · ")[0].slice(0,60);box.appendChild(d);setTimeout(()=>d.remove(),4500)}
   while(box.children.length>2)box.firstChild.remove()}
 
@@ -323,6 +323,7 @@ window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.s
   else if(m.ptcmd==="mode"&&!DEMO_ONLY&&(m.v==="live"||m.v==="mock")&&m.v!==MODE){MODE=m.v;LS.set("pt_mode",MODE);boot()}
   else if(m.ptcmd==="reset"){resetAccount(Math.max(1,+m.v||2000))}
   else if(m.ptcmd==="pause"){paused=!!m.v;render()}
+  else if(m.ptcmd==="theme"){if(m.v==="dark"||m.v==="light")document.documentElement.dataset.theme=m.v;else delete document.documentElement.dataset.theme}
   else if(m.ptcmd==="simscale"){CFG.simScale=+m.v||5;LS.set("pt_simscale",CFG.simScale)}   // takes effect on the next new coins; no restart, balance kept
   else if(m.ptcmd==="kill"){LS.set("pt_kill_"+MODE,"1");tick()}
   else if(m.ptcmd==="rearm"){LS.del("pt_kill_"+MODE);S.pf.shutdown=false;S.pf.why="";S.pf.peak=equity();S.pf.streak=0;save();render()}

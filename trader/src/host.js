@@ -89,6 +89,7 @@ function draw() {
   anim("h_eq", t.eq, v => money(v), 0); { const pc = t.start ? (t.eq / t.start - 1) * 100 : 0, el = $h("h_pct"); if (el) { el.textContent = (pc >= 0 ? "▲ +" : "▼ ") + pc.toFixed(2) + "%"; el.className = "hero-pct " + (pc >= 0 ? "up" : "dn") } } drawRates(t); drawOpen();
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
+  { const wr = t.wn + t.ln ? t.wn / (t.wn + t.ln) : 0, C = 2 * Math.PI * 15.5, ring = $h("h_ring"); if (ring) { ring.style.strokeDasharray = (wr * C).toFixed(1) + " " + C.toFixed(1) } $h("h_ringlab").textContent = t.wn + t.ln ? "win rate " + Math.round(wr * 100) + "% · " + (t.wn + t.ln) + " trades" : "win rate –" }
   anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
   const pc = (k, w) => k + (k === 1 ? " " + w : " " + w + "s");
   $h("hk_wn").textContent = pc(t.wn, "coin"); $h("hk_ln").textContent = pc(t.ln, "coin"); $h("hk_on").textContent = pc(t.open, "coin");
@@ -201,6 +202,22 @@ const SIZES = [1, 5, 10, 20]; let autoSize = true, lastFps = 0, fpsOk = 0; try {
 function measureFps(ms) { return new Promise(res => { let n = 0; const t0 = performance.now(); const f = t => { n++; if (t - t0 < ms) requestAnimationFrame(f); else res(Math.round(n * 1000 / (t - t0))) }; requestAnimationFrame(f) }) }
 setInterval(async () => { if (!autoSize || document.hidden || Object.values(R).some(r => r.live)) return; lastFps = await measureFps(1500); const cur = (Object.values(R)[0] || {}).simScale || 5, k = SIZES.indexOf(cur);
   if (lastFps >= 52) { if (++fpsOk >= 2 && k >= 0 && k < SIZES.length - 1) { send("simscale", SIZES[k + 1]); fpsOk = 0 } } else { fpsOk = 0; if (lastFps < 35 && k > 0) send("simscale", SIZES[k - 1]) } }, 20000);
+/* ---- theme: dark "pro" look by default, Light or match-device on request; desks follow the Master ---- */
+let theme = "dark"; try { theme = localStorage.getItem("pt_host_theme") || "dark" } catch (e) {}
+const themed = {};
+function applyTheme() { if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme; send("theme", theme); document.querySelectorAll("#themesw button").forEach(b => b.classList.toggle("on", b.dataset.v === theme)) }
+$h("themesw").onclick = e => { const b = e.target.closest("button"); if (!b) return; theme = b.dataset.v; try { localStorage.setItem("pt_host_theme", theme) } catch (e) {} applyTheme() };
+window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk && !themed[m.desk]) { themed[m.desk] = 1; sendTo(m.desk, "theme", theme) } });
+applyTheme();
+/* ---- ticker tape: open coins and recent buys scrolling under the hero (refreshed every 12 s so the motion never restarts mid-way) ---- */
+let tickTxt = "";
+function drawTicker() {
+  const items = []; for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; for (const p of r.pos || []) items.push(`<span class="tk ${p.pct >= 0 ? "g" : "r"}"><b>${escH(p.sym)}</b> ${p.pct >= 0 ? "▲" : "▼"} ${Math.abs(p.pct).toFixed(1)}%</span>`);
+    for (const f of (r.feed || []).filter(f => f.o === "bought").slice(0, 2)) items.push(`<span class="tk b">🟢 <b>${escH(f.sym)}</b> bought</span>`) }
+  const html = items.length ? items.join("") : '<span class="tk">Scanning the market…</span>'; if (html === tickTxt) return; tickTxt = html;
+  const tr = $h("tk_track"); tr.innerHTML = html + html; tr.style.animationDuration = Math.max(18, items.length * 3.5) + "s";
+}
+setInterval(drawTicker, 12000); setTimeout(drawTicker, 3000);
 buildSet();
 { const box = document.createElement("div"); box.innerHTML = `<div class="sub"><b>Autopilot</b>: steps a losing desk down to a safer mode, steps a steady winner back up, restarts desks that stopped themselves when a new day starts</div><div class="chips" id="ap_sel" style="margin-top:6px"><button class="chip" data-v="1">On</button><button class="chip" data-v="0">Off</button></div><div id="ap_log" style="margin:4px 0 14px"></div>`;
   $h("h_set").prepend(box); $h("ap_sel").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v == null) return; AP.on = v === "1"; AP.last = {}; apSave(); apLog(AP.on ? "Autopilot switched on" : "Autopilot switched off") }; apDraw() }
