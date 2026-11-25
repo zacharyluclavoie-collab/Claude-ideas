@@ -85,6 +85,7 @@ function draw() {
   drawFeed();   // never swap a button out while it is being pressed
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
+  { const el = $h("h_auto"), r0 = Object.values(R)[0] || {}, live = Object.values(R).some(r => r.live); if (el) el.innerHTML = live ? "⚡ Live market" : `⚙️ Market <b>${r0.simScale || "?"}×</b> ${autoSize ? "· Auto" : "· fixed"}${lastFps ? " · " + lastFps + " fps" : ""}${AP.on ? " · Autopilot on" : ""}` }
   anim("h_eq", t.eq, v => money(v), 0); { const pc = t.start ? (t.eq / t.start - 1) * 100 : 0, el = $h("h_pct"); if (el) { el.textContent = (pc >= 0 ? "▲ +" : "▼ ") + pc.toFixed(2) + "%"; el.className = "hero-pct " + (pc >= 0 ? "up" : "dn") } } drawRates(t); drawOpen();
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks running` : "Starting 5 desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
