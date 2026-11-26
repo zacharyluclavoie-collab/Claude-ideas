@@ -212,7 +212,7 @@ button:active,.chip:active,.mbtn:active,.btn:active{transform:scale(.95)}
 .hero-pct{display:inline-block;margin-top:10px;padding:4px 10px;border-radius:999px;font-weight:800;font-size:13px;background:rgba(255,255,255,.15)}
 .hero-pct.up{background:rgba(52,211,153,.28)}.hero-pct.dn{background:rgba(248,113,113,.3)}
 .dkname{display:inline-flex;align-items:center;gap:8px}
-.cb{font:800 10px/1 inherit;letter-spacing:.04em;padding:4px 6px;border-radius:7px;color:#fff;background:#6b7280}
+.cb{font-size:10px;font-weight:800;line-height:1;letter-spacing:.04em;padding:4px 6px;border-radius:7px;color:#fff;background:#6b7280}
 .cb-solana{background:linear-gradient(135deg,#9945ff,#14f195)}.cb-base{background:#0052ff}.cb-bsc{background:#f0b90b;color:#1a1a1a}.cb-ethereum{background:#627eea}.cb-big{background:linear-gradient(135deg,#ff7a59,#ffb86c)}
 .spark{height:30px;margin:8px 0 2px}.spark svg{width:100%;height:30px;display:block}
 .hdesk{transition:transform .2s ease,box-shadow .2s ease}.hdesk:hover{transform:translateY(-2px)}
@@ -270,6 +270,61 @@ body.fullauto .fa-lock{opacity:.45;pointer-events:none;filter:grayscale(.4)}
 .tipbar{margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--y) 14%,var(--card));border:1px solid color-mix(in srgb,var(--y) 40%,transparent);font-size:13px;line-height:1.45}
 .tipbar button{margin-left:6px;border:0;border-radius:999px;padding:4px 10px;font:700 12px inherit;background:var(--tx);color:var(--bg);cursor:pointer}
 #setup10{width:100%}
+/* ---------- Bot room ---------- */
+.livepill{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:3px 8px 3px 7px;border-radius:99px;background:var(--rs);color:var(--r);font-size:10px;font-weight:800;line-height:1.2;letter-spacing:.08em;vertical-align:middle}
+.livepill i{width:6px;height:6px;border-radius:50%;background:var(--r);animation:brLive 1.4s ease-in-out infinite}
+@keyframes brLive{50%{opacity:.25;transform:scale(.7)}}
+#hbots{padding:16px 16px 110px;max-width:760px;margin:0 auto}
+.br-head{padding:18px 18px 16px;border-radius:22px;color:#fff;background:radial-gradient(120% 140% at 0% 0%,#5b6cff 0%,#7c3aed 45%,#0f172a 100%);box-shadow:var(--shadow2)}
+.br-head .hero-lab{opacity:.75}.br-head .sub{color:rgba(255,255,255,.78)}.br-head .livepill{background:rgba(255,255,255,.16);color:#fff}.br-head .livepill i{background:#ff6b81}
+.br-title{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
+.br-stage{margin-top:12px;padding:6px;overflow:hidden;background:radial-gradient(80% 70% at 50% 50%,var(--soft),var(--card))}
+#br_svg{display:block;width:100%;height:auto;max-height:520px}
+.br-edges line,.br-edges ellipse{stroke:var(--hair);stroke-width:1.2;fill:none}.br-edges ellipse{stroke-dasharray:3 5;animation:brFlow 6s linear infinite}
+@keyframes brFlow{to{stroke-dashoffset:-80}}
+.br-disc{fill:var(--card);stroke:var(--line);stroke-width:1.5;transition:stroke .3s}
+.br-node.ag .br-disc{fill:var(--soft)}
+.br-node.got .br-disc{stroke:var(--accent);stroke-width:2.5}
+.br-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.br-node.talk .br-ring{animation:brPing .7s ease-out}
+@keyframes brPing{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
+.br-ico{font-size:17px}.br-node.ag .br-ico{font-size:13px}
+.br-lab{font-size:9.5px;font-weight:650;fill:var(--mut)}
+.br-zap{fill:none;stroke-width:2;stroke-linecap:round;opacity:0;animation:brZap 1.1s ease-out forwards}
+@keyframes brZap{15%{opacity:.7}100%{opacity:0}}
+.br-halo{opacity:.25}
+.br-big{font-size:32px;font-weight:800;fill:var(--tx);letter-spacing:-.02em}
+.br-cap{font-size:9.5px;fill:var(--mut);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.br-cap2{font-size:11px;fill:var(--g);font-weight:700}
+.br-coreglow{animation:brBreath 3.2s ease-in-out infinite}
+@keyframes brBreath{50%{opacity:.45}}
+.br-bots{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.bcard{flex:0 0 138px;scroll-snap-align:start;text-align:left;display:flex;flex-direction:column;gap:1px;padding:11px 12px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:inherit;cursor:pointer;transition:transform .15s,border-color .2s}
+.bcard:active{transform:scale(.97)}.bcard.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.bcard .bci{font-size:20px}.bcard b{font-size:13px}.bcard .bcn{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-top:4px}
+.bcard .bcl{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.bcard .bcx{font-size:11.5px;color:var(--mut);margin-top:5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:30px}
+.br-f{margin-top:4px}.br-d{margin-top:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}.br-d .chip{flex:0 0 auto}
+.br-chat{margin-top:10px}
+.bm{display:flex;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:14px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent2)}
+.bm.fresh{animation:brIn .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes brIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.bm.k-buy,.bm.k-win{border-left-color:var(--g)}.bm.k-loss{border-left-color:var(--r)}.bm.k-warn{border-left-color:var(--y)}.bm.k-no{border-left-color:var(--line)}.bm.k-ok{border-left-color:var(--accent)}
+.bm.k-buy{background:linear-gradient(90deg,var(--gs),var(--card) 60%)}.bm.k-loss{background:linear-gradient(90deg,var(--rs),var(--card) 60%)}
+.bav{flex:0 0 34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--soft);font-size:18px}
+.bbody{min-width:0;flex:1}
+.bhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}.bhead .bto{color:var(--mut)}.bhead .cb{font-size:9.5px}
+.bhead .btime{margin-left:auto;color:var(--mut);font-size:11px;font-variant-numeric:tabular-nums}
+.btext{font-size:13.5px;line-height:1.35;margin-top:2px;overflow-wrap:anywhere}.btext .bsym{font-weight:750}
+.bm.k-no .btext{color:var(--mut)}
+.br-mini .row{gap:8px}.br-go{flex:0 0 auto}
+.br-mini-list{margin-top:8px}
+.bmini{display:flex;gap:8px;align-items:center;font-size:12.5px;padding:6px 0;border-top:1px solid var(--line);animation:brIn .4s ease-out}
+.bmini .bmt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bmini.k-buy .bmt b,.bmini.k-win .bmt b{color:var(--g)}.bmini.k-loss .bmt b{color:var(--r)}
+.deskbar .botsbtn{font-weight:750}.deskbar .bdot{width:7px;height:7px;border-radius:50%;background:var(--r);animation:brLive 1.4s ease-in-out infinite}
+@media (max-width:520px){#hbots{padding:12px 12px 100px}.br-title{font-size:23px}.bcard{flex-basis:126px}.bm{padding:9px 10px}.btext{font-size:13px}}
+@media (prefers-reduced-motion:reduce){.br-edges ellipse,.br-zap,.br-node.talk .br-ring,.br-coreglow,.bm.fresh,.bmini,.livepill i,.deskbar .bdot{animation:none}}
 
 </style>
 </head>
@@ -400,6 +455,12 @@ function dayAdd(v,t){const d=new Date(t*1000).toISOString().slice(0,10),m=S.pf.d
 function save(){if(S.trades.length>600)S.trades.length=600;if(MODE!=="mock")LS.set(key(),JSON.stringify(S))}
 const now=()=>MODE==="mock"?vnow:Date.now()/1000;
 const toastQ=[];
+/* Bot room: real messages between the bots, made at each real decision (scanner, scam filter, agents, security, committee, risk, trader, watcher).
+   Runtime only. Trades (p=2) are always kept; decisions (p=1) and routine work (p=0) are sampled in real time so the feed stays readable at any speed.
+   TALKC counts every message each bot would have said (its real work), sampled or not. */
+const TALK=[],TALKC={},talkT={};let talkN=0;   // each bot gets its own speaking turn, so a busy bot cannot drown out the others
+function talk(a,b,p,k,s,x){TALKC[a]=(TALKC[a]||0)+1;if(p<2){const r=Date.now(),q=a+p;if(r-(talkT[q]||0)<(p?700:1500))return;talkT[q]=r}
+  TALK.push({i:++talkN,t:now(),a,b,k,s:s&&s.sym||"",c:s&&s.chain||"",x:String(typeof x==="function"?x():x).slice(0,140)});if(TALK.length>60)TALK.shift()}
 function ev(level,kind,tok,msg){S.journal.unshift({t:now(),level,kind,tok,msg});toastQ.push({level,kind,tok,msg});if(toastQ.length>30)toastQ.shift();if(S.journal.length>300)S.journal.length=300}
 
 /* ============================ portfolio helpers ============================ */
@@ -427,7 +488,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-26 04:29";
+const BUILD = "2026-11-26 06:17";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1307,23 +1368,24 @@ const P=()=>MODE==="mock"?MOCK:LIVE;
 const due=(n,every,t)=>{if(t-(last[n]||0)>=every){last[n]=t;return true}return false};
 function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}if(S.core&&d!==S.core.day){S.core.day=d;S.core.dayStart=coreValue()}}
 async function updateRegime(t){let m=await P().majors();if(!m&&CFG.lenient.regime&&uniMedian!=null)m={universe:uniMedian};const r=regimeOf(m);
-  if(r!=="unknown"){regimeOk=t;if(r!==regime)ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);regime=r}
+  if(r!=="unknown"){regimeOk=t;if(r!==regime){ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);if(regime!=="unknown")talk("risk","trader",2,r==="ok"?"ok":"warn",null,r==="ok"?"Market calmed down: buying again":r==="crash"?"Market is crashing: selling everything now":"Market looks risky: no new buys for now")}regime=r}
   if(regime==="crash")for(const p of Object.values(S.pf.positions))p.emergency=p.emergency||"market crash"}
 function safety(t){const pf=S.pf;let why="";
   if(pf.shutdown&&CFG.autoRearmMin>0&&LS.get("pt_kill_"+MODE)!=="1"&&t-(pf.shutAt||t)>=CFG.autoRearmMin*60){pf.shutdown=false;pf.why="";pf.peak=equity();pf.streak=0;ev("warn","auto_rearm","","Shutdown cleared automatically after "+CFG.autoRearmMin+" minutes (paper mode); drawdown measured from here")}if(LS.get("pt_kill_"+MODE)==="1")why="manual emergency stop";if(!why)why=shutdownReason();
-  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;pf.shutAt=t;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions")}
+  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;pf.shutAt=t;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions");talk("risk","trader",2,"warn",null,"Stop everything: "+why+". Sell all, no new buys")}
   if(pf.shutdown)for(const p of Object.values(pf.positions))p.emergency=p.emergency||"shutdown: "+pf.why}
 /* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
   for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
     const s=c.snap;if(s&&s.price>0){const pk=pickAll(s,t,source);
-      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id;c.core=pk.hits.some(h=>!h.agent.swarm)}
+      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;talk("agents","scout",0,"no",s,()=>"Not interested: "+pk.why);rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id;c.core=pk.hits.some(h=>!h.agent.swarm)}
     pass.push(c)}
   if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   {const ch=cands.map(c=>c.snap).filter(s=>s&&s.liq>=30000&&isFinite(s.chg1h)).map(s=>s.chg1h).sort((a,b)=>a-b);if(ch.length>=8)uniMedian=ch[ch.length>>1]}
   {const a=pass.filter(c=>c.core!==false),b=pass.filter(c=>c.core===false);pass.length=0;pass.push(...a,...b.slice(0,Math.max(0,CFG.deepPerScan-a.length,Math.min(10,b.length))))}   // coins a real agent likes go first; scout-only coins get the leftover deep-check slots
   pass.length=Math.min(pass.length,CFG.deepPerScan+10);
+  if(cands.length)talk("scout","filter",0,"info",null,()=>`${source==="new"?"New coins":"Older coins"}: looked at ${cands.length.toLocaleString()}, ${pass.length?pass.length+" worth a closer look":"nothing good this round"}`);
   if(prov.prefetchSecurity&&pass.length)await prov.prefetchSecurity(pass);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
@@ -1338,54 +1400,61 @@ function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr
 function reject(k,snap,src,why,min,stage,extra){rejected[k]=now()+60*(min||(src==="new"?CFG.rejectNewMin:CFG.rejectTrendMin));feedAdd(snap,src,stage||"strategy",why,extra)}
 async function evaluate(k,snap,src,t,agentId){
   {const F=CFG.flt,age=ageH(snap,t);if(age!=null&&age<48&&snap.buyers1h!=null){   // research filters for young tokens: enough distinct buyers, and not wash-traded
-    if(F.minBuyers&&snap.buyers1h<F.minBuyers)return reject(k,snap,src,"too few distinct buyers ("+snap.buyers1h+")",5);
-    const u=snap.buys1h>=20?snap.buyers1h/snap.buys1h:null;if(F.minUniq&&u!=null&&u<F.minUniq)return reject(k,snap,src,"looks wash-traded (few wallets, many trades)",15)}}
+    if(F.minBuyers&&snap.buyers1h<F.minBuyers){talk("filter","scout",0,"no",snap,()=>`Skip: only ${snap.buyers1h} real buyers in the last hour`);return reject(k,snap,src,"too few distinct buyers ("+snap.buyers1h+")",5)}
+    const u=snap.buys1h>=20?snap.buyers1h/snap.buys1h:null;if(F.minUniq&&u!=null&&u<F.minUniq){talk("filter","scout",0,"no",snap,"Skip: fake trading (a few wallets making most trades)");return reject(k,snap,src,"looks wash-traded (few wallets, many trades)",15)}}}
   const pk=pickAll(snap,t,src);
-  if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
+  if(!pk.hits.length){talk("agents","scout",0,"no",snap,()=>"Not interested: "+pk.why);return reject(k,snap,src,pk.why,pk.why==="too young"?3:null)}
   let hits=pk.hits;
   if(hits.some(h=>h.agent.id==="trend")){const bo=await P().breakout(snap);hits=hits.map(h=>{if(h.agent.id!=="trend")return h;const [pl]=h.agent.run(snap,t,bo);return pl?{agent:h.agent,plan:pl}:null}).filter(Boolean);if(!hits.length)return reject(k,snap,src,"no breakout confirmed")}
   for(const h of hits)h.plan=quickPlan(h.plan,h.agent.id);
   stats.strat++;
-  let plan=hits[0].plan;
+  let plan=hits[0].plan;talk(hits[0].agent.id,"security",1,"info",snap,()=>`${hits.length>1?"Me and "+hits.slice(1).map(h=>h.agent.name).join(" and ")+" like it":"I like this one"} (score ${plan.score.toFixed(0)}). Is it safe?`);
   let sec=await P().security(snap.chain,snap.addr);
   if(!sec)stats.secNull=(stats.secNull||0)+1;else stats.secOk=(stats.secOk||0)+1;
   if(!sec&&CFG.lenient.sec&&(stats.secNull||0)>=5&&(stats.secNull||0)>9*(stats.secOk||0))sec=UNVERIFIED;   // source is down: keep trading small, on market-structure checks only
+  if(!sec)talk("security",hits[0].agent.id,1,"warn",snap,"Safety report not ready yet, asking again soon");
   if(!sec)return reject(k,snap,src,"security report not available yet (retrying soon, fail closed)",2,"security",{checks:[["security_data_available",false]],score:plan.score});
   const v=evalSecurity(sec,snap,src,t);
   if(!v.pass){const W=stats.secWhy||(stats.secWhy={});for(const f of v.fails)W[f]=(W[f]||0)+1}
+  if(!v.pass)talk("security",hits[0].agent.id,1,"no",snap,()=>"Unsafe: "+v.fails.slice(0,2).join(", "));
+  else talk("security","committee",1,"ok",snap,()=>`Safe: ${v.checks.filter(c=>c[1]).length} of ${v.checks.length} checks passed`);
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   // learning phase: every unproven agent that likes this coin takes a virtual trade (many agents study one coin at once); only proven agents trade real money
   const proven=[];for(const h of hits){const pr=agentProven(h.agent.id),pb=!pr&&(agentProbation(h.agent.id)||agentExploring(h.agent.id,t));if(pr||pb){h.prob=pb;proven.push(h)}if(!pr)shadowOpen(snap,h,t)}
-  if(!proven.length){feedAdd(snap,src,"learning",hits.map(h=>h.agent.name).join(", ")+" studying this coin with a virtual trade (no money yet)",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+90;return}
+  if(!proven.length){talk(hits[0].agent.id,"watcher",1,"info",snap,"Practice trade only (no money) until I prove myself");feedAdd(snap,src,"learning",hits.map(h=>h.agent.name).join(", ")+" studying this coin with a virtual trade (no money yet)",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+90;return}
   proven.sort((a,b)=>b.plan.score*agentWeight(b.agent.id)-a.plan.score*agentWeight(a.agent.id));
   const ag=proven[0].agent;plan=proven[0].plan;const cat=ag.cat;
   const com=reviewers(snap,cat);
-  if(com.ok<CFG.committeeMin){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
-  {const lp=CFG.lessons.on?lessonPred(lessonFx(snap,t,ag)):null;if(lp!=null&&lp<CFG.lessons.minPred){stats.vetoed++;stats.lessonVeto=(stats.lessonVeto||0)+1;S.lessonVetoes=(S.lessonVetoes||0)+1;{const w="lessons: similar trades lost";(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","lessons from past trades: setups like this averaged "+lp.toFixed(2)+"R, skipped",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+600;return}}
+  if(com.ok<CFG.committeeMin){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");talk("committee",ag.id,1,"no",snap,()=>`Only ${com.ok} of 5 reviewers agree. No (${nm})`);{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
+  {const lp=CFG.lessons.on?lessonPred(lessonFx(snap,t,ag)):null;if(lp!=null&&lp<CFG.lessons.minPred){stats.vetoed++;stats.lessonVeto=(stats.lessonVeto||0)+1;S.lessonVetoes=(S.lessonVetoes||0)+1;talk("committee",ag.id,1,"no",snap,"Setups like this lost before: skip");{const w="lessons: similar trades lost";(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","lessons from past trades: setups like this averaged "+lp.toFixed(2)+"R, skipped",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+600;return}}
+  talk("committee","risk",1,"ok",snap,()=>`${com.ok} of 5 reviewers agree: go`);
   const d=approve(snap,cat,v.risk,plan,t,ag.id);
-  if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
-  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1),t,v.checks,ag.id)}
+  if(!d.ok){stats.vetoed++;talk("risk","committee",1,"no",snap,()=>"No: "+d.why);{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
+  const usd=d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1);talk("risk","trader",1,"ok",snap,()=>`OK: buy ${fmt(usd,usd<10?2:0)} (${(usd/Math.max(1e-9,equity())*100).toFixed(1)}% of the account)`);
+  open(snap,cat,plan,v.risk,sec,usd,t,v.checks,ag.id)}
 function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
-  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
+  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   S.lastOpenAt=t;pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
     size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
-  stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
+  stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);talk("trader","watcher",2,"buy",snap,`Bought ${fmt(f.usd,f.usd<10?2:0)}. Watch it: stop -${(+plan.stop).toFixed(1)}%, first target +${(+plan.tp1).toFixed(0)}%`);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
   const tr={t,side:"sell",sym:p.sym,chain:p.chain,cat:p.cat,ok:f.ok,note:reason+" · "+f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas,pnl:null};
-  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);
+  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);talk("trader","watcher",2,"warn",p,`Sell failed (${f.why}), trying again`);
     if(p.attempts>=3&&!p.emergency){p.emergency="sell failing repeatedly (possible hidden restriction)";ev("crit","emergency",p.sym,p.emergency)}return false}
   const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;p.attempts=0;
-  tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
+  tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);{const mv=(snap.price/p.entry-1)*100,pc=Math.round(part*100);talk("watcher","trader",2,"info",p,`${sayWhy(reason)} (${mv>=0?"+":""}${mv.toFixed(1)}%): sell ${pc>=99?"all":pc+"%"}`);talk("trader","risk",2,pnl>=0?"win":"loss",p,`Sold ${pc>=99?"all":pc+"%"} for ${fmt(net,net<10?2:0)}: ${pnl>=0?"+":"-"}${fmt(Math.abs(pnl))}`)}ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
   if(p.qty<=1e-12||p.qty*snap.price<Math.min(1,(p.size0||1)*0.03))closePos(p,reason,0,t);return true}
+const sayWhy=r=>({stop_loss:"Stop-loss hit",trailing_stop:"Trailing stop hit",take_profit_1:"First target hit",take_profit_2:"Second target hit",time_stop:"Held too long without a win",stagnant:"Not moving"})[r]||(r.startsWith("EMERGENCY")?"Emergency":String(r).replace(/_/g," "));
 function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
-  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
+  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused");talk("risk","trader",2,"warn",null,pf.streak+" losses in a row: short break from buying")}
+  if(!recovered&&p.qty<=1e-12&&/writeoff|stale/.test(reason))talk("watcher","risk",2,"loss",p,"Could not sell it: written off");
   const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
@@ -1402,7 +1471,7 @@ async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions),shs=Objec
   for(const p of ps){const s=snaps[p.chain+":"+p.addr.toLowerCase()];
     if(!s||s.price<=0){if(!feedUp)continue;p.staleSince=p.staleSince||t;if(t-p.staleSince>=CFG.em.staleMin*60){ev("crit","stale_writeoff",p.sym,"no price for "+CFG.em.staleMin+" minutes while other tokens update: closing at a haircut");const rec=pv(p)*CFG.em.staleHaircut;p.qty=0;closePos(p,"stale_data",rec,t)}continue}
     p.staleSince=0;p.seenAt=t;const pp=p.last,pl=p.lastLiq;p.last=s.price;p.lastLiq=s.liq;p.peak=Math.max(p.peak,s.price);
-    if(!p.emergency){p.emergency=emergencyReason(p,s,pp,pl);if(p.emergency)ev("crit","emergency",p.sym,p.emergency)}
+    if(!p.emergency){p.emergency=emergencyReason(p,s,pp,pl);if(p.emergency){ev("crit","emergency",p.sym,p.emergency);talk("watcher","trader",2,"warn",p,"Danger: "+p.emergency+". Sell now!")}}
     if(p.emergency){if(p.attempts>=CFG.em.maxAttempts){ev("crit","writeoff",p.sym,"cannot sell after "+p.attempts+" attempts: written off");p.qty=0;closePos(p,"writeoff_unsellable",0,t)}
       else sellPos(p,s,1,"EMERGENCY: "+p.emergency,true,t);continue}
     adjustStop(p,s);const px=s.price,held=(t-p.opened)/3600,maxHold=p.cat==="new"?CFG.nw.maxHoldH:CFG.tr.maxHoldH;
@@ -1762,13 +1831,14 @@ if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{const ao=LS.get("pt_agents");if(ao)CFG.agentsOff=JSON.parse(ao)}catch(e){}}}
 if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
 // every second, tell the Master board how this desk is doing
+let talkSent=0;
 function deskReport(){if(!DESK||!window.parent||window.parent===window)return;if(AUTOTRAIN!=null){try{window.parent.postMessage({pt:1,desk:DESK,hb:1},"*")}catch(e){}return}   // training: just say "alive" (the account in memory is the practice one)
   try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
   window.parent.postMessage({pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
-    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),simScale:CFG.simScale,checks:stats.scanned||0,feed:S.feed.slice(0,6).map(f=>({t:f.t,sym:f.sym,chain:f.chain,o:f.outcome,d:String(f.detail||"").slice(0,64)})),speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,
+    today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),simScale:CFG.simScale,checks:stats.scanned||0,talk:TALK.filter(m=>m.i>talkSent).slice(-16),tc:TALKC,ags:AGENTS.filter(a=>!a.swarm&&agentOn(a.id)&&(a.scope!=="est"||CFG.tr.enabled)&&(a.scope==="est"||!CFG.onlyTrend)).map(a=>[a.id,a.name]),feed:S.feed.slice(0,6).map(f=>({t:f.t,sym:f.sym,chain:f.chain,o:f.outcome,d:String(f.detail||"").slice(0,64)})),speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,
     ...(()=>{const c=S.curve,tn=now(),eq=totalEquity(),at=sec=>{let v=null;for(let i=c.length-1;i>=0;i--){if(c[i][0]<=tn-sec){v=c[i][1];break}}return v==null?(c.length?c[0][1]:eq):v};
       return{spark:c.slice(-40).map(x=>+x[1].toFixed(2)).concat([+eq.toFixed(2)]),ch1h:eq-at(3600),ch24h:eq-at(86400),hours:c.length?Math.max(0,(tn-c[0][0])/3600):0}})(),
-    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*")}catch(e){}}
+    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*");talkSent=talkN}catch(e){}}
 setInterval(deskReport,1000);
 // Master risk controls: applied on top of the desk's mode (size multiplier, stop-loss, take-profit, max open coins, daily loss limit)
 function applyMasterRisk(){let r=null;try{r=JSON.parse(LS.get("pt_mrisk")||"null")}catch(e){}if(!r)return;const R=CFG.risk;

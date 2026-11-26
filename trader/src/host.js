@@ -11,11 +11,11 @@ for (let i = 1; i <= NDESK; i++) {
   const f = document.createElement("iframe"); f.title = DN[i - 1] + " desk"; f.className = "hframe"; f.hidden = true;
   f.srcdoc = deskDoc(i); $h("hframes").appendChild(f);
 }
-const bar = $h("deskbar"); if (NDESK > 5) bar.classList.add("many");
-bar.innerHTML = ["Master"].concat(DN).map((n, i) => `<button data-d="${i}" class="${i === 0 ? "on" : ""}"><span class="dot" id="hd_${i}"></span>${n}</button>`).join("");
+const bar = $h("deskbar"); if (NDESK > 3) bar.classList.add("many");   // Master + Bots + desks: scroll instead of squeezing
+bar.innerHTML = `<button data-d="0" class="on"><span class="dot" id="hd_0"></span>Master</button><button data-d="-1" class="botsbtn"><span class="bdot"></span>🤖 Bots</button>` + DN.map((n, i) => `<button data-d="${i + 1}"><span class="dot" id="hd_${i + 1}"></span>${n}</button>`).join("");
 bar.onclick = e => { const b = e.target.closest("button"); if (b) show(+b.dataset.d) };
-function show(d) { cur = d; $h("hmaster").hidden = d !== 0; document.querySelectorAll(".hframe").forEach((f, i) => f.hidden = i + 1 !== d); bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.d === d)); if (d === 0) draw() }
-window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk && !m.hb) { R[m.desk] = m; if (cur === 0) draw(); dots() } });
+function show(d) { cur = d; $h("hmaster").hidden = d !== 0; $h("hbots").hidden = d !== -1; if (d === -1 && typeof brDraw === "function") { brDrawChat(); brDraw(); window.scrollTo(0, 0) } document.querySelectorAll(".hframe").forEach((f, i) => f.hidden = i + 1 !== d); bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.d === d)); if (d === 0) draw() }
+window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk && !m.hb) { R[m.desk] = m; try { brIn(m) } catch (err) {} if (cur === 0) draw(); dots() } });
 function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
 function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0, ch1h: 0, ch24h: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += r[k] || 0; return t }
 try { const h = JSON.parse(localStorage.getItem("pt_host_hist2") || "null"); if (h && h.n === NDESK && Array.isArray(h.v)) hist.push(...h.v.slice(-1500)) } catch (e) {}   // the Master chart survives reloads

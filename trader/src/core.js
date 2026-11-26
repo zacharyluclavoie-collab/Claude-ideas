@@ -43,6 +43,12 @@ function dayAdd(v,t){const d=new Date(t*1000).toISOString().slice(0,10),m=S.pf.d
 function save(){if(S.trades.length>600)S.trades.length=600;if(MODE!=="mock")LS.set(key(),JSON.stringify(S))}
 const now=()=>MODE==="mock"?vnow:Date.now()/1000;
 const toastQ=[];
+/* Bot room: real messages between the bots, made at each real decision (scanner, scam filter, agents, security, committee, risk, trader, watcher).
+   Runtime only. Trades (p=2) are always kept; decisions (p=1) and routine work (p=0) are sampled in real time so the feed stays readable at any speed.
+   TALKC counts every message each bot would have said (its real work), sampled or not. */
+const TALK=[],TALKC={},talkT={};let talkN=0;   // each bot gets its own speaking turn, so a busy bot cannot drown out the others
+function talk(a,b,p,k,s,x){TALKC[a]=(TALKC[a]||0)+1;if(p<2){const r=Date.now(),q=a+p;if(r-(talkT[q]||0)<(p?700:1500))return;talkT[q]=r}
+  TALK.push({i:++talkN,t:now(),a,b,k,s:s&&s.sym||"",c:s&&s.chain||"",x:String(typeof x==="function"?x():x).slice(0,140)});if(TALK.length>60)TALK.shift()}
 function ev(level,kind,tok,msg){S.journal.unshift({t:now(),level,kind,tok,msg});toastQ.push({level,kind,tok,msg});if(toastQ.length>30)toastQ.shift();if(S.journal.length>300)S.journal.length=300}
 
 /* ============================ portfolio helpers ============================ */

@@ -20,6 +20,7 @@
     <div class="panel" style="margin-top:14px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" style="font-size:22px">$0</b></div>
       <div class="kv" id="h_kv"></div></div>
     <div class="panel" style="margin-top:10px"><div class="kv" id="h_rate"></div></div>
+    <div class="panel br-mini" style="margin-top:10px"><div class="row"><b>🤖 Bot room <span class="livepill"><i></i>LIVE</span></b><button class="chip br-go" id="br_open">Watch the bots →</button></div><div id="br_mini_list" class="br-mini-list"><div class="sub">The bots start talking as soon as the desks scan…</div></div></div>
     <h2>Live scanner <small id="h_rate2"></small></h2>
     <div class="panel" id="h_feed"></div>
     <h2>Profit / loss, all desks <small>live</small></h2>
@@ -32,6 +33,17 @@
     <div class="panel fullonly" id="h_set"></div>
     <div class="sub" style="margin:14px 2px 0">Each desk is a full copy of the bot with its own paper account, settings and agents, trading one area of the market. All of them run at the same time; this board adds them up. Open a desk to change its mode (it starts on Lots of trades) or its starting balance.</div>
   </main>
+</div>
+<div id="hbots" class="hpane" hidden>
+  <div class="br-head"><div><div class="hero-lab">Bot room</div><div class="br-title">Every bot, live <span class="livepill"><i></i>LIVE</span></div><div class="sub" id="br_sub">Starting the desks…</div></div></div>
+  <div class="panel br-stage"><svg id="br_svg" viewBox="0 0 360 344" role="img" aria-label="Map of the bots: messages fly between them as they make decisions"></svg></div>
+  <h2>What each bot is doing <small>tap one to see only its messages</small></h2>
+  <div class="br-bots" id="br_bots"></div><div class="sub" id="br_bot_note"></div>
+  <h2>Bot chat <small>real decisions, newest first</small></h2>
+  <div class="chips br-f" id="br_f"></div>
+  <div class="chips br-d" id="br_d"></div>
+  <div class="br-chat" id="br_chat"></div>
+  <div class="sub" style="margin:14px 2px 0">Every message is a real decision a bot in one of the desks just made: the Scanner finds coins, the Scam filter drops fakes, the Agents pick the ones they like, Security checks for scams, the Committee votes, the Risk manager sizes the trade, the Trader buys and sells, and the Watcher guards every coin you hold. Routine messages are sampled so you can read them; the counters show all the work. Pretend money only.</div>
 </div>
 <div id="hframes"></div>
 <div class="deskbar" id="deskbar"></div>

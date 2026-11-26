@@ -65,7 +65,7 @@ fs.writeFileSync(path.join(dir, "app.html"), html);   // the single app on its o
 const J = x => JSON.stringify(x).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 const appLive = html.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<!--DESK-->\n');
 const appDemo = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<!--DESK-->\n<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n${art}\n</body>\n</html>\n`;
-const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("host.js");
+const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("host.js") + "\n" + rd("botroom.js");
 const hostPage = `<!doctype html>
 <html lang="en">
 <head>

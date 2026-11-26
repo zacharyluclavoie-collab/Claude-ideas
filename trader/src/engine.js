@@ -3,23 +3,24 @@ const P=()=>MODE==="mock"?MOCK:LIVE;
 const due=(n,every,t)=>{if(t-(last[n]||0)>=every){last[n]=t;return true}return false};
 function roll(t){const d=new Date(t*1000).toISOString().slice(0,10);if(d!==S.pf.day){S.pf.day=d;S.pf.dayStart=equity()}if(S.core&&d!==S.core.day){S.core.day=d;S.core.dayStart=coreValue()}}
 async function updateRegime(t){let m=await P().majors();if(!m&&CFG.lenient.regime&&uniMedian!=null)m={universe:uniMedian};const r=regimeOf(m);
-  if(r!=="unknown"){regimeOk=t;if(r!==regime)ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);regime=r}
+  if(r!=="unknown"){regimeOk=t;if(r!==regime){ev(r==="ok"?"info":"warn","regime","",`market ${regime} → ${r}`);if(regime!=="unknown")talk("risk","trader",2,r==="ok"?"ok":"warn",null,r==="ok"?"Market calmed down: buying again":r==="crash"?"Market is crashing: selling everything now":"Market looks risky: no new buys for now")}regime=r}
   if(regime==="crash")for(const p of Object.values(S.pf.positions))p.emergency=p.emergency||"market crash"}
 function safety(t){const pf=S.pf;let why="";
   if(pf.shutdown&&CFG.autoRearmMin>0&&LS.get("pt_kill_"+MODE)!=="1"&&t-(pf.shutAt||t)>=CFG.autoRearmMin*60){pf.shutdown=false;pf.why="";pf.peak=equity();pf.streak=0;ev("warn","auto_rearm","","Shutdown cleared automatically after "+CFG.autoRearmMin+" minutes (paper mode); drawdown measured from here")}if(LS.get("pt_kill_"+MODE)==="1")why="manual emergency stop";if(!why)why=shutdownReason();
-  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;pf.shutAt=t;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions")}
+  if(why&&!pf.shutdown){pf.shutdown=true;pf.why=why;pf.shutAt=t;ev("crit","shutdown","","EMERGENCY SHUTDOWN: "+why+" · flattening all positions");talk("risk","trader",2,"warn",null,"Stop everything: "+why+". Sell all, no new buys")}
   if(pf.shutdown)for(const p of Object.values(pf.positions))p.emergency=p.emergency||"shutdown: "+pf.why}
 /* Two-stage scan. Stage 1 judges EVERY discovered token locally from the feed's own numbers (no network, thousands per second).
    Stage 2 (network: fresh price, security report) runs only for the few that survive. */
 async function scan(source,t){FILL=CFG.keep.on&&Object.keys(S.pf.positions).length<CFG.keep.target;const prov=P(),cands=source==="new"?await prov.discoverNew(CFG.chains):await prov.discoverTrending(CFG.chains),seen=new Set(),pass=[],w=stats.rejWhy||(stats.rejWhy={});
   for(const c of cands){const k=c.chain+":"+c.addr.toLowerCase();if(seen.has(k)||S.pf.positions[k]||(rejected[k]||0)>t)continue;seen.add(k);stats.scanned++;{const U=stats.uniqSet||(stats.uniqSet={});if(!U[k]&&stats.uniq<50000){U[k]=1;stats.uniq=(stats.uniq||0)+1}}
     const s=c.snap;if(s&&s.price>0){const pk=pickAll(s,t,source);
-      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id;c.core=pk.hits.some(h=>!h.agent.swarm)}
+      if(!pk.hits.length){const y=pk.why.replace(/\d+(\.\d+)?(?![\dh])/g,"#").slice(0,34);w[y]=(w[y]||0)+1;talk("agents","scout",0,"no",s,()=>"Not interested: "+pk.why);rejected[k]=t+(pk.why==="too young"?CFG.quickYoungSec:CFG.quickRejectSec);continue}c.agent=pk.hits[0].agent.id;c.core=pk.hits.some(h=>!h.agent.swarm)}
     pass.push(c)}
   if(pass.length){const g=globalBlock(t);if(g){const V=stats.vwhy||(stats.vwhy={});V[g]=(V[g]||0)+1;stats.gated=(stats.gated||0)+pass.length;stats.strat+=pass.length;pass.length=0}}
   {const ch=cands.map(c=>c.snap).filter(s=>s&&s.liq>=30000&&isFinite(s.chg1h)).map(s=>s.chg1h).sort((a,b)=>a-b);if(ch.length>=8)uniMedian=ch[ch.length>>1]}
   {const a=pass.filter(c=>c.core!==false),b=pass.filter(c=>c.core===false);pass.length=0;pass.push(...a,...b.slice(0,Math.max(0,CFG.deepPerScan-a.length,Math.min(10,b.length))))}   // coins a real agent likes go first; scout-only coins get the leftover deep-check slots
   pass.length=Math.min(pass.length,CFG.deepPerScan+10);
+  if(cands.length)talk("scout","filter",0,"info",null,()=>`${source==="new"?"New coins":"Older coins"}: looked at ${cands.length.toLocaleString()}, ${pass.length?pass.length+" worth a closer look":"nothing good this round"}`);
   if(prov.prefetchSecurity&&pass.length)await prov.prefetchSecurity(pass);
   const byChain={};for(const c of pass)(byChain[c.chain]=byChain[c.chain]||[]).push(c.addr);const fresh={};
   for(const ch in byChain){const r=await prov.snapshots(ch,byChain[ch]);for(const a in r)fresh[ch+":"+a]=r[a]}
@@ -34,54 +35,61 @@ function feedAdd(snap,src,outcome,detail,extra){const k=snap.chain+":"+snap.addr
 function reject(k,snap,src,why,min,stage,extra){rejected[k]=now()+60*(min||(src==="new"?CFG.rejectNewMin:CFG.rejectTrendMin));feedAdd(snap,src,stage||"strategy",why,extra)}
 async function evaluate(k,snap,src,t,agentId){
   {const F=CFG.flt,age=ageH(snap,t);if(age!=null&&age<48&&snap.buyers1h!=null){   // research filters for young tokens: enough distinct buyers, and not wash-traded
-    if(F.minBuyers&&snap.buyers1h<F.minBuyers)return reject(k,snap,src,"too few distinct buyers ("+snap.buyers1h+")",5);
-    const u=snap.buys1h>=20?snap.buyers1h/snap.buys1h:null;if(F.minUniq&&u!=null&&u<F.minUniq)return reject(k,snap,src,"looks wash-traded (few wallets, many trades)",15)}}
+    if(F.minBuyers&&snap.buyers1h<F.minBuyers){talk("filter","scout",0,"no",snap,()=>`Skip: only ${snap.buyers1h} real buyers in the last hour`);return reject(k,snap,src,"too few distinct buyers ("+snap.buyers1h+")",5)}
+    const u=snap.buys1h>=20?snap.buyers1h/snap.buys1h:null;if(F.minUniq&&u!=null&&u<F.minUniq){talk("filter","scout",0,"no",snap,"Skip: fake trading (a few wallets making most trades)");return reject(k,snap,src,"looks wash-traded (few wallets, many trades)",15)}}}
   const pk=pickAll(snap,t,src);
-  if(!pk.hits.length)return reject(k,snap,src,pk.why,pk.why==="too young"?3:null);
+  if(!pk.hits.length){talk("agents","scout",0,"no",snap,()=>"Not interested: "+pk.why);return reject(k,snap,src,pk.why,pk.why==="too young"?3:null)}
   let hits=pk.hits;
   if(hits.some(h=>h.agent.id==="trend")){const bo=await P().breakout(snap);hits=hits.map(h=>{if(h.agent.id!=="trend")return h;const [pl]=h.agent.run(snap,t,bo);return pl?{agent:h.agent,plan:pl}:null}).filter(Boolean);if(!hits.length)return reject(k,snap,src,"no breakout confirmed")}
   for(const h of hits)h.plan=quickPlan(h.plan,h.agent.id);
   stats.strat++;
-  let plan=hits[0].plan;
+  let plan=hits[0].plan;talk(hits[0].agent.id,"security",1,"info",snap,()=>`${hits.length>1?"Me and "+hits.slice(1).map(h=>h.agent.name).join(" and ")+" like it":"I like this one"} (score ${plan.score.toFixed(0)}). Is it safe?`);
   let sec=await P().security(snap.chain,snap.addr);
   if(!sec)stats.secNull=(stats.secNull||0)+1;else stats.secOk=(stats.secOk||0)+1;
   if(!sec&&CFG.lenient.sec&&(stats.secNull||0)>=5&&(stats.secNull||0)>9*(stats.secOk||0))sec=UNVERIFIED;   // source is down: keep trading small, on market-structure checks only
+  if(!sec)talk("security",hits[0].agent.id,1,"warn",snap,"Safety report not ready yet, asking again soon");
   if(!sec)return reject(k,snap,src,"security report not available yet (retrying soon, fail closed)",2,"security",{checks:[["security_data_available",false]],score:plan.score});
   const v=evalSecurity(sec,snap,src,t);
   if(!v.pass){const W=stats.secWhy||(stats.secWhy={});for(const f of v.fails)W[f]=(W[f]||0)+1}
+  if(!v.pass)talk("security",hits[0].agent.id,1,"no",snap,()=>"Unsafe: "+v.fails.slice(0,2).join(", "));
+  else talk("security","committee",1,"ok",snap,()=>`Safe: ${v.checks.filter(c=>c[1]).length} of ${v.checks.length} checks passed`);
   if(!v.pass)return reject(k,snap,src,"failed: "+v.fails.join(", "),CFG.rejectMin*4,"security",{checks:v.checks,score:plan.score,risk:v.risk});
   stats.sec++;
   // learning phase: every unproven agent that likes this coin takes a virtual trade (many agents study one coin at once); only proven agents trade real money
   const proven=[];for(const h of hits){const pr=agentProven(h.agent.id),pb=!pr&&(agentProbation(h.agent.id)||agentExploring(h.agent.id,t));if(pr||pb){h.prob=pb;proven.push(h)}if(!pr)shadowOpen(snap,h,t)}
-  if(!proven.length){feedAdd(snap,src,"learning",hits.map(h=>h.agent.name).join(", ")+" studying this coin with a virtual trade (no money yet)",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+90;return}
+  if(!proven.length){talk(hits[0].agent.id,"watcher",1,"info",snap,"Practice trade only (no money) until I prove myself");feedAdd(snap,src,"learning",hits.map(h=>h.agent.name).join(", ")+" studying this coin with a virtual trade (no money yet)",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+90;return}
   proven.sort((a,b)=>b.plan.score*agentWeight(b.agent.id)-a.plan.score*agentWeight(a.agent.id));
   const ag=proven[0].agent;plan=proven[0].plan;const cat=ag.cat;
   const com=reviewers(snap,cat);
-  if(com.ok<CFG.committeeMin){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
-  {const lp=CFG.lessons.on?lessonPred(lessonFx(snap,t,ag)):null;if(lp!=null&&lp<CFG.lessons.minPred){stats.vetoed++;stats.lessonVeto=(stats.lessonVeto||0)+1;S.lessonVetoes=(S.lessonVetoes||0)+1;{const w="lessons: similar trades lost";(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","lessons from past trades: setups like this averaged "+lp.toFixed(2)+"R, skipped",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+600;return}}
+  if(com.ok<CFG.committeeMin){stats.vetoed++;const nm=com.list.filter(x=>!x[1]).map(x=>x[0]).join(", ");talk("committee",ag.id,1,"no",snap,()=>`Only ${com.ok} of 5 reviewers agree. No (${nm})`);{const w="committee: "+nm;(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","committee approved "+com.ok+"/5 (failed: "+nm+")",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+60;return}
+  {const lp=CFG.lessons.on?lessonPred(lessonFx(snap,t,ag)):null;if(lp!=null&&lp<CFG.lessons.minPred){stats.vetoed++;stats.lessonVeto=(stats.lessonVeto||0)+1;S.lessonVetoes=(S.lessonVetoes||0)+1;talk("committee",ag.id,1,"no",snap,"Setups like this lost before: skip");{const w="lessons: similar trades lost";(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed","lessons from past trades: setups like this averaged "+lp.toFixed(2)+"R, skipped",{checks:v.checks,score:plan.score,risk:v.risk});rejected[k]=t+600;return}}
+  talk("committee","risk",1,"ok",snap,()=>`${com.ok} of 5 reviewers agree: go`);
   const d=approve(snap,cat,v.risk,plan,t,ag.id);
-  if(!d.ok){stats.vetoed++;{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
-  open(snap,cat,plan,v.risk,sec,d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1),t,v.checks,ag.id)}
+  if(!d.ok){stats.vetoed++;talk("risk","committee",1,"no",snap,()=>"No: "+d.why);{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
+  const usd=d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1);talk("risk","trader",1,"ok",snap,()=>`OK: buy ${fmt(usd,usd<10?2:0)} (${(usd/Math.max(1e-9,equity())*100).toFixed(1)}% of the account)`);
+  open(snap,cat,plan,v.risk,sec,usd,t,v.checks,ag.id)}
 function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
-  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);return save()}
+  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   S.lastOpenAt=t;pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
     size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
-  stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
+  stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);talk("trader","watcher",2,"buy",snap,`Bought ${fmt(f.usd,f.usd<10?2:0)}. Watch it: stop -${(+plan.stop).toFixed(1)}%, first target +${(+plan.tp1).toFixed(0)}%`);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
   const tr={t,side:"sell",sym:p.sym,chain:p.chain,cat:p.cat,ok:f.ok,note:reason+" · "+f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas,pnl:null};
-  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);
+  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);talk("trader","watcher",2,"warn",p,`Sell failed (${f.why}), trying again`);
     if(p.attempts>=3&&!p.emergency){p.emergency="sell failing repeatedly (possible hidden restriction)";ev("crit","emergency",p.sym,p.emergency)}return false}
   const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;p.attempts=0;
-  tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
+  tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);{const mv=(snap.price/p.entry-1)*100,pc=Math.round(part*100);talk("watcher","trader",2,"info",p,`${sayWhy(reason)} (${mv>=0?"+":""}${mv.toFixed(1)}%): sell ${pc>=99?"all":pc+"%"}`);talk("trader","risk",2,pnl>=0?"win":"loss",p,`Sold ${pc>=99?"all":pc+"%"} for ${fmt(net,net<10?2:0)}: ${pnl>=0?"+":"-"}${fmt(Math.abs(pnl))}`)}ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
   if(p.qty<=1e-12||p.qty*snap.price<Math.min(1,(p.size0||1)*0.03))closePos(p,reason,0,t);return true}
+const sayWhy=r=>({stop_loss:"Stop-loss hit",trailing_stop:"Trailing stop hit",take_profit_1:"First target hit",take_profit_2:"Second target hit",time_stop:"Held too long without a win",stagnant:"Not moving"})[r]||(r.startsWith("EMERGENCY")?"Emergency":String(r).replace(/_/g," "));
 function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
-  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused")}
+  pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused");talk("risk","trader",2,"warn",null,pf.streak+" losses in a row: short break from buying")}
+  if(!recovered&&p.qty<=1e-12&&/writeoff|stale/.test(reason))talk("watcher","risk",2,"loss",p,"Could not sell it: written off");
   const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
@@ -98,7 +106,7 @@ async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions),shs=Objec
   for(const p of ps){const s=snaps[p.chain+":"+p.addr.toLowerCase()];
     if(!s||s.price<=0){if(!feedUp)continue;p.staleSince=p.staleSince||t;if(t-p.staleSince>=CFG.em.staleMin*60){ev("crit","stale_writeoff",p.sym,"no price for "+CFG.em.staleMin+" minutes while other tokens update: closing at a haircut");const rec=pv(p)*CFG.em.staleHaircut;p.qty=0;closePos(p,"stale_data",rec,t)}continue}
     p.staleSince=0;p.seenAt=t;const pp=p.last,pl=p.lastLiq;p.last=s.price;p.lastLiq=s.liq;p.peak=Math.max(p.peak,s.price);
-    if(!p.emergency){p.emergency=emergencyReason(p,s,pp,pl);if(p.emergency)ev("crit","emergency",p.sym,p.emergency)}
+    if(!p.emergency){p.emergency=emergencyReason(p,s,pp,pl);if(p.emergency){ev("crit","emergency",p.sym,p.emergency);talk("watcher","trader",2,"warn",p,"Danger: "+p.emergency+". Sell now!")}}
     if(p.emergency){if(p.attempts>=CFG.em.maxAttempts){ev("crit","writeoff",p.sym,"cannot sell after "+p.attempts+" attempts: written off");p.qty=0;closePos(p,"writeoff_unsellable",0,t)}
       else sellPos(p,s,1,"EMERGENCY: "+p.emergency,true,t);continue}
     adjustStop(p,s);const px=s.price,held=(t-p.opened)/3600,maxHold=p.cat==="new"?CFG.nw.maxHoldH:CFG.tr.maxHoldH;
