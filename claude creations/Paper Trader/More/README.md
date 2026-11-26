@@ -63,6 +63,15 @@ Every trade pays network and exchange fees whatever its size: on new Solana coin
 
 Bigger slices per coin (35-50%) and buying older coins (no priority fee) did not help: they traded rarely or lost more. So under $75 the bot only buys when fees stay under 2.5% (it trades very little but stops paying fees away); from $75 the normal 5% limit applies. The Master has one-tap **Small start** buttons ($10 or $100, one Solana desk) and shows a tip when the balance is under $100. Recommended: start with $100 of pretend money.
 
+## Real-price test (paper money on real prices)
+The demo market is easier than the real one, so judge the bot on real prices before any real money. Double-click **START REAL-PRICE TEST** (`.command` on Mac, `.bat` on Windows; needs Node.js) in the folder, or run:
+```
+node server/run.mjs --test        # one bot on Solana, Base, BSC and Arbitrum, $100 of pretend money, best tested mode, results in ./real-test
+```
+The status page (http://localhost:8787/) shows a Real-price test box: profit, per day, trades, win rate, average win and loss, fees and a plain verdict (too early before 100+ trades and 1-2 weeks; then making or losing money on real prices). The runner saves `real-test/real_test_hourly.csv` (one line an hour) and `real-test/real_test_trades.csv` (every closed trade) so the bot can be tuned on real data later. On a Mac the launcher keeps the computer awake while it runs. Without Node.js: open the app, Full view, Master settings, **Start the real-price test** (every desk on real prices with $100; runs only while the tab is open).
+
+Tested live from a cloud machine before shipping: all four data sources answered; one bot checked about 1,900 real coins in 2.5 minutes and made paper buys; 5 separate desks checked about 3x fewer coins per minute because they share the free data limits, which is why the test uses one bot. Fixes from that run: every desk now shares one timetable for the free data limits (a "too many requests" answer pauses all of them; before, GeckoTerminal refused about half the requests), desks that do not trade older coins no longer spend requests finding them, a one-letter search word that DexScreener rejects was removed, and GeckoTerminal is asked at most 20 times a minute.
+
 ## Running 24/7 without your phone (always-on runner)
 An iPhone web app cannot run in the background: iOS freezes it when the screen locks. For continuous paper trading, run the same engine headless on any always-on machine (home computer, Raspberry Pi, cheap VPS, a container). It needs only Node 20+ and internet access to the data providers.
 ```

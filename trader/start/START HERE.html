@@ -4,6 +4,12 @@ body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 -apple-system,"
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin:18px 0}.n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--b);color:#fff;font-weight:700;margin-right:10px}
 a.big{display:block;text-align:center;background:var(--b);color:#fff;text-decoration:none;font-weight:700;font-size:20px;padding:18px;border-radius:14px;margin:14px 0}code{background:var(--line);padding:2px 7px;border-radius:6px}h2{font-size:20px;margin:0 0 8px}.ok{color:var(--g);font-weight:700}li{margin:6px 0}</style></head><body><main>
 <h1>Paper Trader</h1><div class="s">Practice trading with fake money. It can never touch real money: there is no wallet inside.</div>
+<div class="card" style="border-color:var(--b)"><h2>🧪 Test it on real prices (recommended before any real money)</h2><p>Runs one bot on <b>real coin prices</b> (Solana, Base, BSC, Arbitrum) with <b>$100 of pretend money</b>. Nothing real is ever bought. Judge it after <b>100+ trades and 1-2 weeks</b>: the demo market is easier than the real one.</p>
+<ol><li>Install <b>Node.js</b> (free, the LTS version) from <a href="https://nodejs.org">nodejs.org</a>. Only once.</li>
+<li>Double-click <code>START REAL-PRICE TEST.command</code> (Mac; the first time, right-click it and choose Open) or <code>START REAL-PRICE TEST.bat</code> (Windows).</li>
+<li>Leave the window open and the computer plugged in and awake. Your results page opens at <code>http://localhost:8787/</code>. It shows profit, trades, win rate, fees and a plain verdict.</li>
+<li>Every trade and an hourly summary are saved in <code>More/real-test/</code> (<code>real_test_trades.csv</code>, <code>real_test_hourly.csv</code>). Send those two files back to Claude to tune the bot on real data.</li></ol>
+<p class="s">No install? Open Paper Trader, tap Full, then Master settings → Start the real-price test. It only runs while that browser tab stays open.</p></div>
 <div class="card"><h2><span class="n">1</span>Start it</h2>
 <a class="big" href="index.html">Open Paper Trader</a>
 <div class="s">Or double-click <b>START PAPER TRADER.bat</b> (Windows) or <b>START PAPER TRADER.command</b> (Mac) in this folder. The app opens in your browser. It trades while that browser tab stays open.</div></div>

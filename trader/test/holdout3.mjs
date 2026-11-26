@@ -1,9 +1,10 @@
 // Unseen-market check for round-3 settings: re-tests chosen round-3 configs (and the current Lots of trades) on seeds 701+.
 //   node test/holdout3.mjs <ids comma-separated, e.g. 17,14> <seeds=10> <days=3>
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { setup, run, score } from "./search3.mjs";
 const ids = (process.argv[2] || "17").split(",").map(Number), HS = +process.argv[3] || 10, DAYS = +process.argv[4] || 3;
-const F = new URL("./search_results.jsonl", import.meta.url).pathname;
+const F = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const rows = fs.readFileSync(F, "utf8").trim().split("\n").map(l => JSON.parse(l)).filter(r => r.round === 3 && r.phase === "train");
 const seeds = [...Array(HS)].map((_, i) => 701 + i);
 for (const c of [{ ref: "lots" }, ...ids.map(i => rows.find(r => r.i === i).c)]) {

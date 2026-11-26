@@ -1,5 +1,6 @@
 // node test/sweep.mjs <seedFrom> <seedTo> <days> [setupJS] [label]   -- runs seeds in parallel worker processes
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import os from "node:os";
 const [a, b, days, setup = "", label = ""] = [+process.argv[2], +process.argv[3], +process.argv[4], process.argv[5] || "", process.argv[6] || ""];
 const seeds = []; for (let s = a; s <= b; s++) seeds.push(s);
@@ -8,7 +9,7 @@ await new Promise(done => {
   const launch = () => {
     while (running < Math.min(4, os.cpus().length) && next < seeds.length) {
       const s = seeds[next++]; running++;
-      const p = spawn("node", [new URL("./worker.mjs", import.meta.url).pathname, String(s), String(days), setup]); let out = "";
+      const p = spawn("node", [fileURLToPath(new URL("./worker.mjs", import.meta.url)), String(s), String(days), setup]); let out = "";
       p.stdout.on("data", d => out += d); p.stderr.on("data", d => process.stderr.write(d));
       p.on("close", () => { try { results.push(JSON.parse(out.trim().split("\n").pop())) } catch (e) { console.error("seed", s, "failed", out.slice(0, 200)) } running--; if (next >= seeds.length && running === 0) done(); else launch() });
     }

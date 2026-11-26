@@ -2,9 +2,10 @@
 // at each moment the bot sees only records with t <= now. Prints the overall result, a time-ordered train/test split and bootstrap intervals.
 //   node recorder/replay.mjs data/ [--setup "CFG.keep.on=false;"] [--split 0.7]
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import vm from "node:vm";
 import path from "node:path";
-const dir = path.dirname(new URL(import.meta.url).pathname);
+const dir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 const args = process.argv.slice(2), opt = (n, d) => { const i = args.indexOf("--" + n); return i < 0 ? d : args[i + 1] };
 const src = path.resolve(args[0] || "data"), SETUP = opt("setup", ""), SPLIT = +opt("split", 0.7);
 const files = fs.statSync(src).isDirectory() ? fs.readdirSync(src).filter(f => f.endsWith(".jsonl")).sort().map(f => path.join(src, f)) : [src];

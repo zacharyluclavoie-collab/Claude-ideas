@@ -3,8 +3,9 @@
 //   node test/search9.mjs hold "<names>"   -> 8 unseen markets (1551-1558) for base + the named variants (comma separated; "a + b" combines)
 //   node test/search9.mjs show             -> tables from the cache
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
-const DAYS = 2, CACHE = new URL("./search9_cache.jsonl", import.meta.url).pathname;
+const DAYS = 2, CACHE = fileURLToPath(new URL("./search9_cache.jsonl", import.meta.url));
 export const V = {
   "base": "",
   "stop 4": "CFG.quick.stop=4;",

@@ -4,15 +4,18 @@
  */
 const GT_NET = { solana: "solana", ethereum: "eth", base: "base", bsc: "bsc", arbitrum: "arbitrum" };
 const GP_CHAIN = { ethereum: "1", bsc: "56", base: "8453", arbitrum: "42161" };
-const MIN_GAP = { "api.dexscreener.com": 350, "api.geckoterminal.com": 2200, "api.gopluslabs.io": 2200, "api.coingecko.com": 3000 };
-const nextAt = {}, coolUntil = {};
+const MIN_GAP = { "api.dexscreener.com": 350, "api.geckoterminal.com": 3000, "api.gopluslabs.io": 2200, "api.coingecko.com": 3000 };
+// one shared timetable for all desks (desks are same-origin frames of the Master; the runner passes SHARED_RL in): together they never go over a free
+// limit, and a "too many requests" answer pauses every desk at once instead of the others carrying on and making it worse
+const RLS = (() => { try { if (typeof SHARED_RL !== "undefined" && SHARED_RL) return SHARED_RL } catch (e) {} try { if (typeof window !== "undefined" && window.parent && window.parent !== window && window.parent.__ptRL) return window.parent.__ptRL } catch (e) {} return null })();
+const nextAt = RLS ? RLS.next : {}, coolUntil = RLS ? RLS.cool : {};
 let health = { ok: 0, fail: 0, lastErr: "", byHost: {} };
 const hostStat = h => health.byHost[h] || (health.byHost[h] = { ok: 0, fail: 0 });
 
 async function getJSON(url) {
-  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK ? (host !== "api.dexscreener.com" ? 0.5 : 0.2) * ((typeof window !== "undefined" && window.DESKN) || 5) : 1),   // 5 desks share the free rate limits
+  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK && !RLS ? ((typeof window !== "undefined" && window.DESKN) || 5) : 1),   // shared timetable: the plain limit; otherwise each desk takes its share
     st = hostStat(host);
-  if ((coolUntil[host] || 0) > Date.now()) { health.fail++; st.fail++; return null }                      // backing off after a rate limit
+  if ((coolUntil[host] || 0) > Date.now()) { st.skip = (st.skip || 0) + 1; return null }                      // backing off after a rate limit (a pause, not a failed request)
   const wait = Math.max(0, (nextAt[host] || 0) - Date.now());
   nextAt[host] = Math.max(Date.now(), nextAt[host] || 0) + gap;
   if (wait) await new Promise(r => setTimeout(r, wait));
@@ -20,7 +23,7 @@ async function getJSON(url) {
   try {
     const r = await fetch(url, { signal: ctl.signal, headers: { accept: "application/json" } });
     if (r.status === 429) { coolUntil[host] = Date.now() + 30000; throw new Error("HTTP 429 rate limited, pausing 30s") }
-    if (!r.ok) throw new Error("HTTP " + r.status);
+    if (!r.ok) { const u = new URL(url); throw new Error("HTTP " + r.status + " on " + (u.pathname + u.search).slice(0, 90)) }   // say which request failed
     const j = await r.json(); health.ok++; st.ok++; return j;
   } catch (e) { health.fail++; st.fail++; health.lastErr = host + ": " + e.message; return null }
   finally { clearTimeout(to) }
@@ -87,7 +90,7 @@ const LIVE = {
     for (const c of cs) for (const pg of pages) o = o.concat(await this.pools(c, `new_pools?page=${pg}`, "new"));
     // DexScreener: newest profiles and boosted tokens (id lists), then keyword searches that return full pair data for up to 30 pairs each
     for (const u of ["token-profiles/latest/v1", "token-boosts/latest/v1", "token-boosts/top/v1"]) { const pr = await getJSON("https://api.dexscreener.com/" + u); for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" }) }
-    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold", "shib", "floki", "popcat", "brett", "mog", "toshi", "goat", "pnut", "neiro", "mew", "bome", "slerf", "panda", "bear", "ape", "monkey", "penguin", "hamster", "cash", "money", "lambo", "pepe2", "wojak", "turbo", "kitty", "doge2", "sun", "moon2", "x", "grok", "agent", "bot", "fi", "dao"];
+    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold", "shib", "floki", "popcat", "brett", "mog", "toshi", "goat", "pnut", "neiro", "mew", "bome", "slerf", "panda", "bear", "ape", "monkey", "penguin", "hamster", "cash", "money", "lambo", "pepe2", "wojak", "turbo", "kitty", "doge2", "sun", "moon2", "grok", "agent", "bot", "fi", "dao"];
     // DexScreener allows ~300 calls/min (GeckoTerminal ~30), so most of the extra scanning goes here: 16 searches x up to 30 pairs per cycle
     for (let i = 0, N = DESK ? 6 : 16; i < N; i++) { const q = KW[(cyc * N + i + DESK * 5) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
     return o;

@@ -1,8 +1,9 @@
 // Usage: node build.mjs [artifactOutPath]
 // Builds trader/index.html (PWA page), an engine-only bundle for Node tests/backtests, and the artifact fragment.
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import path from "node:path";
-const dir = path.dirname(new URL(import.meta.url).pathname);
+const dir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 const rd = f => fs.readFileSync(path.join(dir, "src", f), "utf8");
 const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "agents.js", "learn.js", "train.js", "execution.js", "providers_live.js", "sim_market.js", "backtest_summary.js", "majors.js", "engine.js"];
 const BUILD = new Date().toISOString().slice(0, 16).replace("T", " ");

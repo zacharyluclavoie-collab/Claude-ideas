@@ -2,10 +2,11 @@
 // how wide the scan is, cooldowns and exits. New training seeds (301+) and new unseen seeds (401+) so round 1 can't leak in.
 //   node test/search2.mjs <configs=40> <days=3> <trainSeeds=6> <holdoutSeeds=10> <topK=4>
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import fs from "node:fs";
 import os from "node:os";
 const [N, DAYS, TS, HS, TOPK] = [+process.argv[2] || 40, +process.argv[3] || 3, +process.argv[4] || 6, +process.argv[5] || 10, +process.argv[6] || 4];
-const W = new URL("./worker.mjs", import.meta.url).pathname, OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const W = fileURLToPath(new URL("./worker.mjs", import.meta.url)), OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 let x = 424242; const r = () => (x = (x * 1664525 + 1013904223) % 4294967296) / 4294967296, pick = a => a[Math.floor(r() * a.length)], rng = (a, b, d = 2) => +(a + r() * (b - a)).toFixed(d);
 const EXTRA = ["rider", "dip", "whale", "gem", "trend"];
 function cfg(i) {

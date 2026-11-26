@@ -1,9 +1,10 @@
 // Round 8: more trades without worse trades: Max trades with the scam filters, vs Lots of trades (5x market).
 //   node test/search8.mjs <days=2> <trainSeeds=6> <holdoutSeeds=8>
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
 const [DAYS, TS, HS] = [+process.argv[2] || 2, +process.argv[3] || 6, +process.argv[4] || 8];
-const OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const grid = [
   { name: "lots now", s: "applyPreset('lots');" },
   { name: "max trades", s: "applyPreset('max');" },

@@ -2,9 +2,10 @@
 // Tests a stricter fee limit (max round-trip cost per trade), stricter coin-risk limit, and the scam filters, alone and combined.
 //   node test/search5.mjs <days=2> <trainSeeds=6> <holdoutSeeds=8>
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
 const [DAYS, TS, HS] = [+process.argv[2] || 2, +process.argv[3] || 6, +process.argv[4] || 8];
-const OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const grid = [
   { name: "lots now" },
   { name: "fee limit 3%", cost: 3 },

@@ -1,9 +1,10 @@
 // Round 8 unseen-market check, resumable (survives restarts): Lots of trades vs Max trades + scam filters.
 //   node test/holdout8.mjs <days=2> <firstSeed=1451> <nSeeds=8>     results cached in test/holdout8_cache.jsonl
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
 const [DAYS, S0, N, SC] = [+process.argv[2] || 2, +process.argv[3] || 1451, +process.argv[4] || 8, +process.argv[5] || 5];   // 5th arg: demo market size
-const CACHE = new URL("./holdout8_cache.jsonl", import.meta.url).pathname;
+const CACHE = fileURLToPath(new URL("./holdout8_cache.jsonl", import.meta.url));
 const grid = [
   { name: "lots now", s: "applyPreset('lots');" },
   { name: "max trades + scam filters", s: "applyPreset('max');CFG.flt.minBuyers=25;CFG.flt.minUniq=0.4;" },

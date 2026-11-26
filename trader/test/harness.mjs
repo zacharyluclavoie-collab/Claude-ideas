@@ -1,8 +1,9 @@
 // Headless engine runner for backtests and tests: loads dist/engine_bundle.js into a vm context.
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import vm from "node:vm";
 import path from "node:path";
-const dir = path.dirname(new URL(import.meta.url).pathname);
+const dir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 const bundle = fs.readFileSync(process.env.BUNDLE || path.join(dir, "..", "dist", "engine_bundle.js"), "utf8");
 
 export function makeCtx() {

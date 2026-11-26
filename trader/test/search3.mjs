@@ -2,10 +2,11 @@
 // Explores longer holds, more agents, looser committee, smaller per-coin size so many fit, all on the widest scan.
 //   node test/search3.mjs <configs=24> <days=3> <trainSeeds=6>      results -> test/search_results.jsonl (round 3)
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import fs from "node:fs";
 import os from "node:os";
 const [N, DAYS, TS] = [+process.argv[2] || 24, +process.argv[3] || 3, +process.argv[4] || 6];
-const W = new URL("./worker.mjs", import.meta.url).pathname, OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const W = fileURLToPath(new URL("./worker.mjs", import.meta.url)), OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 let x = 777001; const r = () => (x = (x * 1664525 + 1013904223) % 4294967296) / 4294967296, pick = a => a[Math.floor(r() * a.length)], rng = (a, b, d = 2) => +(a + r() * (b - a)).toFixed(d);
 const EXTRA = ["rider", "dip", "whale", "gem", "trend"];
 export function cfg(i) {

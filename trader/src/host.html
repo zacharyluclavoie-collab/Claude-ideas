@@ -2,6 +2,7 @@
 <div id="hmaster" class="hpane">
   <div class="hero"><div class="hero-top"><span class="hero-lab">All desks</span><span class="hero-ctl"><span class="viewsw" id="viewsw"><button data-v="simple">Simple</button><button data-v="full">Full</button></span><span class="themesw" id="themesw"><button data-v="dark" aria-label="Dark theme">🌙</button><button data-v="light" aria-label="Light theme">☀️</button><button data-v="auto" aria-label="Match device">A</button></span></span></div><div class="eq" id="h_eq">$0</div><div class="hero-sub" id="h_sub">Starting desks…</div><div class="hero-pills"><div class="hero-pct" id="h_pct"></div><div class="hero-auto fa" id="h_fa"></div><div class="hero-auto" id="h_auto"></div><div class="bestchk" id="h_best"></div></div></div>
   <div class="tipbar" id="fa_tip" hidden></div>
+  <div class="panel rtest" id="h_rtest" hidden></div>
   <details class="guide" id="guide"><summary>👋 New here? How it works</summary>
     <div class="gbody">
       <p><b>What it does.</b> The bot looks at thousands of new crypto coins, skips scams and weak ones, buys the few that look strong, and sells them by itself. All money here is <b>pretend (paper) money</b>: nothing real is bought.</p>
@@ -12,7 +13,7 @@
       <p><b>Safety checks.</b> Every coin is checked for scam signs (can't sell, hidden owner powers, fake trading, too few real buyers). Trades whose fees would eat too much are skipped. If a desk loses too much in a day it stops until tomorrow.</p>
       <p><b>Numbers.</b> <i>Open now</i>: profit on coins still held. <i>Per hour / per day</i>: average so far. <i>Market size</i>: how many coins the demo creates (Auto picks the biggest your device runs smoothly). <i>Live scanner</i>: what the desks are checking right now.</p>
       <p><b>Small balances.</b> Every trade pays network and exchange fees (on new Solana coins about $0.17 for a buy plus a sell). On a $2 trade that is 8%, so with $10 the bot almost never buys. In tests $25–$50 came out about even and <b>$100 or more</b> made money. Start with $100 of pretend money: Full view → Master settings → Small start.</p>
-      <p><b>Demo vs live.</b> Demo is a realistic simulated market and can run fast. Live (laptop version) uses real coin prices in real time, still with pretend money. Results on real coins will likely be lower than in the demo.</p>
+      <p><b>Demo vs live.</b> Demo is a realistic simulated market and can run fast. Live (laptop version) uses real coin prices in real time, still with pretend money. Results on real coins will likely be lower than in the demo. To find out, run the <b>real-price test</b> on a laptop: double-click START REAL-PRICE TEST in the folder (or Full view → Master settings → Start the real-price test) and judge it after 100+ trades and 1-2 weeks.</p>
       <button class="chip" id="guide_hide">Got it, hide this</button>
     </div></details>
   <div class="ticker" id="ticker"><div class="tk-track" id="tk_track"></div></div>

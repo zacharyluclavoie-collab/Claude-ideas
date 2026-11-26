@@ -3,9 +3,10 @@
 //   node recorder/record.mjs                       live data, runs until stopped (Ctrl-C)
 //   node recorder/record.mjs --demo --hours 48    synthetic market at fast speed (pipeline test)
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import vm from "node:vm";
 import path from "node:path";
-const dir = path.dirname(new URL(import.meta.url).pathname);
+const dir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 const args = process.argv.slice(2), opt = (n, d) => { const i = args.indexOf("--" + n); return i < 0 ? d : (args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : true) };
 const DEMO = !!opt("demo", false), HOURS = +opt("hours", 24), OUT = path.resolve(opt("out", "data")), EVERY = +opt("every", 60), MAXTRACK = +opt("max", 600);
 fs.mkdirSync(OUT, { recursive: true });

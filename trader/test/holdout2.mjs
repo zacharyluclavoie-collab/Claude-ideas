@@ -1,10 +1,11 @@
 // Re-tests the best round-2 search settings found so far on unseen seeds (401+), so the search can be stopped at any time.
 //   node test/holdout2.mjs <topK=4> <seeds=10> <days=3>
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import fs from "node:fs";
 import os from "node:os";
 const [K, HS, DAYS] = [+process.argv[2] || 4, +process.argv[3] || 10, +process.argv[4] || 3];
-const W = new URL("./worker.mjs", import.meta.url).pathname, F = new URL("./search_results.jsonl", import.meta.url).pathname;
+const W = fileURLToPath(new URL("./worker.mjs", import.meta.url)), F = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const rows = fs.readFileSync(F, "utf8").trim().split("\n").map(l => JSON.parse(l)).filter(r => r.round === 2 && r.phase === "train");
 const EXTRA = ["rider", "dip", "whale", "gem", "trend"];
 function setup(c) {

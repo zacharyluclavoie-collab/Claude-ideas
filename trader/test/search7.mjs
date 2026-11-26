@@ -1,9 +1,10 @@
 // Round 7: lose less on bad days without giving up profit (Lots of trades, 5x market): tighter daily loss stop and drawdown limits.
 //   node test/search7.mjs <days=3> <trainSeeds=6> <holdoutSeeds=8>
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
 const [DAYS, TS, HS] = [+process.argv[2] || 3, +process.argv[3] || 6, +process.argv[4] || 8];
-const OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const grid = [
   { name: "lots now" },
   { name: "daily loss stop 1.5%", dl: 1.5 },

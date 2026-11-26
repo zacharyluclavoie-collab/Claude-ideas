@@ -366,6 +366,8 @@ body.simple .hdesk [id^="dkp"]{font-size:14px;flex:none}
   .br-right>h2:first-child{margin-top:12px}
   .br-left .br-bots{flex-wrap:wrap;overflow:visible}.br-left .bcard{flex:1 1 calc(25% - 8px);min-width:120px}
 }
+.rtest{margin-top:10px;border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--card)),var(--card))}
+.rtest .rtv{margin-top:8px;font-size:13px;font-weight:600}.rtest .chip{margin-top:8px}
 
 </style>
 </head>
@@ -529,7 +531,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-26 06:34";
+const BUILD = "2026-11-26 07:18";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -982,15 +984,18 @@ const exitValue = (qty, price, liq, tax) => { const val = qty * price, R = Math.
  */
 const GT_NET = { solana: "solana", ethereum: "eth", base: "base", bsc: "bsc", arbitrum: "arbitrum" };
 const GP_CHAIN = { ethereum: "1", bsc: "56", base: "8453", arbitrum: "42161" };
-const MIN_GAP = { "api.dexscreener.com": 350, "api.geckoterminal.com": 2200, "api.gopluslabs.io": 2200, "api.coingecko.com": 3000 };
-const nextAt = {}, coolUntil = {};
+const MIN_GAP = { "api.dexscreener.com": 350, "api.geckoterminal.com": 3000, "api.gopluslabs.io": 2200, "api.coingecko.com": 3000 };
+// one shared timetable for all desks (desks are same-origin frames of the Master; the runner passes SHARED_RL in): together they never go over a free
+// limit, and a "too many requests" answer pauses every desk at once instead of the others carrying on and making it worse
+const RLS = (() => { try { if (typeof SHARED_RL !== "undefined" && SHARED_RL) return SHARED_RL } catch (e) {} try { if (typeof window !== "undefined" && window.parent && window.parent !== window && window.parent.__ptRL) return window.parent.__ptRL } catch (e) {} return null })();
+const nextAt = RLS ? RLS.next : {}, coolUntil = RLS ? RLS.cool : {};
 let health = { ok: 0, fail: 0, lastErr: "", byHost: {} };
 const hostStat = h => health.byHost[h] || (health.byHost[h] = { ok: 0, fail: 0 });
 
 async function getJSON(url) {
-  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK ? (host !== "api.dexscreener.com" ? 0.5 : 0.2) * ((typeof window !== "undefined" && window.DESKN) || 5) : 1),   // 5 desks share the free rate limits
+  const host = new URL(url).host, gap = (MIN_GAP[host] || 1000) * (DESK && !RLS ? ((typeof window !== "undefined" && window.DESKN) || 5) : 1),   // shared timetable: the plain limit; otherwise each desk takes its share
     st = hostStat(host);
-  if ((coolUntil[host] || 0) > Date.now()) { health.fail++; st.fail++; return null }                      // backing off after a rate limit
+  if ((coolUntil[host] || 0) > Date.now()) { st.skip = (st.skip || 0) + 1; return null }                      // backing off after a rate limit (a pause, not a failed request)
   const wait = Math.max(0, (nextAt[host] || 0) - Date.now());
   nextAt[host] = Math.max(Date.now(), nextAt[host] || 0) + gap;
   if (wait) await new Promise(r => setTimeout(r, wait));
@@ -998,7 +1003,7 @@ async function getJSON(url) {
   try {
     const r = await fetch(url, { signal: ctl.signal, headers: { accept: "application/json" } });
     if (r.status === 429) { coolUntil[host] = Date.now() + 30000; throw new Error("HTTP 429 rate limited, pausing 30s") }
-    if (!r.ok) throw new Error("HTTP " + r.status);
+    if (!r.ok) { const u = new URL(url); throw new Error("HTTP " + r.status + " on " + (u.pathname + u.search).slice(0, 90)) }   // say which request failed
     const j = await r.json(); health.ok++; st.ok++; return j;
   } catch (e) { health.fail++; st.fail++; health.lastErr = host + ": " + e.message; return null }
   finally { clearTimeout(to) }
@@ -1065,7 +1070,7 @@ const LIVE = {
     for (const c of cs) for (const pg of pages) o = o.concat(await this.pools(c, `new_pools?page=${pg}`, "new"));
     // DexScreener: newest profiles and boosted tokens (id lists), then keyword searches that return full pair data for up to 30 pairs each
     for (const u of ["token-profiles/latest/v1", "token-boosts/latest/v1", "token-boosts/top/v1"]) { const pr = await getJSON("https://api.dexscreener.com/" + u); for (const p of Array.isArray(pr) ? pr : []) if (cs.includes(p.chainId) && p.tokenAddress) o.push({ chain: p.chainId, addr: p.tokenAddress, source: "new" }) }
-    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold", "shib", "floki", "popcat", "brett", "mog", "toshi", "goat", "pnut", "neiro", "mew", "bome", "slerf", "panda", "bear", "ape", "monkey", "penguin", "hamster", "cash", "money", "lambo", "pepe2", "wojak", "turbo", "kitty", "doge2", "sun", "moon2", "x", "grok", "agent", "bot", "fi", "dao"];
+    const KW = ["pepe", "dog", "cat", "ai", "trump", "pump", "moon", "frog", "elon", "baby", "inu", "coin", "meme", "gpt", "bull", "king", "sol", "base", "degen", "wif", "bonk", "chad", "giga", "retard", "pixel", "based", "tiger", "duck", "rocket", "gold", "shib", "floki", "popcat", "brett", "mog", "toshi", "goat", "pnut", "neiro", "mew", "bome", "slerf", "panda", "bear", "ape", "monkey", "penguin", "hamster", "cash", "money", "lambo", "pepe2", "wojak", "turbo", "kitty", "doge2", "sun", "moon2", "grok", "agent", "bot", "fi", "dao"];
     // DexScreener allows ~300 calls/min (GeckoTerminal ~30), so most of the extra scanning goes here: 16 searches x up to 30 pairs per cycle
     for (let i = 0, N = DESK ? 6 : 16; i < N; i++) { const q = KW[(cyc * N + i + DESK * 5) % KW.length], d = await getJSON("https://api.dexscreener.com/latest/dex/search?q=" + q); for (const p of (d && d.pairs) || []) { if (!cs.includes(p.chainId)) continue; const s = dexPair(p.chainId, p); if (s && s.price > 0 && s.liq > 0) o.push({ chain: p.chainId, addr: s.addr, source: "new", snap: s }) } }
     return o;
@@ -1543,7 +1548,8 @@ async function stepFast(t){if(busyF)return;busyF=true;await guard(async()=>{roll
   if(due("equity",MODE==="live"?30:CFG.equityEvery,t)){S.curve.push([t,totalEquity()]);if(S.curve.length>4000)S.curve.shift();save()}});busyF=false}
 async function stepSlow(t){if(busyL)return;busyL=true;await guard(async()=>{watchdog(t);if(due("regime",regime==="unknown"?15:CFG.regimeEvery,t))await updateRegime(t);
   if(Object.keys(S.pf.positions).length&&due("recheck",30,t))await recheck(t);await coreStep(t)});busyL=false}
-async function stepScan(t){if(paused||S.pf.shutdown)return;if(busyS){if(Date.now()-(busySAt||0)<300e3)return;ev("warn","error","","a scan was stuck for 5 minutes and was restarted")}busyS=true;busySAt=Date.now();scanning=true;await guard(async()=>{if(!CFG.onlyTrend&&due("new",CFG.newEvery,t))await scan("new",now());if(due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
+// live: a desk that does not trade older coins does not spend the free data limits looking for them (tested live: most of its requests went there)
+async function stepScan(t){if(paused||S.pf.shutdown)return;if(busyS){if(Date.now()-(busySAt||0)<300e3)return;ev("warn","error","","a scan was stuck for 5 minutes and was restarted")}busyS=true;busySAt=Date.now();scanning=true;await guard(async()=>{if(!CFG.onlyTrend&&due("new",CFG.newEvery,t))await scan("new",now());if((MODE==="mock"||CFG.tr.enabled||CFG.onlyTrend)&&due("trend",CFG.trendEvery,t))await scan("trending",now())});busyS=false;scanning=false}
 async function tick(){if(busy)return;busy=true;try{const t=now();await stepFast(t);await stepSlow(t);await stepScan(t)}finally{busy=false}}
 
 

@@ -1,9 +1,10 @@
 // Round 6: more winning coins without less profit (Lots of trades, 5x market). Win rate is reported for every variant.
 //   node test/search6.mjs <days=2> <trainSeeds=6> <holdoutSeeds=8>
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
 const [DAYS, TS, HS] = [+process.argv[2] || 2, +process.argv[3] || 6, +process.argv[4] || 8];
-const OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const grid = [
   { name: "lots now" },
   { name: "first target +4%", tp1: 4 },

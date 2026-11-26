@@ -1,9 +1,10 @@
 // Round 4: re-tune Lots of trades' size and exposure for the bigger demo market (5x), where many more good coins are available at once.
 //   node test/search4.mjs <days=2> <trainSeeds=6> <holdoutSeeds=8>
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import { run } from "./search3.mjs";
 const [DAYS, TS, HS] = [+process.argv[2] || 2, +process.argv[3] || 6, +process.argv[4] || 8];
-const OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 const grid = [{ ref: true }];
 for (const per of [1.0, 1.4, 1.8]) for (const tot of [50, 75, 95]) grid.push({ per, pos: +(1.63 * per).toFixed(2), tot, maxPos: tot >= 75 ? 60 : 30 });
 const setup = c => `applyPreset('lots');CFG.core.on=false;CFG.simScale=5;` + (c.ref ? "" : `CFG.risk.perTradePct=${c.per};CFG.risk.posNew=${c.pos};CFG.risk.posTrend=${(c.pos * 1.5).toFixed(2)};CFG.risk.totalExp=${c.tot};CFG.risk.maxPos=${c.maxPos};`);

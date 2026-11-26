@@ -351,3 +351,5 @@ body.simple .hdesk [id^="dkp"]{font-size:14px;flex:none}
   .br-right>h2:first-child{margin-top:12px}
   .br-left .br-bots{flex-wrap:wrap;overflow:visible}.br-left .bcard{flex:1 1 calc(25% - 8px);min-width:120px}
 }
+.rtest{margin-top:10px;border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--card)),var(--card))}
+.rtest .rtv{margin-top:8px;font-size:13px;font-weight:600}.rtest .chip{margin-top:8px}

@@ -1,10 +1,11 @@
 // Self-search: tries many random settings in the simulator, ranks them, then re-tests the best ones on unseen seeds.
 //   node test/search.mjs <configs=24> <days=3> <trainSeeds=6> <holdoutSeeds=8>   (results appended to test/search_results.jsonl)
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";   // works with spaces in folder names and on Windows
 import fs from "node:fs";
 import os from "node:os";
 const [N, DAYS, TS, HS] = [+process.argv[2] || 24, +process.argv[3] || 3, +process.argv[4] || 6, +process.argv[5] || 8];
-const W = new URL("./worker.mjs", import.meta.url).pathname, OUT = new URL("./search_results.jsonl", import.meta.url).pathname;
+const W = fileURLToPath(new URL("./worker.mjs", import.meta.url)), OUT = fileURLToPath(new URL("./search_results.jsonl", import.meta.url));
 let x = 9137; const r = () => (x = (x * 1664525 + 1013904223) % 4294967296) / 4294967296, pick = a => a[Math.floor(r() * a.length)], rng = (a, b, d = 2) => +(a + r() * (b - a)).toFixed(d);
 function cfg(i) {
   if (i === 0) return { base: "most" };   // the current best, as the reference
