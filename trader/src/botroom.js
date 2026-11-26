@@ -66,11 +66,12 @@ function brRow(m, fresh) {
 function brDrawChat() { const el = $h("br_chat"); if (!el) return; const L = brLog.filter(brMatch).slice(0, 40); el.innerHTML = L.length ? L.map(m => brRow(m, false)).join("") : `<div class="sub" style="padding:14px 4px">Waiting for the bots… (messages appear as soon as the desks start scanning)</div>` }
 function brShow(m) {   // one message goes on screen
   brLog.unshift(m); if (brLog.length > 160) brLog.length = 160; brLast[isAgent(m.a) ? "agents" : m.a] = m; brShown++;
-  const vis = cur === -1 && !document.hidden;
-  if (vis) { brZap(m); const el = $h("br_chat"); if (el && brMatch(m) && !touchBusy()) { if (el.firstElementChild && el.firstElementChild.classList.contains("sub")) el.innerHTML = ""; el.insertAdjacentHTML("afterbegin", brRow(m, true)); while (el.children.length > 40) el.lastElementChild.remove() } }
-  const mini = $h("br_mini_list"), rn = Date.now();   // Master preview: one new line at a time, slow enough to read
-  if (mini && cur === 0 && rn - brMiniT > 1300 && !touchBusy()) { brMiniT = rn; if (mini.firstElementChild && mini.firstElementChild.classList.contains("sub")) mini.innerHTML = "";
-    mini.insertAdjacentHTML("afterbegin", `<div class="bmini k-${m.k}"><span>${botIcon(m.a)}</span><span class="bmt"><b>${escH(botName(m.a))}</b>${m.s ? " · " + escH(m.s) : ""}: ${escH(m.x)}</span></div>`); while (mini.children.length > 3) mini.lastElementChild.remove() }
+  if ((cur === -1 || cur === 0) && brStageVis && !document.hidden) brZap(m);
+  if (cur === -1 && !document.hidden) { const el = $h("br_chat"); if (el && brMatch(m) && !touchBusy()) { if (el.firstElementChild && el.firstElementChild.classList.contains("sub")) el.innerHTML = ""; el.insertAdjacentHTML("afterbegin", brRow(m, true)); while (el.children.length > 40) el.lastElementChild.remove() } }
+  const mc = $h("m_chat"), rn = Date.now();   // Master: the newest lines, one at a time, slow enough to read
+  const tradeRun = mc && [...mc.children].slice(0, 2).filter(r => /k-(buy|win|loss)/.test(r.className)).length === 2, skip = isTrade(m) && tradeRun && brQ.some(x => !isTrade(x));   // keep a mix of bots on the Master
+  if (mc && cur === 0 && !skip && rn - brMiniT > 850 && !touchBusy()) { brMiniT = rn; if (mc.firstElementChild && mc.firstElementChild.classList.contains("sub")) mc.innerHTML = "";
+    mc.insertAdjacentHTML("afterbegin", `<div class="mrow k-${m.k}"><span class="mi">${botIcon(m.a)}</span><span class="mt"><b>${escH(botName(m.a))}</b>${m.b ? `<i>→ ${escH(botName(m.b))}</i>` : ""}${m.s ? ` <b class="bsym">${escH(m.s)}</b>` : ""} ${escH(m.x)}</span>${deskTag(m.d)}</div>`); while (mc.children.length > 5) mc.lastElementChild.remove() }
 }
 let brTouch = 0; document.addEventListener("pointerdown", () => brTouch = Date.now(), true); const touchBusy = () => Date.now() - brTouch < 600;
 (function drip() {   // spread each second's messages out so they can be read and the dots do not pile up
@@ -83,10 +84,11 @@ function brDrawBots() {
   for (const id of CORE_BOTS) { const n = $h("bcn_" + id), x = $h("bcx_" + id), m = brLast[id]; if (n) n.textContent = (c[id] || 0).toLocaleString(); if (x) x.textContent = m ? (m.s ? m.s + ": " : "") + m.x : "…"; }
   el.querySelectorAll(".bcard").forEach(b => b.classList.toggle("on", b.dataset.b === brBot));
 }
-function brDraw() {
-  brLayout(); const ds = Object.values(R), open = ds.reduce((a, r) => a + (r.open || 0), 0), bots = 8 + brAgents.size - 1;
+function brDrawStage() { brLayout(); const ds = Object.values(R), open = ds.reduce((a, r) => a + (r.open || 0), 0);
   const rate = $h("br_rate"); if (rate) rate.textContent = Math.round(brPerMin()).toLocaleString();
-  const sp = ds.filter(r => !r.live).map(r => r.speed || 1), fast = sp.length ? Math.max(...sp) : 1, tr = $h("br_trades"); if (tr) tr.textContent = `${open} coin${open === 1 ? "" : "s"} watched now${fast > 1 ? " · demo " + fast.toLocaleString() + "× speed" : ""}`;
+  const sp = ds.filter(r => !r.live).map(r => r.speed || 1), fast = sp.length ? Math.max(...sp) : 1, tr = $h("br_trades"); if (tr) tr.textContent = `${open} coin${open === 1 ? "" : "s"} watched now${fast > 1 ? " · demo " + fast.toLocaleString() + "× speed" : ""}` }
+function brDraw() {
+  brDrawStage(); const ds = Object.values(R), bots = 8 + brAgents.size - 1;
   const sub = $h("br_sub"); if (sub) sub.textContent = ds.length ? `${ds.length} desk${ds.length > 1 ? "s" : ""} · ${bots} kinds of bots in each · ${(brCounts().scout || 0).toLocaleString()} coins checked` : "Starting the desks…";
   brDrawBots(); document.querySelectorAll("#br_chat .btime").forEach(t => t.textContent = brAgo(+t.dataset.rt));
 }
@@ -100,4 +102,7 @@ function brBuild() {
   const mo = $h("br_open"); if (mo) mo.onclick = () => show(-1);
   brLayout(); brDrawChat();
 }
-brBuild(); setInterval(() => { if (cur === -1 && !document.hidden) brDraw() }, 1000);
+let brStageVis = true;
+function brPlace() { const w = $h("br_stagewrap"), slot = $h(cur === -1 ? "b_botslot" : "m_botslot"); if (w && slot && w.parentNode !== slot) slot.appendChild(w) }   // one live map, shown on the Master or in the Bots tab
+try { new IntersectionObserver(es => { for (const e of es) brStageVis = e.isIntersecting }).observe($h("br_stagewrap")) } catch (e) {}
+brBuild(); brPlace(); setInterval(() => { if (document.hidden) return; if (cur === -1) brDraw(); else if (cur === 0 && brStageVis) brDrawStage() }, 1000);

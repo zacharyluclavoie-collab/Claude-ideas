@@ -325,6 +325,47 @@ body.fullauto .fa-lock{opacity:.45;pointer-events:none;filter:grayscale(.4)}
 .deskbar .botsbtn{font-weight:750}.deskbar .bdot{width:7px;height:7px;border-radius:50%;background:var(--r);animation:brLive 1.4s ease-in-out infinite}
 @media (max-width:520px){#hbots{padding:12px 12px 100px}.br-title{font-size:23px}.bcard{flex-basis:126px}.bm{padding:9px 10px}.btext{font-size:13px}}
 @media (prefers-reduced-motion:reduce){.br-edges ellipse,.br-zap,.br-node.talk .br-ring,.br-coreglow,.bm.fresh,.bmini,.livepill i,.deskbar .bdot{animation:none}}
+/* ---------- Denser Master (more on screen at once) ---------- */
+.hero-ctl{display:flex;gap:6px;align-items:center}
+.hero .viewsw{position:static;padding:2px}.hero .viewsw button{padding:5px 9px;font-size:11.5px;font-weight:700}
+.hero-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hero-pills>div:empty{display:none}
+.hero-pills .hero-pct,.hero-pills .hero-auto{display:inline-block!important}.hero-pills .bestchk{display:inline-flex!important;align-items:center}
+.hero-pills .hero-pct,.hero-pills .hero-auto,.hero-pills .bestchk{margin:0!important;width:auto!important;max-width:none!important;padding:4px 10px;font-size:12px;line-height:1.3}
+.hero .eq{margin:4px 0 0}
+.guide summary{padding:9px 0;font-size:14px}.ticker{margin-top:8px}
+.dash .dash-tot{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.kv.kv2{border-top:1px solid var(--line);padding-top:9px;margin-top:9px}
+.br-home{margin-top:10px}.br-hh{display:flex;align-items:center}
+#m_botslot .br-stage{margin:8px -6px 0;padding:0;border:0;box-shadow:none;background:radial-gradient(70% 60% at 50% 50%,var(--soft),transparent)}
+#m_botslot #br_svg{max-height:300px;margin:0 auto}
+.m-chat{margin-top:4px}
+.mrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;animation:brIn .4s ease-out}
+.mrow .mi{flex:0 0 20px;text-align:center}.mrow .mt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .mt i{font-style:normal;color:var(--mut);margin:0 4px 0 3px;font-size:11.5px}.mrow .cb{flex:none;font-size:9px;padding:3px 5px}
+.mrow.k-buy .mt>b:first-child,.mrow.k-win .mt>b:first-child{color:var(--g)}.mrow.k-loss .mt>b:first-child{color:var(--r)}.mrow.k-warn .mt>b:first-child{color:var(--y)}.mrow.k-no .mt{color:var(--mut)}
+#h_feed .frow{align-items:center;padding:6px 0}
+#h_feed .frow .ft{display:flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden}
+#h_feed .frow .ft>.sub{margin:0;flex:none}#h_feed .frow .ft>.fd{flex:1;min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis}
+#h_desks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+body.simple #h_desks{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+#h_desks .hdesk{margin:0!important;min-width:0}
+body.simple .hdesk{padding:10px 11px 9px}
+body.simple .hdesk .row{gap:6px}body.simple .hdesk .dkname{min-width:0;display:flex;align-items:center;gap:6px}body.simple .hdesk .dkname b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
+body.simple .hdesk .spark,body.simple .hdesk .spark svg{height:26px}body.simple .hdesk .spark{margin:6px 0 0}
+body.simple .hdesk .sub{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.simple .hdesk [id^="dkp"]{font-size:14px;flex:none}
+@media (max-width:520px){#hr_opens,#hr_runs{display:none}.dash .kv{gap:5px 8px}.dash .kv b{font-size:14px}.mrow .mt i{display:none}h2{margin:14px 2px 6px}.hero .eq{font-size:32px!important}.hero-top .hero-lab{font-size:11px}.dash .dash-tot{font-size:22px}}
+@media (min-width:900px){
+  body.hostbody{max-width:1240px}
+  .mgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px;align-items:start}
+  .mcol>h2.h2top{margin-top:12px}
+  #m_botslot #br_svg{max-height:340px}
+  #hbots{max-width:1240px}
+  .br-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0 18px;align-items:start}
+  .br-right>h2:first-child{margin-top:12px}
+  .br-left .br-bots{flex-wrap:wrap;overflow:visible}.br-left .bcard{flex:1 1 calc(25% - 8px);min-width:120px}
+}
 
 </style>
 </head>
@@ -488,7 +529,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-26 06:17";
+const BUILD = "2026-11-26 06:34";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {

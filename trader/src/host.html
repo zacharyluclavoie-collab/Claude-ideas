@@ -1,6 +1,6 @@
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
 <div id="hmaster" class="hpane">
-  <div class="hero"><div class="hero-top"><span class="hero-lab">All desks</span><span class="themesw" id="themesw"><button data-v="dark" aria-label="Dark theme">🌙</button><button data-v="light" aria-label="Light theme">☀️</button><button data-v="auto" aria-label="Match device">A</button></span></div><div class="eq" id="h_eq">$0</div><div class="hero-sub" id="h_sub">Starting desks…</div><div class="hero-pct" id="h_pct"></div><div class="hero-auto fa" id="h_fa"></div><div class="hero-auto" id="h_auto"></div><div class="bestchk" id="h_best"></div><div class="viewsw" id="viewsw"><button data-v="simple">Simple</button><button data-v="full">Full</button></div></div>
+  <div class="hero"><div class="hero-top"><span class="hero-lab">All desks</span><span class="hero-ctl"><span class="viewsw" id="viewsw"><button data-v="simple">Simple</button><button data-v="full">Full</button></span><span class="themesw" id="themesw"><button data-v="dark" aria-label="Dark theme">🌙</button><button data-v="light" aria-label="Light theme">☀️</button><button data-v="auto" aria-label="Match device">A</button></span></span></div><div class="eq" id="h_eq">$0</div><div class="hero-sub" id="h_sub">Starting desks…</div><div class="hero-pills"><div class="hero-pct" id="h_pct"></div><div class="hero-auto fa" id="h_fa"></div><div class="hero-auto" id="h_auto"></div><div class="bestchk" id="h_best"></div></div></div>
   <div class="tipbar" id="fa_tip" hidden></div>
   <details class="guide" id="guide"><summary>👋 New here? How it works</summary>
     <div class="gbody">
@@ -16,33 +16,37 @@
       <button class="chip" id="guide_hide">Got it, hide this</button>
     </div></details>
   <div class="ticker" id="ticker"><div class="tk-track" id="tk_track"></div></div>
-  <main>
-    <div class="panel" style="margin-top:14px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" style="font-size:22px">$0</b></div>
-      <div class="kv" id="h_kv"></div></div>
-    <div class="panel" style="margin-top:10px"><div class="kv" id="h_rate"></div></div>
-    <div class="panel br-mini" style="margin-top:10px"><div class="row"><b>🤖 Bot room <span class="livepill"><i></i>LIVE</span></b><button class="chip br-go" id="br_open">Watch the bots →</button></div><div id="br_mini_list" class="br-mini-list"><div class="sub">The bots start talking as soon as the desks scan…</div></div></div>
-    <h2>Live scanner <small id="h_rate2"></small></h2>
+  <main><div class="mgrid"><div class="mcol">
+    <div class="panel dash" style="margin-top:12px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" class="dash-tot">$0</b></div>
+      <div class="kv" id="h_kv"></div><div class="kv kv2" id="h_rate"></div></div>
+    <div class="panel br-home"><div class="row"><b class="br-hh">🤖 Bot room <span class="livepill"><i></i>LIVE</span></b><button class="chip br-go" id="br_open">Full room →</button></div>
+      <div id="m_botslot"></div><div id="m_chat" class="m-chat"><div class="sub">The bots start talking as soon as the desks scan…</div></div></div>
+  </div><div class="mcol">
+    <h2 class="h2top">Live scanner <small id="h_rate2"></small></h2>
     <div class="panel" id="h_feed"></div>
     <h2>Profit / loss, all desks <small>live</small></h2>
-    <div class="panel"><div id="h_chart" style="height:120px"></div></div>
+    <div class="panel"><div id="h_chart" style="height:110px"></div></div>
     <h2>Coins open right now <small id="h_opencount"></small></h2>
     <div class="panel" id="h_open"></div>
     <h2>Desks <small>tap one to open it</small></h2>
     <div id="h_desks"></div>
     <h2 class="fullonly">Master settings <small>apply to every desk</small></h2>
     <div class="panel fullonly" id="h_set"></div>
+  </div></div>
     <div class="sub" style="margin:14px 2px 0">Each desk is a full copy of the bot with its own paper account, settings and agents, trading one area of the market. All of them run at the same time; this board adds them up. Open a desk to change its mode (it starts on Lots of trades) or its starting balance.</div>
   </main>
 </div>
 <div id="hbots" class="hpane" hidden>
   <div class="br-head"><div><div class="hero-lab">Bot room</div><div class="br-title">Every bot, live <span class="livepill"><i></i>LIVE</span></div><div class="sub" id="br_sub">Starting the desks…</div></div></div>
-  <div class="panel br-stage"><svg id="br_svg" viewBox="0 0 360 344" role="img" aria-label="Map of the bots: messages fly between them as they make decisions"></svg></div>
+  <div class="br-grid"><div class="br-left"><div id="b_botslot"><div class="panel br-stage" id="br_stagewrap"><svg id="br_svg" viewBox="0 8 360 336" role="img" aria-label="Map of the bots: messages fly between them as they make decisions"></svg></div></div>
   <h2>What each bot is doing <small>tap one to see only its messages</small></h2>
   <div class="br-bots" id="br_bots"></div><div class="sub" id="br_bot_note"></div>
+  </div><div class="br-right">
   <h2>Bot chat <small>real decisions, newest first</small></h2>
   <div class="chips br-f" id="br_f"></div>
   <div class="chips br-d" id="br_d"></div>
   <div class="br-chat" id="br_chat"></div>
+  </div></div>
   <div class="sub" style="margin:14px 2px 0">Every message is a real decision a bot in one of the desks just made: the Scanner finds coins, the Scam filter drops fakes, the Agents pick the ones they like, Security checks for scams, the Committee votes, the Risk manager sizes the trade, the Trader buys and sells, and the Watcher guards every coin you hold. Routine messages are sampled so you can read them; the counters show all the work. Pretend money only.</div>
 </div>
 <div id="hframes"></div>
