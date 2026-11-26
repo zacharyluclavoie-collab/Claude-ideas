@@ -1,4 +1,5 @@
 /* ===== Run controls, speed HUD, made/lost bar, W–L, finished trades, failed/retried, run report, export/import, diagnostics ===== */
+const endDate = g => (CLK.done && g === CLK.until && (g - CLK.g0) % 86400 === 0) ? dateLabel(g - 1) + ", 24:00" : dateLabel(g);   // "End of Day 14" is the end of Oct 22, not Oct 23
 const fmtDur = s => { s = Math.max(0, Math.round(s)); const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60); return d ? `${d} d ${h} h` : h ? `${h} h ${m} m` : `${m} m` };
 const fmtReal = ms => { const s = Math.round(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h} h ${m} m` : m ? `${m} m ${x} s` : `${x} s` };
 const pxF = v => v == null ? "–" : v >= 1 ? v.toFixed(4) : v.toPrecision(4);
@@ -93,7 +94,7 @@ function effSpeedRun() { return CLK.realRun > 1000 ? (CLK.g - CLK.g0) / (CLK.rea
 function summaryText() {
   const D = reportData(), sd = (D.simTo - D.simFrom) / 86400, aw = D.t.wn ? D.t.w / D.t.wn : 0, al = D.t.ln ? D.t.l / D.t.ln : 0;
   const L = ["PAPER TRADER — RUN SUMMARY",
-    `Period: ${simLabel(D.simFrom)} (${dateLabel(D.simFrom)}) to ${simLabel(D.simTo)} (${dateLabel(D.simTo)}) (${sd.toFixed(2)} simulated days, ${fmtReal(CLK.realRun)} real, ${D.sel.toLocaleString()}x selected / ~${Math.round(D.eff).toLocaleString()}x actual)`,
+    `Period: ${simLabel(D.simFrom)} (${dateLabel(D.simFrom)}) to ${simLabel(D.simTo)} (${endDate(D.simTo)}) (${sd.toFixed(2)} simulated days, ${fmtReal(CLK.realRun)} real, ${D.sel.toLocaleString()}x selected / ~${Math.round(D.eff).toLocaleString()}x actual)`,
     `Start: ${money(D.start)}  Final: ${money(D.final)}  Profit: ${sg(D.profit)} (${D.pct >= 0 ? "+" : ""}${D.pct.toFixed(2)}%)`,
     `Trades: ${D.n}  Win rate: ${wrS(D.t.wn, D.t.ln)}  Wins: ${D.t.wn} (${sg(cents(D.t.w))})  Losses: ${D.t.ln} (${sg(cents(D.t.l))})`,
     `Avg win: ${sg(cents(aw))}  Avg loss: ${sg(cents(al))}`,
@@ -109,7 +110,7 @@ function openReport(auto) {
   const tc = (c) => c ? `<b>${escH(c.sym)}</b> · ${escH(c.desk)} · price ${pxF(c.entry)} → ${pxF(c.exit)} · <b class="${c.pnl >= 0 ? "g" : "r"}">${sg(c.pnl)}</b> · ${escH(reasonN(c.reason))} · held ${fmtDur(c.t - c.opened)}` : "–";
   el.innerHTML = `<div class="rep"><div class="row"><h3>📋 Run report</h3><button class="chip" id="rp_close">Close</button></div>${auto ? '<div class="donebar">✅ Test complete. Everything is paused.</div>' : ""}<div class="sub">${DEMO_NOTE}</div>
     <h4>1 · Result</h4><div class="kv"><div><span>Final balance</span><b>${money(D.final)}</b></div><div><span>Profit</span><b class="${D.profit >= 0 ? "g" : "r"}">${sg(D.profit)} (${D.pct >= 0 ? "+" : ""}${D.pct.toFixed(2)}%)</b></div><div><span>Start balance</span><b>${money(D.start)}</b></div></div>
-    <h4>2 · Period</h4><div class="sub">${simLabel(D.simFrom)} (${dateLabel(D.simFrom)}) → ${simLabel(D.simTo)} (${dateLabel(D.simTo)}) · ${sd.toFixed(2)} simulated days · ${fmtReal(CLK.realRun)} real · ${D.sel.toLocaleString()}x selected / ~${Math.round(D.eff).toLocaleString()}x actual (whole run)</div>
+    <h4>2 · Period</h4><div class="sub">${simLabel(D.simFrom)} (${dateLabel(D.simFrom)}) → ${simLabel(D.simTo)} (${endDate(D.simTo)}) · ${sd.toFixed(2)} simulated days · ${fmtReal(CLK.realRun)} real · ${D.sel.toLocaleString()}x selected / ~${Math.round(D.eff).toLocaleString()}x actual (whole run)</div>
     <h4>3 · Trades</h4><div class="kv"><div><span>Trades</span><b>${D.n.toLocaleString()}</b></div><div><span>Win rate</span><b>${wrS(D.t.wn, D.t.ln)}</b></div><div><span>Win / loss size</span><b>${al < 0 ? (aw / -al).toFixed(2) + "x" : "–"}</b></div><div><span>Wins</span><b class="g">${D.t.wn} · ${sg(cents(D.t.w))}</b></div><div><span>Losses</span><b class="r">${D.t.ln} · ${sg(cents(D.t.l))}</b></div><div><span>Avg win / loss</span><b>${sg(cents(aw))} / ${sg(cents(al))}</b></div><div><span>Open now</span><b>${D.t.open} · ${sg(cents(D.t.openPl))}</b></div></div>
     <h4>4 · Desks</h4><div class="tblw"><table class="ftbl"><thead><tr><th>Desk</th><th>Profit</th><th>Balance</th><th>Trades</th><th>Win rate</th><th>Best</th><th>Worst</th></tr></thead><tbody>${D.desks.map(d => `<tr><td>${escH(d.name)}</td><td class="${d.pnl >= 0 ? "g" : "r"}">${sg(d.pnl)}</td><td>${money(d.eq)}</td><td>${d.n}</td><td>${d.wr}</td><td>${d.best ? sg(d.best.pnl) + " " + escH(d.best.sym) : "–"}</td><td>${d.worst ? sg(d.worst.pnl) + " " + escH(d.worst.sym) : "–"}</td></tr>`).join("")}</tbody></table></div>
     <h4>5 · Failed and retried</h4><div class="sub">Failed buys ${D.z.buyFail} · failed sells ${D.z.sellRev + D.z.sellDrop + D.z.sellOther} (${D.z.sellRev} reverted, ${D.z.sellDrop} dropped) · retries that worked ${D.z.retryOk} · fees burned ${money(cents(D.z.burnBuy + D.z.burnSell))} · written off ${D.z.writeoff}</div>
@@ -136,10 +137,11 @@ async function exportRun() {
 }
 async function importRun(file) {
   try { const o = JSON.parse(await file.text()); if (!o || o.app !== "paper-trader" || !o.run || !o.desks) throw new Error("not a Paper Trader run file");
+    leaving = true; CLK.state = "paused"; await new Promise(r => setTimeout(r, 200));   // stop this run from saving over the imported one
     if (o.run.nd && o.run.nd !== NDESK) { try { localStorage.setItem("pt_host_n", String(o.run.nd)) } catch (e) {} }
     await IDB.clear(); for (const [k, v] of Object.entries(o.desks)) if (v) await IDB.put("desk" + k, v);
     localStorage.setItem(RUNK, JSON.stringify(o.run)); toast("Imported: reloading…"); setTimeout(() => location.reload(), 600)
-  } catch (e) { toast("Import failed: " + e.message); diag("storage", "import failed: " + e.message) }
+  } catch (e) { leaving = false; toast("Import failed: " + e.message); diag("storage", "import failed: " + e.message) }
 }
 
 /* ---- Diagnostics (Full view): checks, settings log, speed history, storage, errors ---- */
@@ -170,4 +172,4 @@ buildRun(); drawRestore(); if (restoreWait) { CLK.state = "paused"; drawRun() }
 document.body.classList.toggle("fullauto", FA);
 $h("h_diag").addEventListener("toggle", drawDiag);
 draw(); setInterval(() => { if (cur === 0) { draw(); mark() } }, 1000); setInterval(() => { if (cur !== 0) drawRun(); if ($h("h_diag").open) drawDiag() }, 1000);
-window.addEventListener("pagehide", () => { if (lastSaveG) writeRun(lastSaveG) });
+window.addEventListener("pagehide", () => { if (lastSaveG && !leaving) writeRun(lastSaveG) });

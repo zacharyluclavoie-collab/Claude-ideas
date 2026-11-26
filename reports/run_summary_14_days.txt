@@ -1,0 +1,29 @@
+PAPER TRADER — RUN SUMMARY
+Period: Day 1 · 00:00 (Oct 9) to End of Day 14 (Oct 23) (14.00 simulated days, 14 m 53 s real, 10,000x selected / ~1,355x actual)
+Start: $10,000.00  Final: $13,909.20  Profit: +$3,909.20 (+39.09%)
+Trades: 1932  Win rate: 62%  Wins: 1201 (+$6,031.19)  Losses: 731 (-$2,236.29)
+Avg win: +$5.02  Avg loss: -$3.06
+Failed buys: 231  Failed sells: 278  Fees burned: $24.73
+Open at the end: 26 coins (+$120.49)
+DESKS:
+- Solana: +$1,011.46 | 544 trades | 60% win
+- Base: +$693.45 | 372 trades | 65% win
+- BSC: +$704.06 | 398 trades | 58% win
+- Arbitrum: +$602.14 | 342 trades | 61% win
+- Big coins: +$898.09 | 276 trades | 71% win
+DAILY:
+- Day 1 (Oct 9): 229 trades, made +$505.86, lost -$247.47, net +$258.39, balance $10,283.52
+- Day 2 (Oct 10): 100 trades, made +$220.06, lost -$75.20, net +$144.86, balance $10,466.02
+- Day 3 (Oct 11): 125 trades, made +$375.95, lost -$95.32, net +$280.63, balance $10,727.31
+- Day 4 (Oct 12): 106 trades, made +$342.33, lost -$210.53, net +$131.80, balance $10,881.18
+- Day 5 (Oct 13): 143 trades, made +$386.06, lost -$119.05, net +$267.01, balance $11,139.31
+- Day 6 (Oct 14): 141 trades, made +$411.70, lost -$153.21, net +$258.49, balance $11,394.03
+- Day 7 (Oct 15): 136 trades, made +$340.39, lost -$135.87, net +$204.52, balance $11,581.71
+- Day 8 (Oct 16): 137 trades, made +$571.45, lost -$252.09, net +$319.36, balance $11,928.18
+- Day 9 (Oct 17): 118 trades, made +$395.65, lost -$147.50, net +$248.15, balance $12,219.72
+- Day 10 (Oct 18): 126 trades, made +$518.85, lost -$172.56, net +$346.29, balance $12,504.78
+- Day 11 (Oct 19): 138 trades, made +$452.49, lost -$146.36, net +$306.13, balance $12,794.38
+- Day 12 (Oct 20): 138 trades, made +$450.57, lost -$204.90, net +$245.67, balance $13,065.56
+- Day 13 (Oct 21): 158 trades, made +$596.75, lost -$138.16, net +$458.59, balance $13,517.89
+- Day 14 (Oct 22): 137 trades, made +$463.09, lost -$138.08, net +$325.01, balance $13,909.20
+NOTE: Demo market — not real prices. Past demo results do not predict real results.

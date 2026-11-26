@@ -112,9 +112,9 @@ function finishRun() {
 }
 
 /* ---- saving (all desks at the same simulated moment) and restoring ---- */
-let lastSaveG = 0;
+let lastSaveG = 0, leaving = false;   // set by Start over / Import: from then on nothing may save over the new data
 function doSave(why) {
-  if (saving || isLive()) return; const ds = readyDesks(); if (!ds.length || !ds.every(d => ACK[d] === CLK.g && (PEND[d] || {}).vnow === CLK.g)) { if (why !== "auto") setTimeout(() => doSave(why), 300); return }
+  if (saving || isLive() || leaving) return; const ds = readyDesks(); if (!ds.length || !ds.every(d => ACK[d] === CLK.g && (PEND[d] || {}).vnow === CLK.g)) { if (why !== "auto") setTimeout(() => doSave(why), 300); return }
   lastSave = Date.now(); saving = { g: CLK.g, need: new Set(ds), ok: true, why, t0: Date.now() }; const g = CLK.g;
   for (const d of ds) post(d, { ptcmd: "save", v: g });
   setTimeout(() => { if (saving && saving.g === g) finishSave(false, "a desk did not answer in 6 s") }, 6000);
@@ -122,11 +122,12 @@ function doSave(why) {
 function saveAck(m) { if (!saving || m.saved !== saving.g) return; if (!m.ok) { saving.ok = false; saving.err = m.saveErr || "save refused" } saving.need.delete(m.desk); if (!saving.need.size) finishSave(saving.ok) }
 function finishSave(ok, err) { const sv = saving; saving = null; if (!sv) return; setTimeout(() => { if (cur === 0) draw() }, 0); if (ok) { lastSaveG = sv.g; writeRun(sv.g); window.__ptRestore = true; if (sv.why !== "auto") diag("storage", `saved at ${simLabel(sv.g)} (${sv.why}) in ${Date.now() - sv.t0} ms`) } else diag("storage", `save failed at ${simLabel(sv.g)}: ${err || sv.err}`) }
 function writeRun(g) {
-  const t = totals();
+  if (leaving) return; const t = totals();
   try { localStorage.setItem(RUNK, JSON.stringify({ g, g0: CLK.g0, speed: CLK.speed, state: CLK.state, until: CLK.until, untilMode: CLK.untilMode, done: CLK.done, startedAt: CLK.startedAt, realRun: CLK.realRun, nd: NDESK, days: DAYS, savedAt: Date.now(), bal: cents(t.eq), start: cents(t.start), trades: t.wn + t.ln, setlog: SETLOG.slice(0, 40), actlog: ACTLOG.slice(0, 30) })) } catch (e) { diag("storage", "could not write the run summary: " + e.message) }
 }
 setInterval(() => { if (CLK.state === "running" || CLK.state === "nonew") CLK.realRun += 1000 }, 1000);
 function startOver(cap) {
+  leaving = true; CLK.state = "paused";
   try { localStorage.removeItem(RUNK); localStorage.removeItem("pt_host_hist2"); for (let i = 1; i <= 25; i++) { localStorage.setItem("d" + i + "_pt_cap", String(cap)); localStorage.setItem("d" + i + "_pt_reset_pending", "1") } } catch (e) {}
   const done = () => location.reload(); try { IDB.clear().then(done, done) } catch (e) { done() }
 }
