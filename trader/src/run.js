@@ -8,6 +8,7 @@ const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.o
   put(k,v){return this.tx("readwrite",st=>st.put(v,k))},get(k){return this.tx("readonly",st=>st.get(k))},del(k){return this.tx("readwrite",st=>st.delete(k))},clear(){return this.tx("readwrite",st=>st.clear())},keys(){return this.tx("readonly",st=>st.getAllKeys())}};
 const PEND = {}, ACK = {}, READY = {}, DIAG = [], SETLOG = [], ACTLOG = [], SPD = [], SPH = [], WARN = { inv: 0 };
 const RESTORE = window.__ptRestore || null;
+const DCFG = {};
 let SNAPT = { g: CLK.g, real: Date.now() }, SNAP = null, NEXT = null, snapId = 0, saving = null, lastSave = 0, lastSaveTrades = 0, skipTo = 0, budget = 0, stepAt = performance.now(), bootAt = Date.now(), waitN = 0, stepN = 0, drawTimer = 0;
 let restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
 const KEEP = (RESTORE && RUNSV) ? RUNSV : {};
@@ -55,6 +56,7 @@ function runIn(m) {
   if (m.live) { R[m.desk] = m; SNAP = buildSnap(R, Date.now() / 1000); SNAPT = { g: Date.now() / 1000, real: Date.now(), live: true }; return }
   if (m.vnow == null) return;
   PEND[m.desk] = m; if (m.ack != null) ACK[m.desk] = m.ack;
+  { const o = DCFG[m.desk], k = { mode: m.mode, paused: !!m.paused }; if (o && READY[m.desk]) { if (o.mode !== k.mode) setLog(`${DN[m.desk - 1]}: mode`, MODEN[o.mode] || o.mode, MODEN[k.mode] || k.mode); if (o.paused !== k.paused) setLog(`${DN[m.desk - 1]}: no new trades`, o.paused ? "on" : "off", k.paused ? "on" : "off") } DCFG[m.desk] = k }   // every desk setting change is logged, whoever made it (you, Full Auto, the tournament, the desk page)
   if (m.ready && !READY[m.desk]) {
     READY[m.desk] = true; sendMoney(m.desk);
     if (RESTORE) { if (m.restored) diag("storage", `${DN[m.desk - 1]} restored save #${RESTORE.sid} at ${simLabel(m.vnow)}`); else diag("storage", `${DN[m.desk - 1]} could not load save #${RESTORE.sid}: started fresh at ${simLabel(m.vnow)}`) }
@@ -182,8 +184,9 @@ function finishSave(ok, err) {
   if (sv.why !== "auto" && sv.why !== "trade closed") diag("storage", `save #${sv.id} at ${simLabel(sv.g)} (${sv.why}): ${D$(sv.stamp.eq)}, ${sv.stamp.trades} trades, in ${Date.now() - sv.t0} ms`);
   setTimeout(() => { if (cur === 0) draw() }, 0);
 }
+let handState = null;   // the state a tab that takes over should continue in
 function runRecord(sv) {
-  return { v: 2, sid: sv.id, g: sv.g, stamp: sv.stamp, saves: SAVES.slice(-3), g0: CLK.g0, seed: CLK.seed, speed: CLK.speed, state: CLK.state, until: CLK.until, untilMode: CLK.untilMode, done: CLK.done, startedAt: CLK.startedAt, realRun: CLK.realRun, nd: NDESK,
+  return { v: 2, sid: sv.id, g: sv.g, stamp: sv.stamp, saves: SAVES.slice(-3), g0: CLK.g0, seed: CLK.seed, speed: CLK.speed, state: handState || CLK.state, until: CLK.until, untilMode: CLK.untilMode, done: CLK.done, startedAt: CLK.startedAt, realRun: CLK.realRun, nd: NDESK,
     days: sv.keep.days, dstate: sv.keep.dstate, dd: sv.keep.dd, money: sv.keep.money, modelog: sv.keep.modelog, alloc: sv.keep.alloc, alloclog: sv.keep.alloclog, savedAt: Date.now(), bal: sv.stamp.eq / 100, trades: sv.stamp.trades, setlog: SETLOG.slice(0, 300), actlog: ACTLOG.slice(0, 60) } }
 function writeRun(sv) { if (leaving || readOnly) return; try { localStorage.setItem(RUNK, JSON.stringify(runRecord(sv))) } catch (e) { diag("storage", "could not write the save record: " + e.message) } }
 setInterval(() => { if ((CLK.state === "running" || CLK.state === "nonew") && !restoreWait && !readOnly) CLK.realRun += 1000 }, 1000);
@@ -220,7 +223,7 @@ function drawRestore() {
 setInterval(() => { if (readOnly) return; try { const l = JSON.parse(localStorage.getItem(LOCKK) || "null"); if (l && l.id !== TAB && l.id) return; localStorage.setItem(LOCKK, JSON.stringify({ id: TAB, t: Date.now() })) } catch (e) {} }, 2000);
 window.addEventListener("storage", e => {
   if (e.key === "pt_host_takeover" && e.newValue && !readOnly) { const req = JSON.parse(e.newValue); if (req.by === TAB) return;   // another tab asks: pause, save, hand over
-    setState("paused", "handing over to another tab"); const wait = () => { if (saving) return setTimeout(wait, 200); readOnly = true; try { localStorage.setItem(LOCKK, JSON.stringify({ id: null, t: 0, to: req.by })) } catch (x) {} actLog("Another tab took over this run. This tab is now read-only."); showTabBlock("taken") }; setTimeout(wait, 400) }
+    handState = CLK.state === "nonew" ? "nonew" : CLK.state === "running" ? "running" : null; setState("paused", "handing over to another tab"); const wait = () => { if (saving) return setTimeout(wait, 200); readOnly = true; try { localStorage.setItem(LOCKK, JSON.stringify({ id: null, t: 0, to: req.by })) } catch (x) {} actLog("Another tab took over this run. This tab is now read-only."); showTabBlock("taken") }; setTimeout(wait, 400) }
   if (e.key === LOCKK && tabBlocked && takeoverAsked) { try { const l = JSON.parse(e.newValue || "null"); if (!l || !l.id || l.to === TAB) location.reload() } catch (x) {} }
 });
 let takeoverAsked = false;
@@ -244,6 +247,7 @@ function checkInvariants(sn, rr, trades) {
   if (todayPrev && todayPrev.dk === sn.dk) { const dTd = t.todayN - todayPrev.n, dTr = trades - todayPrev.trades; if (dTd !== dTr) bad.push(`trades today moved ${todayPrev.n} → ${t.todayN} while ${dTr} trades closed`) } else if (todayPrev && t.todayN !== 0 && sn.g % 86400 === HSIM0 % 86400) bad.push(`trades today did not reset at midnight (${t.todayN})`);
   if (full) todayPrev = { dk: sn.dk, n: t.todayN, trades };
   for (const [d, r] of rs) { const x = sn.desks[d], nm = DN[d - 1]; if (r.buysOk != null && r.buysOk !== r.wn + r.ln + r.open) bad.push(`${nm}: ${r.buysOk} coins bought, but ${r.wn} won + ${r.ln} lost + ${r.open} open = ${r.wn + r.ln + r.open}`);
+    if (r.mc && Math.abs(Math.round(r.eq * 100) - r.mc.eq) > (r.open || 0) + 1) bad.push(`${nm}: balance in cents ${D$(r.mc.eq)} does not match the desk's own balance ${D$(Math.round(r.eq * 100))} (money outside the counted accounts)`);
     if (x.eq - x.start !== x.w + x.l + x.openPl - x.bb + x.y) bad.push(`${nm}: profit ${SG$(x.eq - x.start)} vs won + lost + open − failed-buy fees + interest ${SG$(x.w + x.l + x.openPl - x.bb + x.y)}`) }
   if (full) { if (trades < maxTrades) bad.push(`total trades went down ${maxTrades} → ${trades}`); maxTrades = Math.max(maxTrades, trades) }
   const daySum = Object.values(sn.days).reduce((a, x) => a + x.n, 0); if (daySum !== trades) bad.push(`daily table adds up to ${daySum} trades, total ${trades}`);

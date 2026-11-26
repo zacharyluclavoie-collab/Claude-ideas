@@ -143,7 +143,8 @@ function draw() {
 
 /* ---- Master settings: one tap changes every desk ---- */
 const PRM = [["recommended", "Recommended"], ["easy", "Easy"], ["risky", "Risky"], ["most", "Most money"], ["lots", "Lots of trades"], ["max", "Max trades"], ["runner", "Runner (test)"], ["tight", "Tight (test)"]];
-const sendTo = (d, ptcmd, v) => { const f = document.querySelectorAll(".hframe")[d - 1]; try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} };
+const SENDLOG = { closeall: "Sell all", risk: "Risk settings", kill: "Emergency stop", rearm: "Re-arm", reset: "Reset desk", pause: "No new trades (desk)" };
+const sendTo = (d, ptcmd, v) => { const f = document.querySelectorAll(".hframe")[d - 1]; if (SENDLOG[ptcmd] && typeof setLog === "function") setLog(`${DN[d - 1]}: ${SENDLOG[ptcmd]}`, "", v === undefined ? "done" : typeof v === "object" ? JSON.stringify(v) : String(v)); try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} };
 const send = (ptcmd, v) => document.querySelectorAll(".hframe").forEach(f => { try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} });
 let capPick = 2000, resetArm = 0;
 /* ---- FULL AUTO: runs the whole app for the best tested results ----

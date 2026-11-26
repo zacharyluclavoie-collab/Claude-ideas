@@ -291,7 +291,8 @@ if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1
 if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set("pt_core","1");LS.set("pt_swarm","1")}
 {const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","max","runner","tight","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{const ao=LS.get("pt_agents");if(ao)CFG.agentsOff=JSON.parse(ao)}catch(e){}}}
-if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
+function deskLock(){if(!DESK)return;const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false;if(S&&S.core&&typeof coreOff==="function")coreOff()}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
+deskLock();if(DESK){const ap0=applyPreset;applyPreset=function(k){ap0(k);deskLock()}}   // a mode change (by you, Full Auto, Autopilot or the mode tournament) never moves a desk's money into the BTC/ETH/SOL sleeve
 // every second, tell the Master board how this desk is doing
 let talkSent=0;
 // One clock (Master): in the demo the Master owns the simulated clock. It sends "advance to time G"; the desk simulates up to exactly G,
