@@ -2,14 +2,19 @@
 // Arbitrum replaced Ethereum: Ethereum network fees (~$5 a trade) blocked almost every trade
 const AREAS = ["Solana", "Base", "BSC", "Arbitrum", "Big coins"]; let NDESK = 5; try { NDESK = Math.max(1, Math.min(25, +localStorage.getItem("pt_host_n") || 5)) } catch (e) {}
 // ---- one simulated clock for every desk (demo); restored from the last save if there is one (run.js has the controller) ----
-const HSIM0 = 1759968000, RUNK = "pt_host_run";
+const HSIM0 = 1759968000, RUNK = "pt_host_run", LOCKK = "pt_host_lock", TAB = (() => { let t = null; try { t = sessionStorage.getItem("pt_tab") } catch (e) {} if (!t) { t = Math.random().toString(36).slice(2, 10); try { sessionStorage.setItem("pt_tab", t) } catch (e) {} } return t })();   // the same tab keeps its id across reloads, so a reload is never blocked by its own lock
 let RUNSV = null; try { RUNSV = JSON.parse(localStorage.getItem(RUNK) || "null") } catch (e) {}
-const CLK = { g: HSIM0, g0: HSIM0, speed: 300, state: "running", until: 0, untilMode: "freeze", done: false, startedAt: Date.now(), realRun: 0 };
-if (RUNSV && RUNSV.nd === NDESK && RUNSV.g >= HSIM0) { Object.assign(CLK, { g: RUNSV.g, g0: RUNSV.g0 || HSIM0, speed: RUNSV.speed || 300, until: RUNSV.until || 0, untilMode: RUNSV.untilMode || "freeze", done: !!RUNSV.done, startedAt: RUNSV.startedAt || Date.now(), realRun: RUNSV.realRun || 0 }); CLK.state = "paused"; window.__ptRestore = true }
-else { try { const sp = +localStorage.getItem("pt_host_speed"); if (sp) CLK.speed = sp } catch (e) {} window.__ptRestore = false }
+// one live tab owns the run (heartbeat every 2 s); a second tab is blocked until it takes over or chooses read-only (Fix 11)
+let TABLOCK = null; try { TABLOCK = JSON.parse(localStorage.getItem(LOCKK) || "null") } catch (e) {}
+const tabBlocked = !!(TABLOCK && TABLOCK.id && TABLOCK.id !== TAB && Date.now() - TABLOCK.t < 6000);
+let readOnly = tabBlocked;
+if (!tabBlocked) try { localStorage.setItem(LOCKK, JSON.stringify({ id: TAB, t: Date.now() })) } catch (e) {}
+const CLK = { g: HSIM0, g0: HSIM0, speed: 300, state: "running", until: 0, untilMode: "freeze", done: false, startedAt: Date.now(), realRun: 0, seed: (Math.random() * 1e9) | 0 };
+if (RUNSV && RUNSV.nd === NDESK && RUNSV.g >= HSIM0) { Object.assign(CLK, { g: RUNSV.g, g0: RUNSV.g0 || HSIM0, speed: RUNSV.speed || 300, until: RUNSV.until || 0, untilMode: RUNSV.untilMode || "freeze", done: !!RUNSV.done, startedAt: RUNSV.startedAt || Date.now(), realRun: RUNSV.realRun || 0, seed: RUNSV.seed || CLK.seed }); CLK.state = "paused"; window.__ptRestore = { sid: RUNSV.sid || 0, g: RUNSV.g } }
+else { try { const sp = +localStorage.getItem("pt_host_speed"); if (sp) CLK.speed = sp; const sd = +localStorage.getItem("pt_host_seed"); if (sd) { CLK.seed = sd; localStorage.removeItem("pt_host_seed") } } catch (e) {} window.__ptRestore = false; if (tabBlocked) CLK.state = "paused" }
 window.__ptClock = CLK;
 const cents = v => Math.round(v * 100) / 100;
-const DN = [...Array(NDESK)].map((_, i) => AREAS[i % 5] + (i >= 5 ? " " + (Math.floor(i / 5) + 1) : "")), R = {}, hist = [], MODEN = { recommended: "Recommended", easy: "Easy", risky: "Risky", most: "Most money", lots: "Lots of trades", max: "Max trades", safe: "Recommended" };
+const DN = [...Array(NDESK)].map((_, i) => AREAS[i % 5] + (i >= 5 ? " " + (Math.floor(i / 5) + 1) : "")), R = {}, hist = [], MODEN = { recommended: "Recommended", easy: "Easy", risky: "Risky", most: "Most money", lots: "Lots of trades", max: "Max trades", runner: "Runner (test)", tight: "Tight (test)", safe: "Recommended" };
 const $h = id => document.getElementById(id), escH = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const money = (n, d = 2) => (n < 0 ? "-" : "") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
 const sg = (n, d = 2) => (n >= 0 ? "+" : "-") + "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -26,11 +31,11 @@ bar.onclick = e => { const b = e.target.closest("button"); if (b) show(+b.datase
 function show(d) { cur = d; $h("hmaster").hidden = d !== 0; $h("hbots").hidden = d !== -1; if (typeof brPlace === "function") brPlace(); if (d === -1 && typeof brDraw === "function") { brDrawChat(); brDraw(); window.scrollTo(0, 0) } document.querySelectorAll(".hframe").forEach((f, i) => f.hidden = i + 1 !== d); bar.querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.d === d)); if (d === 0) draw() }
 window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk && !m.hb) { try { runIn(m) } catch (err) { try { diag("error", "Master: " + err.message) } catch (e2) {} } try { brIn(m) } catch (err) {} dots() } });
 function dots() { for (let i = 1; i <= NDESK; i++) { const r = R[i], el = $h("hd_" + i); if (el) el.className = "dot " + (!r ? "" : r.eq >= r.start ? "g" : "r") } }
-const MONEYK = new Set(["eq", "start", "w", "l", "openPl", "today", "ch1h", "ch24h"]);
-function totals() { const t = { eq: 0, start: 0, w: 0, wn: 0, l: 0, ln: 0, open: 0, openPl: 0, today: 0, todayN: 0, scanned: 0, ch1h: 0, ch24h: 0 }; for (const r of Object.values(R)) for (const k in t) t[k] += MONEYK.has(k) ? cents(r[k] || 0) : (r[k] || 0); for (const k of MONEYK) t[k] = cents(t[k]); if (!isLive() && typeof dailyRows === "function" && typeof SNAPT !== "undefined") { const y = dailyRows()[isoDay(SNAPT.g)]; t.today = y ? cents(y.made + y.lost) : 0 } return t }   // each desk to the cent first, so the desks always add up to the total exactly
+// totals() lives in run.js: the dollar view of the one snapshot SNAP
 let histG = []; try { const h = JSON.parse(localStorage.getItem("pt_host_hist2") || "null"); if (window.__ptRestore && h && h.n === NDESK && Array.isArray(h.v) && Array.isArray(h.gs)) { hist.push(...h.v.slice(-1500)); histG.push(...h.gs.slice(-1500)) } } catch (e) {}   // the Master chart survives a restore
 // chart samples follow the snapshot clock: a point every 5 simulated minutes (thinned to keep the whole run), nothing new while paused
-function histSample() { if (!Object.keys(R).length) return; const g = SNAPT.g, last = histG[histG.length - 1]; if (last != null && g - last < (isLive() ? 1 : 300)) return; const t = totals(); hist.push(cents(t.eq - t.start)); histG.push(g);
+function histSample() { if (SNAP) histSampleSnap(SNAP) }
+function histSampleSnap(sn) { if (!sn || !Object.keys(sn.desks).length) return; const g = sn.g, last = histG[histG.length - 1]; if (last != null && g - last < (isLive() ? 1 : 300)) return; hist.push((sn.tot.eq - sn.tot.start) / 100); histG.push(g);
   if (hist.length > 1600) { for (let i = hist.length - 2; i > 0; i -= 2) { hist.splice(i, 1); histG.splice(i, 1) } } }
 setInterval(() => { if (isLive()) histSample() }, 1000);
 setInterval(() => { try { localStorage.setItem("pt_host_hist2", JSON.stringify({ n: NDESK, v: hist.slice(-1600), gs: histG.slice(-1600) })) } catch (e) {} }, 20000);
@@ -97,12 +102,13 @@ const vsw = $h("viewsw"); let simple = true; try { simple = localStorage.getItem
 const applyView = () => { document.body.classList.toggle("simple", simple); vsw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.v === "simple") === simple)) };
 vsw.onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; simple = v === "simple"; try { localStorage.setItem("pt_host_simple", simple ? "1" : "0") } catch (e) {} applyView() }; applyView();
 let drawT = 0; function drawLater() { if (!drawT) drawT = setTimeout(() => { drawT = 0; draw() }, 300) }   // a press is in progress: draw right after it, never skip
+function drawThenCheck() { draw(); try { checkScreen() } catch (e) {} }
 function draw() {
   if (performance.now() < touchHold) { drawLater(); return }
   drawFeed();   // never swap a button out while it is being pressed
   if (!built) buildBoard();
   const t = totals(), pl = t.eq - t.start, n = Object.keys(R).length;
-  { const el = $h("h_best"), rs = Object.values(R); if (el && rs.length) { const off = rs.filter(r => r.mode !== "lots"); el.innerHTML = off.length ? `⚠️ ${off.length} desk${off.length > 1 ? "s are" : " is"} not on the best mode <button id="fixbest">Fix</button>` : "★ Best mode on all desks"; el.className = "bestchk " + (off.length ? "warn" : "ok");
+  { const el = $h("h_best"), rs = Object.values(R); if (el && rs.length) { const off = MONEY.tournament ? [] : rs.filter(r => r.mode !== "lots"); el.innerHTML = MONEY.tournament ? "🏆 Mode tournament on" : off.length ? `⚠️ ${off.length} desk${off.length > 1 ? "s are" : " is"} not on the best mode <button id="fixbest">Fix</button>` : "★ Best mode on all desks"; el.className = "bestchk " + (off.length ? "warn" : "ok");
     const fb = $h("fixbest"); if (fb) fb.onclick = () => { for (let i = 1; i <= NDESK; i++) if (R[i] && R[i].mode !== "lots") sendTo(i, "preset", "lots") } } }
   { const el = $h("h_fa"); if (el) { el.textContent = FA ? "🤖 Full Auto on" + (faLog.length ? " · " + faLog.filter(l => Date.now() - l.t < 3600e3 && !/switched/.test(l.msg)).length + " fixes this hour" : "") : "✋ Full Auto off"; el.classList.toggle("off", !FA) } }
   { const el = $h("h_auto"), r0 = Object.values(R)[0] || {}, live = Object.values(R).some(r => r.live); if (el) el.innerHTML = live ? "⚡ Live market" : `⚙️ Market ${autoSize ? "Auto — currently " : ""}<b>${r0.simScale || "?"}×</b>${autoSize ? "" : " (fixed)"} ${CLK.state === "paused" || CLK.state === "emergency" ? "" : " · " + fpsNow + " fps"}${AP.on ? " · Autopilot on" : ""}` }
@@ -110,18 +116,18 @@ function draw() {
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks · ${isLive() ? "live prices" : simLabel(SNAPT.g) + " · " + STATEN[CLK.state].toLowerCase()}` : "Starting " + NDESK + " desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
   { const wr = t.wn + t.ln ? t.wn / (t.wn + t.ln) : 0, C = 2 * Math.PI * 15.5, ring = $h("h_ring"); if (ring) { ring.style.strokeDasharray = (wr * C).toFixed(1) + " " + C.toFixed(1) } $h("h_ringlab").textContent = t.wn + t.ln ? "win rate " + Math.round(wr * 100) + "% · " + (t.wn + t.ln) + " trades" : "win rate –" }
-  drawWL(t); drawSumbar(); drawFinished(); drawFailed(); drawRun(); if (typeof brDrawStage === "function" && brStageVis) brDrawStage(); if (Date.now() - tickAt > 3000) { tickAt = Date.now(); drawTicker() }   // every live label from this same snapshot
+  if (SNAP) $h("h_kv").dataset.snap = SNAP.id; drawWL(t); drawSumbar(); drawFinished(); drawFailed(); drawDash(); drawRun(); if (typeof brDrawStage === "function" && brStageVis) brDrawStage(); if (Date.now() - tickAt > 3000) { tickAt = Date.now(); drawTicker() }   // every live label from this same snapshot
   anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
   const pc = (k, w) => k + (k === 1 ? " " + w : " " + w + "s");
   $h("hk_wn").textContent = pc(t.wn, "coin"); $h("hk_ln").textContent = pc(t.ln, "coin"); $h("hk_on").textContent = pc(t.open, "coin");
   $h("hk_td").textContent = String(t.todayN); $h("hk_wr").textContent = t.wn + t.ln ? Math.round(100 * t.wn / (t.wn + t.ln)) + "%" : "–"; { const aw = t.wn ? t.w / t.wn : 0, al = t.ln ? t.l / t.ln : 0; $h("hk_avg").innerHTML = t.wn + t.ln ? `<em class="g">${sg(aw)}</em> / <em class="r">${sg(al)}</em>` : "–";
     $h("hk_avgs").textContent = t.wn && t.ln && al < 0 ? "wins are " + (aw / -al).toFixed(1) + "x the size of losses" : "" }
-  for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const p = r.eq - r.start;
-    anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, r.eq, v => money(v), 0);
+  for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r || !SNAP || !SNAP.desks[i]) continue; const x = SNAP.desks[i], p = (x.eq - x.start) / 100;
+    anim("dkp" + i, p, v => sg(v)); $h("dkp" + i).className = "num " + (p >= 0 ? "g" : "r"); anim("dke" + i, x.eq / 100, v => money(v), 0);
     { const sp = r.spark || [], el = $h("dks" + i); if (el && sp.length > 1) { const lo = Math.min(...sp, r.start), hi = Math.max(...sp, r.start), pd = (hi - lo) * 0.1 || 1, X = k => k / (sp.length - 1) * 100, Y = v => 28 - (v - lo + pd) / (hi - lo + 2 * pd) * 28;
       el.innerHTML = `<svg viewBox="0 0 100 28" preserveAspectRatio="none"><line x1="0" x2="100" y1="${Y(r.start)}" y2="${Y(r.start)}" stroke="var(--mut)" stroke-dasharray="2 3" stroke-width="1" vector-effect="non-scaling-stroke" opacity=".6"/><path d="${sp.map((v, k) => (k ? "L" : "M") + X(k).toFixed(1) + " " + Y(v).toFixed(1)).join("")}" fill="none" stroke="${sp[sp.length - 1] >= r.start ? "var(--g)" : "var(--r)"}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>` } }
     $h("dki" + i).textContent = `${r.mode === "lots" ? "★ " : ""}${MODEN[r.mode] || r.mode} · ${r.paused ? "no new trades" : r.status}${r.live ? "" : " · " + simLabel(r.vnow)}`;
-    $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${sg(r.w)}</span> · <span class="r">${r.ln} lost ${sg(r.l)}</span> · ${r.open} open · ${r.todayN} today`;
+    $h("dkw" + i).innerHTML = `<span class="g">${r.wn} won ${SG$(x.w)}</span> · <span class="r">${r.ln} lost ${SG$(x.l)}</span> · ${r.open} open · ${x.todayN} today${deskStatus(i, r, x)}`;
     { const sel = document.querySelector(`.dkctl[data-d="${i}"] select`); if (sel && document.activeElement !== sel && sel.value !== r.mode) sel.value = r.mode; const pz = $h("dkpz" + i); if (pz) { pz.textContent = r.shutdown ? "Stopped" : r.paused ? "Allow new trades" : "No new trades"; pz.classList.toggle("on", !!r.paused || !!r.shutdown) } }
     $h("dkl" + i).textContent = r.lastTrade ? `Last trade: ${r.lastTrade.sym} · ${reasonN(r.lastTrade.reason)} · ${sg(r.lastTrade.pnl)} · ${simLabel(r.lastTrade.t)}` : "No finished trades yet";
     const key = r.lastTrade ? r.lastTrade.sym + "|" + r.lastTrade.t : ""; if (lastSeen[i] !== undefined && lastSeen[i] !== key) { const c = $h("dk" + i); c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse") } lastSeen[i] = key }
@@ -136,7 +142,7 @@ function draw() {
 }
 
 /* ---- Master settings: one tap changes every desk ---- */
-const PRM = [["recommended", "Recommended"], ["easy", "Easy"], ["risky", "Risky"], ["most", "Most money"], ["lots", "Lots of trades"], ["max", "Max trades"]];
+const PRM = [["recommended", "Recommended"], ["easy", "Easy"], ["risky", "Risky"], ["most", "Most money"], ["lots", "Lots of trades"], ["max", "Max trades"], ["runner", "Runner (test)"], ["tight", "Tight (test)"]];
 const sendTo = (d, ptcmd, v) => { const f = document.querySelectorAll(".hframe")[d - 1]; try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} };
 const send = (ptcmd, v) => document.querySelectorAll(".hframe").forEach(f => { try { f.contentWindow.postMessage({ ptcmd, v }, "*") } catch (e) {} });
 let capPick = 2000, resetArm = 0;
@@ -180,7 +186,7 @@ function faTick() {
   if (!FA) return; if (!autoSize) { autoSize = true; try { localStorage.setItem("pt_host_autosize", "1") } catch (e) {} }
   if (AP.on) { AP.on = false; apSave() }   // Full Auto replaces the Autopilot (which could move desks off the best mode)
   for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const nm = DN[i - 1];
-    if (r.mode !== "lots" || r.custom) { sendTo(i, "fullauto"); faNote(`${nm}: back to ★ Lots of trades with the tested settings`) }
+    if ((r.mode !== "lots" && !MONEY.tournament) || r.custom) { sendTo(i, "fullauto"); faNote(`${nm}: back to ★ Lots of trades with the tested settings`) }
     if (r.shutdown && faDay[i] && r.day && r.day !== faDay[i]) { sendTo(i, "rearm"); faNote(`${nm}: new day, restarted after yesterday's stop`) }
     faDay[i] = r.day; sendTo(i, "fa", FA) }
 }

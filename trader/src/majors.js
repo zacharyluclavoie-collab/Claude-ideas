@@ -73,7 +73,8 @@ function coreTrade(id, usd, t, why) {
 }
 // idle trading cash earns a stablecoin-lending rate too (Aave-style, about 2-5% a year): small, but money is never just sitting still
 function cashYield(t) { const pf = S.pf; if (!CFG.core.cashYield) { pf.lastYield = t; return } const dt = Math.max(0, t - (pf.lastYield || t)); pf.lastYield = t; if (dt <= 0 || dt > 7 * 86400 || pf.cash <= 0) return;
-  const y = pf.cash * CFG.core.yieldApr / 100 * dt / (365 * 86400); pf.cash += y; pf.realized += y; pf.yieldEarned = (pf.yieldEarned || 0) + y; dayAdd(y, t) }
+  pf.yieldAcc = (pf.yieldAcc || 0) + pf.cash * CFG.core.yieldApr / 100 * dt / (365 * 86400); const y = Math.floor(pf.yieldAcc * 100) / 100; if (y <= 0) return;   // credited in whole cents
+  pf.yieldAcc -= y; pf.cash += y; pf.realized += y; pf.yieldEarned = Math.round(((pf.yieldEarned || 0) + y) * 100) / 100; dayAdd(y, t) }
 async function coreStep(t) {
   cashYield(t);
   if (!CFG.core.on) { if (S.core) coreOff(); return } coreInit(t); const c = S.core; if (!c) return;

@@ -25,8 +25,11 @@ function brIn(m) {   // a desk report arrived
 // work counters: sum of every bot's real work over all desks (the engine counts sampled-out messages too)
 function brCounts() { const c = {}; let checks = 0; for (const r of Object.values(R)) { checks += r.checks || 0; const tc = r.tc || {}; for (const k in tc) { const id = isAgent(k) ? "agents" : k; c[id] = (c[id] || 0) + tc[k] } } c.scout = checks; return c }
 function brTotal() { let n = 0; for (const r of Object.values(R)) for (const k in (r.tc || {})) n += r.tc[k]; return n }
-setInterval(() => { brRate.push([Date.now(), brTotal()]); while (brRate.length > 61) brRate.shift() }, 1000);
-const brPerMin = () => { if (brRate.length < 2) return 0; const a = brRate[0], b = brRate[brRate.length - 1]; return b[0] > a[0] ? Math.max(0, (b[1] - a[1]) / (b[0] - a[0]) * 60000) : 0 };
+// one 10-second window for every bot-room rate (the same window as the speed service)
+setInterval(() => { if (typeof CLK !== "undefined" && (CLK.state === "paused" || CLK.state === "emergency") && !isLive()) { brRate.length = 0; return } brRate.push([Date.now(), brTotal(), brCounts()]); while (brRate.length > 11) brRate.shift() }, 1000);
+const brPerMin = id => { if (brRate.length < 2) return 0; const a = brRate[0], b = brRate[brRate.length - 1]; if (b[0] <= a[0]) return 0; const d = id ? (b[2][id] || 0) - (a[2][id] || 0) : b[1] - a[1]; return Math.max(0, d / (b[0] - a[0]) * 60000) };
+const SCAN_BOTS = new Set(["scout", "filter", "agents", "security", "committee"]);   // the bots that only work on new coins: off in No new trades
+const brOff = id => typeof CLK !== "undefined" && CLK.state === "nonew" && !isLive() && SCAN_BOTS.has(id);
 
 // layout: bots on a ring in the order a coin travels through them
 function brLayout() {
@@ -80,13 +83,14 @@ let brTouch = 0; document.addEventListener("pointerdown", () => brTouch = Date.n
 })();
 function brDrawBots() {
   const el = $h("br_bots"); if (!el) return; const c = brCounts();
-  if (!el.firstElementChild) el.innerHTML = CORE_BOTS.map(id => `<button class="bcard" data-b="${id}"><span class="bci">${botIcon(id)}</span><b>${botName(id)}</b><span class="bcn num" id="bcn_${id}">0</span><span class="bcl">${BOT[id][2]}</span><span class="bcx" id="bcx_${id}">…</span></button>`).join("");
-  for (const id of CORE_BOTS) { const n = $h("bcn_" + id), x = $h("bcx_" + id), m = brLast[id]; if (n) n.textContent = (c[id] || 0).toLocaleString(); if (x) x.textContent = m ? (m.s ? m.s + ": " : "") + m.x : "…"; }
+  if (!el.firstElementChild) el.innerHTML = CORE_BOTS.map(id => `<button class="bcard" data-b="${id}"><span class="bci">${botIcon(id)}</span><b>${botName(id)}</b><span class="bcn num" id="bcn_${id}">0</span><span class="bcl">${BOT[id][2]}</span><span class="bcr" id="bcr_${id}"></span><span class="bcx" id="bcx_${id}">…</span></button>`).join("");
+  const pz = !isLive() && (CLK.state === "paused" || CLK.state === "emergency");
+  for (const id of CORE_BOTS) { const n = $h("bcn_" + id), x = $h("bcx_" + id), r = $h("bcr_" + id), m = brLast[id], off = brOff(id); if (n) n.textContent = (c[id] || 0).toLocaleString(); if (r) { r.textContent = pz ? "paused" : off ? "Scanner off — No New Trades mode" : Math.round(brPerMin(id)).toLocaleString() + " a minute (10 s)"; r.classList.toggle("off", off) } if (x) x.textContent = off ? "Off: no new coins are looked at until you tap Run." : m ? (m.s ? m.s + ": " : "") + m.x : "…"; }
   el.querySelectorAll(".bcard").forEach(b => b.classList.toggle("on", b.dataset.b === brBot));
 }
 function brDrawStage() { brLayout(); const ds = Object.values(R), open = ds.reduce((a, r) => a + (r.open || 0), 0);
   const rate = $h("br_rate"); if (rate) rate.textContent = !isLive() && (CLK.state === "paused" || CLK.state === "emergency") ? "paused" : Math.round(brPerMin()).toLocaleString();
-  const tr = $h("br_trades"); if (tr) tr.textContent = `${open} coin${open === 1 ? "" : "s"} watched now${isLive() ? " · live prices" : CLK.state === "paused" || CLK.state === "emergency" ? " · paused" : " · ~" + Math.round(effSpeed()).toLocaleString() + "× actual speed"}` }
+  const tr = $h("br_trades"); if (tr) { tr.dataset.spd = SPEEDV.id; tr.textContent = `${open} coin${open === 1 ? "" : "s"} watched now${isLive() ? " · live prices" : CLK.state === "paused" || CLK.state === "emergency" ? " · paused" : " · actual speed " + speedText() + " (10 s)"}${CLK.state === "nonew" && !isLive() ? " · scanners off (No new trades)" : ""}` } }
 function brDraw() {
   brDrawStage(); const ds = Object.values(R), bots = 8 + brAgents.size - 1;
   const sub = $h("br_sub"); if (sub) sub.textContent = ds.length ? `${ds.length} desk${ds.length > 1 ? "s" : ""} · ${bots} kinds of bots in each · ${(brCounts().scout || 0).toLocaleString()} coins checked` : "Starting the desks…";

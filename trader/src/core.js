@@ -36,6 +36,8 @@ const gauss=()=>{let u=0,v=0;while(!u)u=rng();v=rng();return Math.sqrt(-2*Math.l
 let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")||300;
 // the demo clock starts at a UTC midnight, so "Day 1, Day 2..." on screen, "today" and the daily loss stop all turn over at the same moment
 const SIM0=1759968000;   // 2025-10-09 00:00 UTC
+// money features (Spec V2, Part 3). The Master owns these and sends them to every desk. Only the ladder is on by default (it only protects).
+CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1};
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
   async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
@@ -98,6 +100,8 @@ function applyPreset(k) {
   if (k === "lots") { applyPreset("max"); delete CFG.agentsOff.trend; CFG.flt.minBuyers = 25; CFG.flt.minUniq = 0.4; return }
     // self-search round 8: Max trades + scam filters. On 8 unseen 5x demo markets +7.54%/day vs +4.66% for the previous Lots of trades (round-2 #9 + filters),
     // better on every one of the 8 markets, worst market +5.28% vs +3.66%, same scam buys, max dip 1.22% vs 1.09%. Trend Follower only trades older coins (Big coins desk).
+  if (k === "runner") { applyPreset("lots"); CFG.tp1Frac = 0.25; CFG.quick.trail = +(CFG.quick.trail * 1.2).toFixed(2); return }   // Money 5 variant A: let winners run
+  if (k === "tight") { applyPreset("lots"); CFG.quick.stop = Math.max(1, CFG.quick.stop - 1); CFG.tp1Frac = 0.4; return }   // Money 5 variant B: bank earlier, lose smaller
   if (k === "safe") { applyPreset("protect"); CFG.learn.probation = false; CFG.swarmOff = true; CFG.core.on = true; CFG.wdSafe = true; applySecMode("balanced"); return }   // no real money for any agent until it has proven itself
   if (k === "protect") { applyActivity("selective"); applyQuick(true); CFG.learn.on = true; CFG.learn.probation = true; CFG.committeeMin = 2; CFG.agentHourly = 8; CFG.keep.on = false; CFG.agentProbation = 0.6; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 1.5; CFG.risk.dailyLock = 1.5; CFG.risk.maxDD = 6; CFG.risk.totalExp = 35; CFG.risk.maxPos = 100; CFG.risk.perHour = 60; CFG.risk.perDay = 400 }
   else if (k === "turbo") { applyActivity("active"); applyQuick(true); CFG.keep.on = false; CFG.learn.on = false; CFG.committeeMin = 1; CFG.agentHourly = 30; CFG.agentsOff = { rider: 1, dip: 1, whale: 1, gem: 1, trend: 1 }; CFG.risk.dailyLoss = 2; CFG.risk.dailyLock = 0; CFG.risk.maxDD = 8; CFG.risk.totalExp = 40; CFG.risk.maxPos = 100; CFG.risk.perHour = 200; CFG.risk.perDay = 2000; CFG.risk.maxCostPct = 6 }

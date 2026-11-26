@@ -4,7 +4,7 @@ const DESKS=[{n:"Solana",chains:["solana"]},{n:"Base",chains:["base"]},{n:"BSC",
 const deskInfo=()=>{const a=DESKS[(DESK-1)%5],v=Math.floor((DESK-1)/5);return Object.assign({},a,{n:a.n+(v?" "+(v+1):""),mode:"lots"||"lots"})};   // desks 6-25 repeat the 5 areas with other modes
 if(DESK&&!LS.get("pt_desk_init")){for(const k of["pt_wide_v5","pt_preset_v6","pt_preset_v7","pt_preset_v8","pt_preset_v9","pt_preset_v10","pt_swarm_v11"])LS.set(k,"1");LS.set("pt_cap","2000");LS.set("pt_swarm","0");LS.set("pt_preset",deskInfo().mode);LS.set("pt_intro_v3","1");LS.set("pt_desk_init","1")}
 if(LS.get("pt_reset_pending")){LS.del("pt_reset_pending");LS.del("pt_state_live");LS.del("pt_state_mock");LS.del("pt_kill_live");LS.del("pt_kill_mock")}   // fresh account at the new starting balance (set by the $10 setup)
-if(DESK&&!["recommended","easy","risky","most","lots","max","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
+if(DESK&&!["recommended","easy","risky","most","lots","max","runner","tight","safe","protect","turbo","always"].includes(LS.get("pt_preset")||""))LS.set("pt_preset",deskInfo().mode);   // repair a desk mode saved by an earlier build
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const sgn=(n,d=2)=>(n>=0?"+":"-")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -289,7 +289,7 @@ if(!LS.get("pt_lots_v12")){if(LS.get("pt_preset")==="lots"||LS.get("pt_preset")=
 if(!LS.get("pt_swarm_v11")){LS.set("pt_swarm","0");LS.set("pt_swarm_v11","1")}   // testing: scouts lowered results even as practice-only, so they start off
 if(!LS.get("pt_preset_v10")){savePreset("recommended");LS.set("pt_preset_v10","1");LS.set("pt_preset_v9","1")}
 if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set("pt_core","1");LS.set("pt_swarm","1")}
-{const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","max","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
+{const pk=LS.get("pt_preset");if(["recommended","easy","risky","most","lots","max","runner","tight","safe"].includes(pk)){applyPreset(pk);let sv={};try{sv=JSON.parse(LS.get("pt_risk")||"{}")}catch(e){}for(const k of KEYS)if(typeof sv[k]==="number")CFG.risk[k]=sv[k];
   CFG.core.on=LS.get("pt_core")!=="0";CFG.lessons.on=LS.get("pt_lessons")!=="0";CFG.swarmOff=LS.get("pt_swarm")==="0";try{const ao=LS.get("pt_agents");if(ao)CFG.agentsOff=JSON.parse(ao)}catch(e){}}}
 if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
 // every second, tell the Master board how this desk is doing
@@ -305,7 +305,11 @@ function deskSnap(){const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now(
       return{spark:c.slice(-40).map(x=>+x[1].toFixed(2)).concat([+eq.toFixed(2)]),ch1h:eq-at(3600),ch24h:eq-at(86400),hours:c.length?Math.max(0,(tn-c[0][0])/3600):0}})(),
     pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||"",vnow:MODE==="mock"?vnow:now(),fx,yieldEarned:pf.yieldEarned||0,days:pf.days||{},todayN:dy.n,today:dy.made+dy.lost,buysOk:fx.buyOk??pf.exec.buys,
     openPl:Object.values(pf.positions).reduce((a,p)=>a+p.real+pv(p)-p.cost,0),
-    lastTrade:lc?{sym:lc.sym,reason:lc.reason,pnl:lc.pnl,t:lc.t}:null,best:pf.best?{sym:pf.best.sym,pnl:pf.best.pnl,reason:pf.best.reason,t:pf.best.t,opened:pf.best.opened??pf.best.t-pf.best.held*3600,entry:pf.best.entry??null,exit:pf.best.exit??null}:null,worst:pf.worst?{sym:pf.worst.sym,pnl:pf.worst.pnl,reason:pf.worst.reason,t:pf.worst.t,opened:pf.worst.opened??pf.worst.t-pf.worst.held*3600,entry:pf.worst.entry??null,exit:pf.worst.exit??null}:null,
+    lastTrade:lc?{sym:lc.sym,reason:lc.reason,pnl:lc.pnl,t:lc.t}:null,posKey:Object.values(pf.positions).map(p=>p.sym+"@"+(+p.entry).toPrecision(6)+":"+(+p.qty).toPrecision(6)).sort().join(","),
+    mc:(()=>{const C=x=>Math.round((x||0)*100),ps=Object.values(pf.positions);let pvC=0,openC=0;for(const p of ps){const v=C(pv(p));pvC+=v;openC+=C(p.real)+v-C(p.cost)}const fx=pf.fx||{};return{eq:C(pf.cash)+pvC,start:C(pf.start),w:C(T.w),l:C(T.l),open:openC,bb:C(fx.burnBuy),bs:C(fx.burnSell),y:C(pf.yieldEarned),wo:C(pf.woLoss),flat:C(pf.flatEst)}})(),
+    dayc:Object.fromEntries(Object.entries(pf.days||{}).map(([k,x])=>[k,{n:x.n,w:x.w,l:x.l,made:Math.round(x.made*100),lost:Math.round(x.lost*100)}])),
+    exits:pf.exits||{},audits:(pf.audits||[]).slice(-12),woN:pf.woN||0,memG:pf.memG||{},memInfl:stats.memInfl||0,memFlip:stats.memFlip||0,preSkip:stats.preSkip||0,preHalf:stats.preHalf||0,
+    money:{step:CFG.money.cold?coldStep():null,alloc:CFG.money.alloc,bank:pf.bank||null,bankLog:(pf.bankLog||[]).slice(-20),ftcUntil:pf.ftcUntil||0,ftcN:pf.ftcN||0,ftcLog:(pf.ftcLog||[]).slice(-20),coldLog:(pf.coldLog||[]).slice(-20),smN:pf.smN||0,cfg:CFG.money},best:pf.best?{sym:pf.best.sym,pnl:pf.best.pnl,reason:pf.best.reason,t:pf.best.t,opened:pf.best.opened??pf.best.t-pf.best.held*3600,entry:pf.best.entry??null,exit:pf.best.exit??null}:null,worst:pf.worst?{sym:pf.worst.sym,pnl:pf.worst.pnl,reason:pf.worst.reason,t:pf.worst.t,opened:pf.worst.opened??pf.worst.t-pf.worst.held*3600,entry:pf.worst.entry??null,exit:pf.worst.exit??null}:null,
     tail:pf.closed.slice(-8).map(c=>({sym:c.sym,chain:c.chain,pnl:c.pnl,reason:c.reason,t:c.t,opened:c.opened??(c.t-c.held*3600),entry:c.entry??null,exit:c.exit??null,in:c.in??c.size,out:c.out??null})),
     pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.cost0||p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency,att:p.attempts||0,failN:p.failN||0})),failClosed:pf.failClosed||0}}
 function deskReport(extra){if(!DESK||!window.parent||window.parent===window)return;if(AUTOTRAIN!=null){try{window.parent.postMessage({pt:1,desk:DESK,hb:1},"*")}catch(e){}return}   // training: just say "alive" (the account in memory is the practice one)
@@ -318,11 +322,11 @@ const yieldNow=(()=>{const ch=new MessageChannel(),q=[];ch.port1.onmessage=()=>{
 async function deskWork(){if(deskBusy||!deskReady)return;deskBusy=true;try{while(vnow<deskTarget){const t0=performance.now();while(vnow<deskTarget&&performance.now()-t0<8){const d=Math.min(deskStp,deskTarget-vnow);vnow+=d;await tick()}if(vnow<deskTarget)await yieldNow()}}catch(e){try{window.parent.postMessage({pt:1,desk:DESK,err:"tick: "+String(e&&e.message||e)},"*")}catch(e2){}}finally{deskBusy=false}
   if(vnow>=deskTarget)deskReport({ack:vnow})}
 // ---- saving and restoring this desk (IndexedDB), always at a time the Master chose, so every desk is saved at the same moment ----
-async function deskSave(G){if(!hostClock()||vnow!==G)return false;const keep=Object.values(S.pf.positions).map(p=>p.addr.toLowerCase()).concat(Object.values(S.shadow||{}).map(x=>String(x.addr).toLowerCase()));
+async function deskSave(G,id){if(!hostClock()||vnow!==G)return false;const keep=Object.values(S.pf.positions).map(p=>p.addr.toLowerCase()).concat(Object.values(S.shadow||{}).map(x=>String(x.addr).toLowerCase()));
   const st={};for(const k of["scanned","uniq","bought","vetoed","sec","strat","scamSeen","scamBought","junkSeen","gated","lessonVeto"])if(typeof stats[k]==="number")st[k]=stats[k];
-  await IDB.put("desk"+DESK,{v:1,savedAt:Date.now(),vnow,S,stats:st,talkc:Object.assign({},TALKC),talkN,mock:MOCK.dump(keep),simScale:CFG.simScale,regime,paused:!!paused});return true}
-async function deskRestore(){let sv=null;try{sv=await IDB.get("desk"+DESK)}catch(e){}if(!sv||!sv.S||!sv.mock)return false;
-  S=sv.S;vnow=sv.vnow;Object.assign(stats,sv.stats||{});Object.assign(TALKC,sv.talkc||{});talkN=sv.talkN||0;talkSent=talkN;if(sv.simScale)CFG.simScale=sv.simScale;MOCK.restore(sv.mock);regime=sv.regime||"unknown";regimeOk=vnow;paused=!!sv.paused;
+  await IDB.put("desk"+DESK+(id?"#"+id:""),{v:2,id:id||0,savedAt:Date.now(),vnow,S,stats:st,talkc:Object.assign({},TALKC),talkN,mock:MOCK.dump(keep),simScale:CFG.simScale,regime,paused:!!paused,money:Object.assign({},CFG.money),preset:curPreset()});return true}
+async function deskRestore(){let sv=null;const R0=window.parent.__ptRestore||{};try{sv=await IDB.get("desk"+DESK+(R0.sid?"#"+R0.sid:""))}catch(e){}if(!sv||!sv.S||!sv.mock)return false;if(R0.g&&sv.vnow!==R0.g)return false;   // only the exact save the Master chose
+  S=sv.S;vnow=sv.vnow;Object.assign(stats,sv.stats||{});Object.assign(TALKC,sv.talkc||{});talkN=sv.talkN||0;talkSent=talkN;if(sv.simScale)CFG.simScale=sv.simScale;MOCK.restore(sv.mock);regime=sv.regime||"unknown";regimeOk=vnow;paused=!!sv.paused;if(sv.money)Object.assign(CFG.money,sv.money);
   if(S.shadow)for(const k of Object.keys(S.shadow)){const x=S.shadow[k];if(!x||!MOCK.toks[String(x.addr).toLowerCase()])delete S.shadow[k]}
   return true}
 // Master risk controls: applied on top of the desk's mode (size multiplier, stop-loss, take-profit, max open coins, daily loss limit)
@@ -348,9 +352,10 @@ async function closeAllPositions(){const ps=Object.values(S.pf.positions);if(!ps
 function resetAccount(c){LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);seedPretrained();resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),totalEquity()]];render()}}
 window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.source!==window.parent)return;
   if(m.ptcmd==="adv"){if(hostClock()&&deskReady){deskTarget=Math.max(deskTarget,+m.v||0);deskStp=+m.stp||10;if(vnow>=deskTarget&&!deskBusy)deskReport({ack:vnow});else deskWork()}return}
-  if(m.ptcmd==="save"){deskSave(+m.v).then(ok=>deskReport({saved:+m.v,ok})).catch(err=>deskReport({saved:+m.v,ok:false,saveErr:String(err&&err.message||err)}));return}
+  if(m.ptcmd==="save"){deskSave(+m.v,m.id).then(ok=>deskReport({saved:+m.v,ok})).catch(err=>deskReport({saved:+m.v,ok:false,saveErr:String(err&&err.message||err)}));return}
   if(m.ptcmd==="hold"){holdLoops=!!m.v;deskReport();return}
   if(m.ptcmd==="snap"){deskReport();return}
+  if(m.ptcmd==="money"){Object.assign(CFG.money,m.v||{});deskReport();return}   // money features: the Master owns them (Spec V2 Part 3)
   if(m.ptcmd==="preset"){savePreset(m.v);render()}
   else if(m.ptcmd==="speed"){SPEED=+m.v||300;LS.set("pt_speed",SPEED)}
   else if(m.ptcmd==="mode"&&!DEMO_ONLY&&(m.v==="live"||m.v==="mock")&&m.v!==MODE){MODE=m.v;LS.set("pt_mode",MODE);boot()}
@@ -391,7 +396,7 @@ cw.addEventListener("pointerdown",setScrub);cw.addEventListener("pointermove",e=
 for(const ev2 of["pointerup","pointerleave","pointercancel"])cw.addEventListener(ev2,()=>{scrubF=null;$("chart").innerHTML=chartSVG()});
 async function wake(){try{if(navigator.wakeLock)await navigator.wakeLock.request("screen")}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){wake();if(MODE==="live"){stepFast(now());stepSlow(now());stepScan(now())}}});
-function boot(){timers.forEach(clearInterval);timers=[];SEED=MODE==="mock"?(Math.random()*1e9|0):(Date.now()&0xffffff);rng=mulberry(SEED);load();last={};rejected={};stats=freshStats();regime="unknown";rows.clear();$("plist").innerHTML="";
+function boot(){timers.forEach(clearInterval);timers=[];SEED=MODE==="mock"?((hostClock()&&window.parent.__ptClock&&window.parent.__ptClock.seed)?(window.parent.__ptClock.seed+DESK*101)|0:(Math.random()*1e9|0)):(Date.now()&0xffffff);rng=mulberry(SEED);load();last={};rejected={};stats=freshStats();regime="unknown";rows.clear();$("plist").innerHTML="";
   if(MODE==="mock"&&hostClock()){LS.del("pt_kill_mock");deskReady=false;const P=window.parent,G=(P.__ptClock&&P.__ptClock.g)||SIM0;
     (async()=>{let restored=false;if(P.__ptRestore){try{restored=await deskRestore()}catch(e){restored=false}}
       if(!restored){vnow=G;MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]]}

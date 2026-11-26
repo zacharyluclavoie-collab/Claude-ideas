@@ -20,7 +20,7 @@ function driftAgainst(pool, side, lat) {
   const m = lat / 60, flowMove = Math.pow(1 + pool.flow * m, 2) - 1, noise = gauss() * 0.004 * Math.sqrt(Math.max(m, 0.02));
   return side === "buy" ? flowMove + noise : -flowMove + noise;
 }
-function simBuy(s, usd, tax, isNew) {
+function simBuy0(s, usd, tax, isNew) {
   const x = CFG.ex, gas = gasUsd(s.chain, isNew), lat = (EXEC_LAT[s.chain] || 5) * (0.8 + rng() * 1.2) + 1;
   const pFail = x.fail + (isNew ? x.newFail : 0) + (s.chain === "solana" && isNew ? 0.06 : 0);
   if (rng() < pFail) return rng() < 0.6 ? { ok: false, why: "tx reverted, fee burned", gas, fee: 0, slip: 0 } : { ok: false, why: "tx dropped, no fill", gas: 0, fee: 0, slip: 0 };
@@ -42,12 +42,12 @@ function simBuy(s, usd, tax, isNew) {
   const px = s.price * (1 + total), qty = usd / px * (1 - tax / 100);
   return { ok: true, why: (partial ? "filled (partial)" : "filled") + (sandwich ? ", sandwiched" : ""), qty, px, usd, fee: usd * fee, gas, slip: total * 100, partial, mev: sandwich > 0, lat };
 }
-function simSell(s, qty, tax, urgent, attempt, blocked) {
+function simSell0(s, qty, tax, urgent, attempt, blocked, extraTol) {
   const x = CFG.ex, gas = gasUsd(s.chain, false), lat = (EXEC_LAT[s.chain] || 5) * (0.8 + rng() * 1.2) + 1;
   if (blocked) return { ok: false, why: "sell reverted in pre-flight simulation (token restricts selling); no fee", gas: 0, fee: 0, slip: 0 };
   if (rng() < x.fail * (urgent ? 2 : 1)) return rng() < 0.6 ? { ok: false, why: "tx reverted, fee burned", gas, fee: 0, slip: 0 } : { ok: false, why: "tx dropped, no fill", gas: 0, fee: 0, slip: 0 };
   if (s.price <= 0 || s.liq <= 0) return { ok: false, why: "no liquidity", gas, fee: 0, slip: 0 };
-  const pool = poolOf(s), fee = x.fee / 100, tol = Math.min((urgent ? x.maxEmSlip : x.maxSellSlip) + attempt * 2, 60) / 100;
+  const pool = poolOf(s), fee = x.fee / 100, tol = Math.min((urgent ? x.maxEmSlip : x.maxSellSlip) + attempt * 2 + (extraTol || 0), extraTol >= 100 ? 99 : 60) / 100;
   let tokIn = qty * (1 - tax / 100), partial = false;
   // largest sale whose pool impact stays inside the limit: price impact of selling t tokens ~ 1-(b/(b+t))^2
   const maxTok = pool.b * (1 / Math.sqrt(1 - Math.min(tol * 0.7, 0.95)) - 1);
@@ -65,3 +65,9 @@ function simSell(s, qty, tax, urgent, attempt, blocked) {
 }
 // liquidation value of a position: what selling it into the pool would return now
 const exitValue = (qty, price, liq, tax) => { const val = qty * price, R = Math.max(liq / 2, 1); return val * R / (R + val) * (1 - tax / 100) * 0.997 };
+
+// money is kept in whole cents: every cash amount a fill produces (spent, received, network fee) is rounded to the cent where it happens
+const c2 = v => Math.round((v || 0) * 100) / 100;
+function centsFill(f) { if (f) { if (f.gas != null) f.gas = c2(f.gas); if (f.usd != null) f.usd = c2(f.usd); if (f.fee != null) f.fee = c2(f.fee) } return f }
+function simBuy(s, usd, tax, isNew) { return centsFill(simBuy0(s, usd, tax, isNew)) }
+function simSell(s, qty, tax, urgent, attempt, blocked, extraTol) { return centsFill(simSell0(s, qty, tax, urgent, attempt, blocked, extraTol)) }

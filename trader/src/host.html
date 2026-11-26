@@ -22,6 +22,8 @@
   <main><div class="mgrid"><div class="mcol">
     <div class="panel dash" style="margin-top:12px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" class="dash-tot">$0</b></div><div class="wl" id="h_wl"></div><div class="sub asof" id="h_asof"></div>
       <div class="kv" id="h_kv"></div><div class="kv kv2" id="h_rate"></div></div>
+    <h2>Money dashboard <small>what matters more than the balance</small></h2>
+    <div class="panel" id="h_dash"></div>
     <h2>Coins open right now <small id="h_opencount"></small></h2>
     <div class="panel" id="h_open"></div>
     <h2>Finished trades <small id="h_fincount"></small></h2>
@@ -37,6 +39,8 @@
     <div class="panel fullonly" id="h_fail"></div>
     <h2>Desks <small>tap one to open it</small></h2>
     <div id="h_desks"></div>
+    <h2 class="fullonly">Money features <small>each off until an A/B test proves it</small></h2>
+    <div class="panel fullonly" id="h_money"></div>
     <h2 class="fullonly">Master settings <small>apply to every desk</small></h2>
     <div class="panel fullonly" id="h_set"></div>
     <details class="guide fullonly" id="h_how"><summary>📐 How the numbers work</summary><div class="gbody">
@@ -47,9 +51,16 @@
       <p><b>Open now.</b> Profit or loss on coins still held, including any part already sold. <b>Failed and retried.</b> Every buy and sell attempt; fees burned on failed ones are inside each desk's profit.</p>
       <p><b>Speed.</b> "Selected" is the speed you chose; "actual" is measured: simulated seconds that really passed per real second over the last 10 seconds. All desks share one browser thread, so the actual speed depends on the device.</p>
       <p><b>Paused vs No new trades.</b> Paused stops the clock: nothing on the page changes. No new trades keeps the clock running and lets open coins be sold, but buys nothing new. Emergency stop freezes everything (sells nothing) until you tap Run twice.</p>
-      <p><b>Saving.</b> The run is saved in this browser every few seconds and whenever you pause; after a reload you can Resume or Start over. Export makes a file you can import later.</p>
+      <p><b>Check.</b> One coin looked at by a desk's scanner against the entry rules and the scam checks. "Coins checked a minute" counts these. In <b>No new trades</b> the scanners are off, so it shows <b>Off</b>, not 0.</p>
+      <p><b>Bot action.</b> One message between two bots on a desk (a vote, a report, an alert). Bot actions a minute = messages in the last 10 seconds, scaled to a minute. Position managers and risk managers keep working in No new trades; scanner bots show "Scanner off — No New Trades mode".</p>
+      <p><b>What stops in each mode.</b> Running: everything works. No new trades: clock runs, open coins are watched and sold, scanners and buyers are off. Paused: the clock stops and nothing changes. Emergency stop: everything is frozen, nothing is sold.</p>
+      <p><b>Money in cents.</b> Every amount is kept in whole cents, so desks add up to the totals exactly and the report's rounding line is always $0.00.</p>
+      <p><b>End-of-day balance.</b> Previous day's end + net of trades closed that day + change in open coins' profit/loss − fees on failed buys + cash interest. Fees on failed sells are inside the trades they belong to.</p>
+      <p><b>Expectancy.</b> Average result of a finished trade (money won + money lost) ÷ trades. <b>Profit factor.</b> Money won ÷ money lost. <b>Max drawdown.</b> Biggest fall of the total balance from its high.</p>
+      <p><b>Two size rules.</b> When Cold-desk size steps (Money 8) and Smart allocation (Money 1) are both on, Money 8 decides the size of new trades and Money 1 is ignored.</p>
+      <p><b>Saving.</b> One complete save (clock, balances, coins, counters, history, settings) every few seconds, after a trade closes (at most once a second), when you pause and when the page is hidden. Each save has a number; the last 3 are kept. After a reload the banner shows the save that will be loaded, and the restore is checked against it.</p>
     </div></details>
-    <details class="panel fullonly diag" id="h_diag"><summary><b>🩺 Diagnostics</b> <span class="sub">checks on every snapshot, settings log, speed, saving, errors</span></summary><div id="dg_body"></div></details>
+    <details class="panel fullonly diag" id="h_diag"><summary><b>🩺 Diagnostics</b> <span class="dgbadge" id="dg_badge"></span> <span class="sub">checks on every snapshot, settings log, speed, saving, errors</span></summary><div id="dg_body"></div></details>
   </div></div>
     <div class="sub" style="margin:14px 2px 0">Each desk is a full copy of the bot with its own paper account, settings and agents, trading one area of the market. All of them run at the same time; this board adds them up. Open a desk to change its mode (it starts on Lots of trades) or its starting balance.</div>
   </main>
@@ -71,5 +82,6 @@
 <div class="sumbar" id="sumbar" hidden></div>
 <div class="deskbar" id="deskbar"></div>
 <div class="overlay" id="h_report" hidden></div>
+<div class="overlay tabblock" id="h_tab" hidden></div>
 <div class="overlay" id="h_modal" hidden></div>
 <div class="htoast" id="htoast" role="status"></div>

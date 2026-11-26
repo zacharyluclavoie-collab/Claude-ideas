@@ -398,3 +398,12 @@ body.modal-open{overflow:hidden}
 .chip{display:inline-flex;align-items:center;justify-content:center}
 
 [title]{cursor:help}.chip[title],button[title]{cursor:pointer}
+/* V2: money dashboard, money features, tab lock, diagnostics badge, audits */
+.dgbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:6px}.dgbadge.ok{background:var(--gs);color:var(--g)}.dgbadge.bad{background:var(--rs);color:var(--r)}
+.mny{padding:8px 0;border-top:1px solid var(--line)}.mny:first-of-type{border-top:0}.mny .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mrow{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px}.mrow input[type=range]{flex:1;min-width:80px}.mrow label{color:var(--mut)}
+.tabblock{z-index:120}.rep.small{max-width:440px;margin:18vh auto 0}
+.dstat{font-size:11px;color:var(--mut)}.audit{font-size:12px;padding:6px 0;border-top:1px dashed var(--line);line-height:1.45}
+.ftbl.recon td:last-child{text-align:right;font-variant-numeric:tabular-nums}.bcr{display:block;font-size:10.5px;color:var(--mut)}.bcr.off{color:var(--y);font-weight:700}
+#h_dash .kv{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.rununtil select{width:auto;max-width:100%}.rununtil input{width:64px!important}
