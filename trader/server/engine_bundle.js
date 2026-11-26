@@ -70,7 +70,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-25 23:56";
+const BUILD = "2026-11-26 01:17";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -178,13 +178,13 @@ function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({
   // small accounts (e.g. $10): percentage limits would make every trade a few cents and fees would eat it, so trade ~10% of the account per position
   // on cheap chains only (the cost check below still blocks chains whose network fee is too big for the trade)
   const small=eq<500,minT=small?Math.max(0.5,Math.min(R.minTrade,eq*0.05)):R.minTrade;
-  if(small){const s=eq*0.20;caps.share=s;caps.risk=s*Math.max(0.5,riskMult());caps.pos=s;if(caps.agent!=null)caps.agent=Math.max(caps.agent,s-agentExposure(agentId));delete caps.newExp;caps.chain=eq*R.totalExp/100-(expBy(p=>p.chain)[snap.chain]||0)}
+  if(small){const s=eq*(R.smallShare||0.20);caps.share=s;caps.risk=s*Math.max(0.5,riskMult());caps.pos=s;if(caps.agent!=null)caps.agent=Math.max(caps.agent,s-agentExposure(agentId));delete caps.newExp;caps.chain=eq*R.totalExp/100-(expBy(p=>p.chain)[snap.chain]||0)}
   let name="",usd=Infinity;for(const [n,v] of Object.entries(caps))if(v<usd){usd=v;name=n}
   if(usd<minT)return no(`size ${usd.toFixed(2)} below min (${name})`);
-  {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),fee=2*CFG.ex.fee/100,cap=R.maxCostPct/100;
+  {const gasRT=2*(CFG.ex.gas[snap.chain]??0.5)*1.2+(snap.chain==="solana"&&cat==="new"?0.15:0),res=Math.max(snap.liq/2,1),fee=2*CFG.ex.fee/100,cap=(eq<75?Math.min(R.maxCostPct,2.5):R.maxCostPct)/100;   // under $75 fees decide everything: tested $25/$50 lost 5-12% in 2 days at 5%, about 0% / -1% at 2.5%
    const fit=Math.max(0,cap-fee)*res/2*0.9;                      // biggest size whose price impact stays inside the cost limit
    if(usd>fit){usd=fit;name="pool depth (cost limit)"}
-   if(usd<minT)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${R.maxCostPct}% to round-trip`);
+   if(usd<minT)return no(`pool too shallow: a ${R.minTrade}$ trade would cost more than ${(cap*100).toFixed(1)}% to round-trip`);
    const cost=gasRT/usd+fee+2*usd/res;
    if(cost>cap)return no(`network fees ${(gasRT/usd*100).toFixed(1)}% of a ${usd.toFixed(0)}$ trade are too high on ${snap.chain}`)}
   if(false)return no(`size ${usd.toFixed(0)} below min (${name})`);return{ok:true,usd,why:`size ${usd.toFixed(0)} (${name})`}}

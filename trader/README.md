@@ -47,12 +47,26 @@ On by default (Master settings). Every 10 s it puts any desk that is off ★ Lot
 ## Settings found by self-search
 `test/search.mjs` / `test/search2.mjs` try many random settings in the simulator (training seeds), then `test/holdout2.mjs` re-tests the best on seeds they never saw. "Lots of trades" uses the round-2 winner (#9: widest scan, stop 5%, half sold at +7%, rest up to +40% / 5% trailing stop, Trend Follower on, lessons off): +1.69%/day on 10 unseen simulated markets, 10/10 profitable. "Max trades" uses #8 (~56 trades/day, +1.79%/day, 9/10 profitable, deeper dips). Logs in reports/search_log_round2.txt and reports/holdout_round2.txt. Simulated results only. Round 5 (reports/search_log_round5_fees_scams.txt) added the scam filters to Lots of trades: on 8 unseen 5x markets +3.95%/day vs +3.80%, worst market +2.68% vs +1.48%, max dip 0.98% vs 2.01%, 70% fewer scam buys. A tighter fee cap (3%) looked good in training but not on unseen markets, so the 5% cap stays.
 
+## Small balances ($10 to $100)
+Every trade pays network and exchange fees whatever its size: on new Solana coins about $0.17 for a buy plus a sell, plus 0.3% each way. Demo tests (one Solana desk on Lots of trades, 2 simulated days, 6 markets each, `test/small.mjs`):
+
+| Start | Trades per run | Mean return | Notes |
+|---|---|---|---|
+| $10 | 0-1 | about 0% | fees are bigger than any trade the risk rules allow |
+| $25 | 7 | -5.5% (5% fee cap) / +0.2% (2.5% cap) | |
+| $50 | 46 | -12.5% (5% cap) / -1.2% (2.5% cap) | |
+| $100 | 136 | +5.5% (5% cap) / -5.6% (2.5% cap) | 4 of 6 markets up |
+| $200 | 145 | +19% | one market -14%: under $500 each coin gets about 20% of the account, so swings are large |
+
+Bigger slices per coin (35-50%) and buying older coins (no priority fee) did not help: they traded rarely or lost more. So under $75 the bot only buys when fees stay under 2.5% (it trades very little but stops paying fees away); from $75 the normal 5% limit applies. The Master has one-tap **Small start** buttons ($10 or $100, one Solana desk) and shows a tip when the balance is under $100. Recommended: start with $100 of pretend money.
+
 ## Running 24/7 without your phone (always-on runner)
 An iPhone web app cannot run in the background: iOS freezes it when the screen locks. For continuous paper trading, run the same engine headless on any always-on machine (home computer, Raspberry Pi, cheap VPS, a container). It needs only Node 20+ and internet access to the data providers.
 ```
-node server/run.mjs --port 8787 --token CHOOSE_A_SECRET     # 5 desks (Solana, Base, BSC, Ethereum, Big coins), live data, state in ./state/
+node server/run.mjs --port 8787 --token CHOOSE_A_SECRET     # 5 desks (Solana, Base, BSC, Arbitrum, Big coins), live data, state in ./state/
 node server/run.mjs --desks 10 --preset most                 # 10 desks, every desk in "Most money" mode
 node server/run.mjs --desks 1                                # one bot trading every chain (state/state.json)
+node server/run.mjs --desks 1 --cap 100 --preset lots        # one bot with $100 of pretend money (--cap sets the balance of accounts that have not started yet)
 ```
 Each desk has its own paper account ($2,000 by default) and its own state file (`state/state_desk1.json`, ...); the status page adds them up and lists each desk with its positions and recent events. Desks practise in simulation one at a time every 3 days. They share the free data-provider limits, so more desks means each scans a little slower.
 Open `http://<machine>:8787/?token=CHOOSE_A_SECRET` on your phone to watch equity, positions and events (refreshes every 3 s). State survives restarts and reboots; stops, take-profits and emergency exits run all the time. `POST /stop?token=...` sets the emergency stop. Run `node build.mjs` first if you changed the source (it refreshes `server/engine_bundle.js`).

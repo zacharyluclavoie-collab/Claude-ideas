@@ -13,7 +13,7 @@ import path from "node:path";
 const dir = path.dirname(new URL(import.meta.url).pathname);
 const args = process.argv.slice(2), opt = (n, d) => { const i = args.indexOf("--" + n); return i < 0 ? d : (args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : true) };
 const DEMO = !!opt("demo", false), SPEED = +opt("speed", 60) || 60, PORT = +opt("port", 8787), TOKEN = opt("token", ""), STATE = path.resolve(opt("state", "state"));
-const NDESK = Math.max(1, Math.min(25, +opt("desks", 5) || 5)), PRESET = opt("preset", "");
+const NDESK = Math.max(1, Math.min(25, +opt("desks", 5) || 5)), PRESET = opt("preset", ""), CAP = Math.max(0, +opt("cap", 0) || 0);   // --cap 10: start every new account with $10
 fs.mkdirSync(STATE, { recursive: true });
 const bundle = fs.readFileSync(path.join(dir, "engine_bundle.js"), "utf8");
 const AREAS = [{ n: "Solana", chains: ["solana"] }, { n: "Base", chains: ["base"] }, { n: "BSC", chains: ["bsc"] }, { n: "Arbitrum", chains: ["arbitrum"] }, { n: "Big coins", chains: ["solana", "base", "bsc", "arbitrum"], trend: true }];
@@ -28,6 +28,7 @@ function makeDesk(i) {   // i = 0 for the single all-chain bot, 1..N for desks
   if (!store[P + "pt_preset"]) { store[P + "pt_preset"] = i ? MODES[Math.floor((i - 1) / 5)] || "lots" : "recommended"; dirty = true }
   if (PRESET) { store[P + "pt_preset"] = String(PRESET); dirty = true }
   if (i && !store[P + "pt_cap"]) { store[P + "pt_cap"] = "2000"; dirty = true }
+  if (CAP && !store[P + "pt_state_" + (DEMO ? "mock" : "live")]) { store[P + "pt_cap"] = String(CAP); dirty = true }   // only for an account that has not started yet
   const localStorage = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); dirty = true }, removeItem: k => { delete store[k]; dirty = true } };
   // window.DESK makes the engine share the free API limits between desks (same as the app)
   const ctx = vm.createContext({ console, setTimeout, clearTimeout, setInterval, clearInterval, Date, Math, JSON, performance, fetch, AbortController, URL, localStorage, window: i ? { DESK: i, DESKN: NDESK } : undefined, document: { getElementById: () => ({}) }, navigator: {} });
