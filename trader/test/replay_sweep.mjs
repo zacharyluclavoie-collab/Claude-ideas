@@ -15,6 +15,9 @@ export const VARIANTS = {
   "wider stop (-7%)": "CFG.quick.stop=7;",
   "40% of account per coin": "CFG.risk.smallShare=0.4;",
   "established coins too": "CFG.tr.enabled=true;",
+  "daily loss limit 6%": "CFG.risk.dailyLoss=6;",
+  "12% of account per coin": "CFG.risk.smallShare=0.12;",
+  "both": "CFG.risk.dailyLoss=6;CFG.risk.smallShare=0.12;",
 };
 const only = process.argv[4] ? process.argv[4].split("|") : null;
 for (const [name, v] of Object.entries(VARIANTS)) {

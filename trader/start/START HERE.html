@@ -8,7 +8,7 @@ a.big{display:block;text-align:center;background:var(--b);color:#fff;text-decora
 <ol><li>Install <b>Node.js</b> (free, the LTS version) from <a href="https://nodejs.org">nodejs.org</a>. Only once.</li>
 <li>Double-click <code>START REAL-PRICE TEST.command</code> (Mac; the first time, right-click it and choose Open) or <code>START REAL-PRICE TEST.bat</code> (Windows).</li>
 <li>Leave the window open and the computer plugged in and awake. Your results page opens at <code>http://localhost:8787/</code>. It shows profit, trades, win rate, fees and a plain verdict.</li>
-<li>Every trade and an hourly summary are saved in <code>More/real-test/</code> (<code>real_test_trades.csv</code>, <code>real_test_hourly.csv</code>). Send those two files back to Claude to tune the bot on real data.</li></ol>
+<li>Every trade and an hourly summary are saved in <code>More/real-test/</code> (<code>real_test_trades.csv</code>, <code>real_test_hourly.csv</code>). It also records the real market in <code>More/real-test/market-data/</code> (about 70 MB a day). Send that folder and the two files back to Claude: the recording can be replayed thousands of times faster than real time to test and tune settings on real prices.</li></ol>
 <p class="s">No install? Open Paper Trader, tap Full, then Master settings → Start the real-price test. It only runs while that browser tab stays open.</p></div>
 <div class="card"><h2><span class="n">1</span>Start it</h2>
 <a class="big" href="index.html">Open Paper Trader</a>
