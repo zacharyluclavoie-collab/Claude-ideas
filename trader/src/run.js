@@ -59,6 +59,7 @@ function runIn(m) {
   { const o = DCFG[m.desk], k = { mode: m.mode, paused: !!m.paused }; if (o && READY[m.desk]) { if (o.mode !== k.mode) setLog(`${DN[m.desk - 1]}: mode`, MODEN[o.mode] || o.mode, MODEN[k.mode] || k.mode); if (o.paused !== k.paused) setLog(`${DN[m.desk - 1]}: no new trades`, o.paused ? "on" : "off", k.paused ? "on" : "off") } DCFG[m.desk] = k }   // every desk setting change is logged, whoever made it (you, Full Auto, the tournament, the desk page)
   if (m.ready && !READY[m.desk]) {
     READY[m.desk] = true; sendMoney(m.desk);
+    if (!RESTORE && readyDesks().length === NDESK && !SETLOG.some(l => l.name === "Run start")) setLog("Run start", "", `seed ${CLK.seed}, ${NDESK} desks, speed ${CLK.speed.toLocaleString()}x, Full Auto ${FA ? "on" : "off"}, market size ${autoSize ? "Auto" : (m.simScale || "?") + "x fixed"}, money features on: ${Object.entries(MONEY).filter(([, v]) => v === true).map(([k]) => MONEYN[k] || k).join(", ") || "none"}`);   // the starting setup, so a run can be explained from its export alone
     if (RESTORE) { if (m.restored) diag("storage", `${DN[m.desk - 1]} restored save #${RESTORE.sid} at ${simLabel(m.vnow)}`); else diag("storage", `${DN[m.desk - 1]} could not load save #${RESTORE.sid}: started fresh at ${simLabel(m.vnow)}`) }
     if (m.vnow > CLK.g) { CLK.g = m.vnow; for (const d of readyDesks()) if (d !== m.desk) advance(d, CLK.g) }
     else if (m.vnow < CLK.g) advance(m.desk, CLK.g)
@@ -89,7 +90,7 @@ function clkStep() {
   if (!ds.every(d => ACK[d] >= CLK.g)) { if (running) waitN++; return }
   stepN++;
   let target = CLK.g;
-  if (skipTo > CLK.g) target = Math.min(skipTo, CLK.g + Math.max(600, (eff || 2000) * 0.3));
+  if (skipTo > CLK.g) target = Math.min(skipTo, CLK.g + Math.floor(Math.max(600, (eff || 2000) * 0.3) / 30) * 30);   // whole 30 s steps, so the desks' ticks never depend on the computer's speed
   else if (running) { const Q = stepQ(CLK.speed), k = Math.floor(budget / Q); if (!k) return; target = CLK.g + k * Q; budget -= k * Q }
   else return;
   const mid = HSIM0 + (Math.floor((CLK.g - HSIM0) / 86400) + 1) * 86400; if (target > mid) target = mid;   // stop exactly at every simulated midnight

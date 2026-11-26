@@ -84,7 +84,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-26 20:56";
+const BUILD = "2026-11-26 21:52";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -737,49 +737,55 @@ const MK_ARCH = {
   honey:  { w: 0.040, A: [2.0, 6.0], rise: [20, 120], fall: [200, 600], sUp: 0.10, sDn: -0.02 },
   stealth:{ w: 0.017, A: [2.0, 7.0], rise: [20, 120], fall: [100, 400], sUp: 0.14, sDn: -0.08 },
 };
-const mkU = (a, b) => a + (b - a) * rng();
-const mkLogN = (med, sd) => med * Math.exp(sd * gauss());
-function mkPoisson(l) { if (l > 25) return Math.max(0, Math.round(l + Math.sqrt(l) * gauss())); const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= rng() } while (p > L); return k - 1 }
+// The market has its OWN random stream (seeded from the desk seed), separate from the bot's (rng: fills, failed transactions,
+// latency, data outages). So two runs with the same seed see the same coins and the same price paths even when the bot behaves
+// differently (a money feature on or off): an A/B test then measures the feature, not a reshuffled market.
+const MR = { a: 1 };
+function mrng() { let a = MR.a = (MR.a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 }
+const mgauss = () => { let u = 0, v = 0; while (!u) u = mrng(); v = mrng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) };
+const mkU = (a, b) => a + (b - a) * mrng();
+const mkLogN = (med, sd) => med * Math.exp(sd * mgauss());
+function mkPoisson(l) { if (l > 25) return Math.max(0, Math.round(l + Math.sqrt(l) * mgauss())); const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= mrng() } while (p > L); return k - 1 }
 
 const MOCK = {
-  toks: {}, n: 0, t0: 0, G: 0, lastMin: 0, crashUntil: 0, major: { bitcoin: 0, ethereum: 0, solana: 0 }, majorHist: [], vol: 1,
+  toks: {}, n: 0, t0: 0, G: 0, lastMin: 0, mt: 0, crashUntil: 0, major: { bitcoin: 0, ethereum: 0, solana: 0 }, majorHist: [], vol: 1,
   cfg: { newPerMin: { solana: 0.16, base: 0.07, ethereum: 0.025, bsc: 0.07, arbitrum: 0.05 }, lagNew: [60, 240], signal: 0.35, crashPerMin: 1 / 5500, estUp: 0.038, estRev: 0.004, estMR: 0.015, estFall: [200, 700] },
 
   init() {
-    this.toks = {}; this.n = 0; this.t0 = vnow; this.G = 0; this.lastMin = vnow; this.crashUntil = 0; this.majorHist = []; this.vol = 1;
+    MR.a = ((SEED | 0) ^ 0x5bd1e995) | 0; this.toks = {}; this.n = 0; this.t0 = vnow; this.G = 0; this.lastMin = vnow; this.mt = vnow; this.crashUntil = 0; this.majorHist = []; this.vol = 1;
     for (let i = 0; i < 160; i++) this.spawn(true);
     for (let m = 0; m < MK_RING; m++) { this.G = m - MK_RING; for (const t of Object.values(this.toks)) this.step(t) }   // warm-up history for established tokens
     this.G = 0;
   },
   // save / restore (persistence): the whole market is too big to save (hundreds of MB of history), so a save keeps the market clock and
   // the coins the desk still holds; a restore builds a fresh market at that moment and puts those coins back exactly as they were
-  dump(keep) { const held = {}; for (const k of keep || []) { const t = this.toks[k]; if (t) held[k] = t } return { n: this.n, t0: this.t0, G: this.G, lastMin: this.lastMin, crashUntil: this.crashUntil, major: this.major, majorHist: this.majorHist, vol: this.vol, held } },
+  dump(keep) { const held = {}; for (const k of keep || []) { const t = this.toks[k]; if (t) held[k] = t } return { mr: MR.a, n: this.n, t0: this.t0, G: this.G, lastMin: this.lastMin, crashUntil: this.crashUntil, major: this.major, majorHist: this.majorHist, vol: this.vol, held } },
   restore(sv) {
-    const G1 = sv.G; this.toks = {}; this.n = sv.n; this.t0 = sv.t0; this.lastMin = sv.lastMin; this.crashUntil = sv.crashUntil; this.major = sv.major || this.major; this.majorHist = sv.majorHist || []; this.vol = sv.vol || 1;
+    const G1 = sv.G; this.toks = {}; this.n = sv.n; this.t0 = sv.t0; this.lastMin = sv.lastMin; this.mt = sv.lastMin; this.crashUntil = sv.crashUntil; this.major = sv.major || this.major; this.majorHist = sv.majorHist || []; this.vol = sv.vol || 1;
     this.G = G1 - MK_RING - 1; for (let i = 0; i < 160; i++) this.spawn(true);
     for (const t of Object.values(this.toks)) t.genG = G1 - MK_RING - 1;
     for (let m = 0; m < MK_RING; m++) { this.G = G1 - MK_RING + m; for (const t of Object.values(this.toks)) this.step(t) }
-    this.G = G1; for (const k in (sv.held || {})) this.toks[k] = sv.held[k];
+    this.G = G1; for (const k in (sv.held || {})) this.toks[k] = sv.held[k]; if (sv.mr != null) MR.a = sv.mr; this.mt = this.lastMin;
   },
-  pickKind() { let r = rng(), acc = 0; for (const [k, a] of Object.entries(MK_ARCH)) { acc += a.w; if (r < acc) return k } return "dud" },
+  pickKind() { let r = mrng(), acc = 0; for (const [k, a] of Object.entries(MK_ARCH)) { acc += a.w; if (r < acc) return k } return "dud" },
   spawn(est, forced) {
-    const chains = CFG.chains, chain = forced || chains[Math.floor(rng() * chains.length)], n = ++this.n;
+    const chains = CFG.chains, chain = forced || chains[Math.floor(mrng() * chains.length)], n = ++this.n;
     const addr = chain === "solana" ? "MOCK" + n : "0x" + n.toString(16).padStart(40, "0");
     const kind = est ? "est" : this.pickKind(), ar = MK_ARCH[kind] || { A: [0.5, 2], rise: [100, 400], fall: [1000, 5000], sUp: 0.05, sDn: -0.03 };
     const liq = est ? clamp(mkLogN(500e3, 0.9), 120e3, 6e6) : clamp(mkLogN(8e3, 1.05), 2500, 700e3);
-    const q = liq / 2, p0 = Math.pow(10, -7 + rng() * 7), b = q / p0;
-    const t = { chain, addr, sym: simName(n), kind, est, created: est ? vnow - (80 + rng() * 800) * 3600 : vnow, genG: est ? -MK_RING - 1 : this.G, q, b, p0, price: p0,
+    const q = liq / 2, p0 = Math.pow(10, -7 + mrng() * 7), b = q / p0;
+    const t = { sseed: (mrng() * 4294967296) | 0, chain, addr, sym: simName(n), kind, est, created: est ? this.mt - (80 + mrng() * 800) * 3600 : this.mt, genG: est ? -MK_RING - 1 : this.G, q, b, p0, price: p0,
       A: est ? mkU(0.3, 1.6) : mkU(...ar.A), rise: mkU(...ar.rise), fall: est ? mkU(...this.cfg.estFall) : mkU(...ar.fall), sUp: ar.sUp, sDn: ar.sDn, h: est ? 0.15 : 0.02, peak: 0, waveUntil: 0,
-      noise: 0, sigN: est ? 0.04 : 0.09, tax0: rng() < 0.7 ? 0 : mkU(0, 3), sellTax: 0, flow: 0, rugged: false, dead: false, insIdx: 0,
-      holders: Math.floor(est ? mkU(3e3, 8e4) : mkU(25, 300)), launchHolders: 0, soph: SCAM_KINDS.has(kind) && rng() < 0.25, wash: 1,
+      noise: 0, sigN: est ? 0.04 : 0.09, tax0: mrng() < 0.7 ? 0 : mkU(0, 3), sellTax: 0, flow: 0, rugged: false, dead: false, insIdx: 0,
+      holders: Math.floor(est ? mkU(3e3, 8e4) : mkU(25, 300)), launchHolders: 0, soph: SCAM_KINDS.has(kind) && mrng() < 0.25, wash: 1,
       cumV: new Float64Array(MK_RING), cumB: new Float64Array(MK_RING), cumS: new Float64Array(MK_RING), cumU: new Float64Array(MK_RING), px: new Float64Array(MK_RING), qs: new Float64Array(MK_RING),
-      c: { v: 0, b: 0, s: 0, u: 0 }, visibleAt: vnow + (est ? -1e6 : mkU(...this.cfg.lagNew)), tRug: 0, rugFrac: 0, blockAfter: 1e9, taxAfter: 0, taxFrom: 1e9 };
+      c: { v: 0, b: 0, s: 0, u: 0 }, visibleAt: this.mt + (est ? -1e6 : mkU(...this.cfg.lagNew)), tRug: 0, rugFrac: 0, blockAfter: 1e9, taxAfter: 0, taxFrom: 1e9 };
     t.sellTax = t.tax0; t.peak = t.rise * mkU(1.2, 2.2);
     if (SCAM_KINDS.has(kind)) t.wash = t.soph ? mkU(1.2, 2) : mkU(2, 7);          // sophisticated scams spread fake volume over many wallets and look organic
     if (kind === "rug_i") { t.tRug = mkU(20, 700); t.rugFrac = mkU(0.85, 0.995) }
     if (kind === "rug_s") { t.tRug = mkU(30, 400); t.devSell = mkU(0.004, 0.02) }
     if (kind === "honey") { t.blockAfter = 0; t.tRug = mkU(240, 900) }
-    if (kind === "stealth") { t.blockAfter = mkU(30, 200); if (rng() < 0.5) { t.taxFrom = t.blockAfter; t.taxAfter = mkU(45, 95); t.blockAfter = 1e9 } }
+    if (kind === "stealth") { t.blockAfter = mkU(30, 200); if (mrng() < 0.5) { t.taxFrom = t.blockAfter; t.taxAfter = mkU(45, 95); t.blockAfter = 1e9 } }
     if (kind === "runner" || kind === "moon") t.waveEvery = mkU(300, 1500);
     this.toks[addr.toLowerCase()] = t; return t;
   },
@@ -795,10 +801,10 @@ const MOCK = {
     // hype state machine
     if (!t.est && t.rising === undefined) t.rising = true;
     // pumps end without warning: the chance of ending each minute grows with how far price has run (no learnable schedule)
-    if (!t.est && t.rising && rng() < (1 / t.peak) * (1 + 0.6 * Math.max(0, Math.log(this.price(t) / t.p0)))) t.rising = false;
+    if (!t.est && t.rising && mrng() < (1 / t.peak) * (1 + 0.6 * Math.max(0, Math.log(this.price(t) / t.p0)))) t.rising = false;
     if (!t.est && t.rising) t.h += (1 - t.h) / Math.max(4, t.rise); else if (t.waveUntil > age) t.h += (1 - t.h) / 40; else t.h *= Math.exp(-1 / t.fall);
-    if (t.waveEvery && rng() < 1 / t.waveEvery) { t.waveUntil = age + mkU(40, 240); t.h = Math.min(1, t.h + mkU(0.3, 0.8)); t.peak = Math.max(t.peak, age) }
-    if (t.est && rng() < 0.30 / 1440) { t.waveDir = rng() < 0.5 ? 1 : -1; t.waveUntil = age + mkU(20, 150); t.revUntil = t.waveUntil + mkU(60, 300); t.h = Math.min(1, t.h + mkU(0.3, 0.9)) }
+    if (t.waveEvery && mrng() < 1 / t.waveEvery) { t.waveUntil = age + mkU(40, 240); t.h = Math.min(1, t.h + mkU(0.3, 0.8)); t.peak = Math.max(t.peak, age) }
+    if (t.est && mrng() < 0.30 / 1440) { t.waveDir = mrng() < 0.5 ? 1 : -1; t.waveUntil = age + mkU(20, 150); t.revUntil = t.waveUntil + mkU(60, 300); t.h = Math.min(1, t.h + mkU(0.3, 0.9)) }
     const rising = t.est ? t.waveUntil > age : (t.rising || t.waveUntil > age);
     // dev actions
     if (t.kind === "rug_i" && !t.rugged && age >= t.tRug) { t.rugged = true; const f = t.rugFrac; const dumped = t.b * mkU(0.5, 2.5); t.q *= 1 - f; t.b *= 1 - f; this.sellTokens(t, dumped * (1 - f)); t.h = 0.01 }
@@ -806,15 +812,15 @@ const MOCK = {
     if (t.kind === "rug_s" && age >= t.tRug && t.q > 300) { this.sellTokens(t, t.b * t.devSell * mkU(0.5, 1.5)); t.rugged = true }
     if (age >= t.taxFrom) t.sellTax = t.taxAfter;
     // organic flow
-    const base = t.est ? 0.5 : 0.12, V = t.q * (base + t.A * t.h) / 60 * (this.crashUntil > vnow ? 1.4 : 1);
-    t.noise = 0.85 * t.noise + 0.15 * gauss() * t.sigN * 3;
+    const base = t.est ? 0.5 : 0.12, V = t.q * (base + t.A * t.h) / 60 * (this.crashUntil > this.mt ? 1.4 : 1);
+    t.noise = 0.85 * t.noise + 0.15 * mgauss() * t.sigN * 3;
     let s = (rising ? t.sUp * this.cfg.signal : t.sDn) * (rising ? 1 : (t.est ? 0.4 : 1)) + t.noise;
     if (t.est) { const lnr = Math.log(this.price(t) / this.pxAgo(t, 360)); s = t.noise * 0.6 - this.cfg.estMR * clamp(lnr, -0.6, 0.6) + (t.waveUntil > age ? this.cfg.estUp * t.waveDir : age < (t.revUntil || 0) ? -this.cfg.estRev * t.waveDir : 0) }
-    if (this.crashUntil > vnow) s -= 0.07;
+    if (this.crashUntil > this.mt) s -= 0.07;
     if (!t.est) { const lnm = Math.log(this.price(t) / t.p0); s += lnm > 0 ? -(MK_KAPPA[t.kind] || 0.1) * lnm : -0.03 * lnm }   // profit-taking into strength, bargain hunting after collapses
     if (t.kind === "dead") s = -0.02 + t.noise * 0.3;
     let net = V * s;
-    if (rng() < (t.est ? 0.004 : 0.012)) net += (rng() < (0.35 + Math.max(0, s)) ? 1 : -1) * t.q * (t.est ? mkU(0.002, 0.012) : mkU(0.004, 0.03));    // whale
+    if (mrng() < (t.est ? 0.004 : 0.012)) net += (mrng() < (0.35 + Math.max(0, s)) ? 1 : -1) * t.q * (t.est ? mkU(0.002, 0.012) : mkU(0.004, 0.03));    // whale
     // insiders / snipers take profit into strength (new tokens only)
     if (!t.est && t.kind !== "dead") { const mult = this.price(t) / t.p0, th = [1.6, 2.6, 4.2, 7]; if (t.insIdx < th.length && mult >= th[t.insIdx]) { net -= t.q * mkU(0.03, 0.1) * (t.kind === "moon" ? 0.4 : 1); t.insIdx++ } }
     const maxNet = t.q * 0.22; net = clamp(net, -maxNet, maxNet);
@@ -823,7 +829,7 @@ const MOCK = {
     if (net > 0) this.buyQuote(t, net); else if (net < 0 && t.q > 50) this.sellTokens(t, Math.min(-net / Math.max(this.price(t), 1e-18), t.b * 0.2));
     t.flow = net / t.q;
     // activity counters (wash inflates scam tokens' apparent activity)
-    const avgTrade = clamp(t.q * 0.004, 25, 450), vol = V * (net ? 1 : 0.5), nTx = Math.max(0, vol / avgTrade * (0.8 + 0.4 * rng()));
+    const avgTrade = clamp(t.q * 0.004, 25, 450), vol = V * (net ? 1 : 0.5), nTx = Math.max(0, vol / avgTrade * (0.8 + 0.4 * mrng()));
     const pBuy = clamp(0.5 + s * 1.6, 0.08, 0.92), buys = nTx * pBuy * (blocked ? 1.0 : 1), sells = nTx * (1 - pBuy) * (blocked ? 0.06 : 1);
     const wash = t.wash;
     t.c.v += vol * wash; t.c.b += buys * wash; t.c.s += sells * (wash > 1 ? 1 : 1); t.c.u += buys * (wash > 1 && !t.soph ? 0.25 : 0.75);
@@ -836,13 +842,13 @@ const MOCK = {
   advance() {
     const mins = Math.min(Math.floor((vnow - this.lastMin) / 60), 40);
     for (let i = 0; i < mins; i++) {
-      this.G++; this.lastMin += 60;
-      this.vol = clamp(0.97 * this.vol + 0.03 * (0.6 + 0.8 * rng()) + (rng() < 0.002 ? 0.8 : 0), 0.5, 3);
-      if (rng() < this.cfg.crashPerMin && this.crashUntil < vnow) this.crashUntil = vnow + mkU(2, 5) * 3600;     // market-wide sell-off about every 4 days
-      const bm = (this.crashUntil > vnow ? -0.0006 : 0) + gauss() * 0.00045 * this.vol;
+      this.G++; this.lastMin += 60; this.mt = this.lastMin;   // the market moves in whole minutes on its own clock, so how the bot's ticks are cut never changes it
+      this.vol = clamp(0.97 * this.vol + 0.03 * (0.6 + 0.8 * mrng()) + (mrng() < 0.002 ? 0.8 : 0), 0.5, 3);
+      if (mrng() < this.cfg.crashPerMin && this.crashUntil < this.mt) this.crashUntil = this.mt + mkU(2, 5) * 3600;     // market-wide sell-off about every 4 days
+      const bm = (this.crashUntil > this.mt ? -0.0006 : 0) + mgauss() * 0.00045 * this.vol;
       this.majorHist.push(bm); if (this.majorHist.length > 61) this.majorHist.shift();
       const sc = CFG.simScale || 1;   // market size: 1 = original demo (~470 new coins a day), bigger = closer to the real market (tens of thousands a day)
-      for (const [ch, rate] of Object.entries(this.cfg.newPerMin)) if (CFG.chains.includes(ch)) { if (sc === 1) { if (rng() < rate) this.spawn(false, ch) } else { let k = Math.floor(rate * sc); if (rng() < rate * sc - k) k++; for (let i = 0; i < k; i++) this.spawn(false, ch) } }
+      for (const [ch, rate] of Object.entries(this.cfg.newPerMin)) if (CFG.chains.includes(ch)) { if (sc === 1) { if (mrng() < rate) this.spawn(false, ch) } else { let k = Math.floor(rate * sc); if (mrng() < rate * sc - k) k++; for (let i = 0; i < k; i++) this.spawn(false, ch) } }
       if (sc > 1 && this.G % 60 === 0) for (const k of Object.keys(this.toks)) { const t = this.toks[k]; if (!t.est && this.G - t.genG > 2880 && !(S && S.pf && S.pf.positions[t.chain + ":" + t.addr.toLowerCase()])) delete this.toks[k] }   // big markets: forget new coins after 2 days (most are dead by then)
       for (const t of Object.values(this.toks)) this.step(t);
     }
@@ -867,18 +873,18 @@ const MOCK = {
     const t = this.toks[addr.toLowerCase()]; if (!t) return null; const age = this.G - t.genG, k = t.kind;
     if (rng() < 0.03 || (age < 4 && rng() < 0.65)) return null;                         // feed outage or token not indexed yet: bot fails closed
     if (t.secStatic) { const o = Object.assign({}, t.secStatic); o.sellTax = t.sellTax > 20 && age >= t.taxFrom + 60 ? t.sellTax : (t.secStatic.honeypot ? 99 : t.tax0); o.holders = Math.floor(t.secStatic.holders0 * (1 + age / 300)); if (t.rugged) { o.creator = Math.max(o.creator, 40); o.top10 = Math.max(o.top10, 80) } return o }
-    const sol = chain === "solana", c = rng, chance = p => c() < p, pick = a => a[Math.floor(c() * a.length)];
+    const sol = chain === "solana", c = mulberry(((t.sseed || 1) ^ 0x2545F491) | 0), U = (a, b) => a + (b - a) * c(), chance = p => c() < p, pick = a => a[Math.floor(c() * a.length)];
     const scam = SCAM_KINDS.has(k), est = t.est, fp = !scam && !est;
     let honeypot = false, sellTax = t.sellTax > 20 && age >= t.taxFrom + 60 ? t.sellTax : t.tax0, flagged = false;
     if (k === "honey" && chance(t.soph ? 0.55 : 0.9)) { honeypot = true; sellTax = 99 }
     const mintable = (k === "rug_s" && chance(0.7)) || (k === "rug_i" && chance(0.3)) || (fp && chance(0.04)) || (k === "dead" && chance(0.4));
-    const lpLocked = est ? null : k === "rug_i" ? (chance(0.5) ? mkU(85, 100) : mkU(0, 20)) : k === "rug_s" ? (chance(0.55) ? mkU(80, 100) : mkU(0, 30)) : k === "honey" ? mkU(0, 100) : (chance(0.78) ? mkU(80, 100) : mkU(0, 40));
-    const creator = (k === "rug_i" || k === "rug_s") ? (chance(0.55) ? mkU(9, 35) : mkU(0.5, 6)) : (fp && chance(0.07)) ? mkU(8.5, 20) : mkU(0, 5);
-    const top10 = est ? mkU(10, 42) : (scam && chance(0.5)) ? mkU(42, 80) : (fp && chance(0.13)) ? mkU(46, 70) : mkU(14, 40);
-    const holders = Math.floor(est ? mkU(3000, 90000) : Math.max(15, t.holders * (1 + age / 300) * mkU(0.6, 1.4)));
+    const lpLocked = est ? null : k === "rug_i" ? (chance(0.5) ? U(85, 100) : U(0, 20)) : k === "rug_s" ? (chance(0.55) ? U(80, 100) : U(0, 30)) : k === "honey" ? U(0, 100) : (chance(0.78) ? U(80, 100) : U(0, 40));
+    const creator = (k === "rug_i" || k === "rug_s") ? (chance(0.55) ? U(9, 35) : U(0.5, 6)) : (fp && chance(0.07)) ? U(8.5, 20) : U(0, 5);
+    const top10 = est ? U(10, 42) : (scam && chance(0.5)) ? U(42, 80) : (fp && chance(0.13)) ? U(46, 70) : U(14, 40);
+    const holders = Math.floor(est ? U(3000, 90000) : Math.max(15, t.holders * (1 + age / 300) * U(0.6, 1.4)));
     const rep = { sol, honeypot, buyTax: t.tax0 * 0.5, sellTax, openSource: scam && chance(0.25) ? false : true, proxy: chance(0.08), mintable, hiddenOwner: k === "rug_s" && chance(0.25), takeBack: false, ownerBal: k === "rug_s" && chance(0.2),
       pausable: k === "honey" && chance(0.3), cannotSellAll: false, cooldown: chance(0.04), blacklist: scam && chance(0.15), slipMod: k === "stealth" && chance(0.15), selfdestruct: false, extCall: chance(0.08), freezable: false, closable: false, nonTransferable: false,
-      creatorHP: scam && chance(0.12), inDex: true, holders, holders0: holders / (1 + age / 300), top10, creator, owner: mkU(0, 3), lpLocked };
+      creatorHP: scam && chance(0.12), inDex: true, holders, holders0: holders / (1 + age / 300), top10, creator, owner: U(0, 3), lpLocked };
     t.secStatic = rep; return Object.assign({}, rep);
   },
 };
