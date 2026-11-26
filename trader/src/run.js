@@ -10,7 +10,7 @@ const PEND = {}, ACK = {}, READY = {}, DIAG = [], SETLOG = [], ACTLOG = [], SPD 
 const RESTORE = window.__ptRestore || null;
 const DCFG = {};
 let SNAPT = { g: CLK.g, real: Date.now() }, SNAP = null, NEXT = null, snapId = 0, saving = null, lastSave = 0, lastSaveTrades = 0, skipTo = 0, budget = 0, stepAt = performance.now(), bootAt = Date.now(), waitN = 0, stepN = 0, drawTimer = 0;
-let restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
+let lastSig = "", restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
 const KEEP = (RESTORE && RUNSV) ? RUNSV : {};
 let DAYS = KEEP.days || {}, DSTATE = KEEP.dstate || {}, DD = KEEP.dd || { peak: 0, peakG: 0, max: 0, pct: 0, from: 0, to: 0 }, SID = KEEP.sid || 0, SAVES = KEEP.saves || [], MODELOG = KEEP.modelog || {}, ALLOC = KEEP.alloc || {}, ALLOCLOG = KEEP.alloclog || [];
 let MONEY = Object.assign({ ladder: true, slipPlus: 1, prebuy: false, ftc: false, bank: false, bankTarget: 150, memory: false, cold: false, smart: false, tournament: false }, (() => { try { return JSON.parse(localStorage.getItem("pt_host_money") || "{}") } catch (e) { return {} } })(), KEEP.money || {});
@@ -71,6 +71,9 @@ function advance(d, g) { post(d, { ptcmd: "adv", v: g, stp: skipTo > CLK.g ? 30 
 function tryCommit() { const ds = readyDesks(); if (!ds.length || !ds.every(d => PEND[d] && PEND[d].vnow === CLK.g)) return; commit(ds) }
 function commit(ds) {
   const rr = {}; for (const d of ds) rr[d] = PEND[d];
+  const sig = CLK.g + "|" + ds.map(d => { const r = rr[d]; return [r.vnow, r.mc ? r.mc.eq : r.eq, r.wn, r.ln, r.open, r.todayN, r.posKey, r.mode, r.paused, r.shutdown, r.simScale].join(",") }).join("|");
+  if (sig === lastSig) { for (const d of ds) R[d] = rr[d]; return }   // a desk only said "still here" (e.g. while paused): same numbers, so no new snapshot and nothing on screen moves
+  lastSig = sig;
   const sn = buildSnap(rr, CLK.g); NEXT = { rr, sn };
   afterCommit(sn, rr);
   const still = CLK.state === "paused" || CLK.state === "emergency" || CLK.done || restoreWait, n = performance.now();
