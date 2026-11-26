@@ -34,7 +34,13 @@ const gauss=()=>{let u=0,v=0;while(!u)u=rng();v=rng();return Math.sqrt(-2*Math.l
 
 /* ============================ state ============================ */
 let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")||300;
-let paused=false, vnow=1.76e9, last={}, regime="unknown", regimeOk=0, rejected={}, stats=freshStats();
+// the demo clock starts at a UTC midnight, so "Day 1, Day 2..." on screen, "today" and the daily loss stop all turn over at the same moment
+const SIM0=1759968000;   // 2025-10-09 00:00 UTC
+// small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
+const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
+  async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
+  put(k,v){return this.tx("readwrite",st=>st.put(v,k))},get(k){return this.tx("readonly",st=>st.get(k))},del(k){return this.tx("readwrite",st=>st.delete(k))},clear(){return this.tx("readwrite",st=>st.clear())}};
+let paused=false, vnow=SIM0, last={}, regime="unknown", regimeOk=0, rejected={}, stats=freshStats();
 let S; // {pf, journal[], trades[]}
 const key=()=>"pt_state_"+MODE;
 function newState(cap){return{feed:[],pf:{ag:{},exec:{buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0},feesPaid:0,start:cap,cash:cap,positions:{},realized:0,peak:cap,day:"",dayStart:cap,streak:0,pauseUntil:0,entries:[],cool:{},shutdown:false,why:"",closed:[]},journal:[],trades:[],curve:[]}}
@@ -76,7 +82,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-26 15:54";
+const BUILD = "2026-11-26 18:00";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -735,6 +741,16 @@ const MOCK = {
     for (let m = 0; m < MK_RING; m++) { this.G = m - MK_RING; for (const t of Object.values(this.toks)) this.step(t) }   // warm-up history for established tokens
     this.G = 0;
   },
+  // save / restore (persistence): the whole market is too big to save (hundreds of MB of history), so a save keeps the market clock and
+  // the coins the desk still holds; a restore builds a fresh market at that moment and puts those coins back exactly as they were
+  dump(keep) { const held = {}; for (const k of keep || []) { const t = this.toks[k]; if (t) held[k] = t } return { n: this.n, t0: this.t0, G: this.G, lastMin: this.lastMin, crashUntil: this.crashUntil, major: this.major, majorHist: this.majorHist, vol: this.vol, held } },
+  restore(sv) {
+    const G1 = sv.G; this.toks = {}; this.n = sv.n; this.t0 = sv.t0; this.lastMin = sv.lastMin; this.crashUntil = sv.crashUntil; this.major = sv.major || this.major; this.majorHist = sv.majorHist || []; this.vol = sv.vol || 1;
+    this.G = G1 - MK_RING - 1; for (let i = 0; i < 160; i++) this.spawn(true);
+    for (const t of Object.values(this.toks)) t.genG = G1 - MK_RING - 1;
+    for (let m = 0; m < MK_RING; m++) { this.G = G1 - MK_RING + m; for (const t of Object.values(this.toks)) this.step(t) }
+    this.G = G1; for (const k in (sv.held || {})) this.toks[k] = sv.held[k];
+  },
   pickKind() { let r = rng(), acc = 0; for (const [k, a] of Object.entries(MK_ARCH)) { acc += a.w; if (r < acc) return k } return "dud" },
   spawn(est, forced) {
     const chains = CFG.chains, chain = forced || chains[Math.floor(rng() * chains.length)], n = ++this.n;
@@ -1024,29 +1040,33 @@ async function evaluate(k,snap,src,t,agentId){
   if(!d.ok){stats.vetoed++;talk("risk","committee",1,"no",snap,()=>"No: "+d.why);{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
   const usd=d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1);talk("risk","trader",1,"ok",snap,()=>`OK: buy ${fmt(usd,usd<10?2:0)} (${(usd/Math.max(1e-9,equity())*100).toFixed(1)}% of the account)`);
   open(snap,cat,plan,v.risk,sec,usd,t,v.checks,ag.id)}
+// failed / retried accounting (Master "Failed / retried" block): every buy and sell attempt is counted, and every fee burned on a failed one
+const FX=()=>S.pf.fx||(S.pf.fx={buyOk:0,buyFail:0,sellOk:0,sellRev:0,sellDrop:0,sellOther:0,burnBuy:0,burnSell:0,retryOk:0,writeoff:0});
+// finished trades per global simulated day (UTC day of the simulated clock = the Master's Day N)
+function dayTrade(t,pnl){const d=new Date(t*1000).toISOString().slice(0,10),m=S.pf.days||(S.pf.days={}),x=m[d]||(m[d]={n:0,w:0,l:0,made:0,lost:0});x.n++;if(pnl>0){x.w++;x.made+=pnl}else{x.l++;x.lost+=pnl}}
 function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
-  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
-  pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
+  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;{const x=FX();x.buyFail++;x.burnBuy+=f.gas}S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
+  pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;FX().buyOk++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   S.lastOpenAt=t;pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
-    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
+    size0:f.usd,cost0:f.usd+f.gas,out:0,lastPx:0,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);talk("trader","watcher",2,"buy",snap,`Bought ${fmt(f.usd,f.usd<10?2:0)}. Watch it: stop -${(+plan.stop).toFixed(1)}%, first target +${(+plan.tp1).toFixed(0)}%`);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
   const tr={t,side:"sell",sym:p.sym,chain:p.chain,cat:p.cat,ok:f.ok,note:reason+" · "+f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas,pnl:null};
-  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);talk("trader","watcher",2,"warn",p,`Sell failed (${f.why}), trying again`);
+  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;{const x=FX(),w=String(f.why||"");if(/revert/.test(w))x.sellRev++;else if(/drop/.test(w))x.sellDrop++;else x.sellOther++;x.burnSell+=f.gas}p.failN=(p.failN||0)+1;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);talk("trader","watcher",2,"warn",p,`Sell failed (${f.why}), trying again`);
     if(p.attempts>=3&&!p.emergency){p.emergency="sell failing repeatedly (possible hidden restriction)";ev("crit","emergency",p.sym,p.emergency)}return false}
-  const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;p.attempts=0;
+  const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;{const x=FX();x.sellOk++;if(p.attempts>0)x.retryOk++}p.attempts=0;p.out=(p.out||0)+net;p.lastPx=f.px;
   tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);{const mv=(snap.price/p.entry-1)*100,pc=Math.round(part*100);talk("watcher","trader",2,"info",p,`${sayWhy(reason)} (${mv>=0?"+":""}${mv.toFixed(1)}%): sell ${pc>=99?"all":pc+"%"}`);talk("trader","risk",2,pnl>=0?"win":"loss",p,`Sold ${pc>=99?"all":pc+"%"} for ${fmt(net,net<10?2:0)}: ${pnl>=0?"+":"-"}${fmt(Math.abs(pnl))}`)}ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
   if(p.qty<=1e-12||p.qty*snap.price<Math.min(1,(p.size0||1)*0.03))closePos(p,reason,0,t);return true}
 const sayWhy=r=>({stop_loss:"Stop-loss hit",trailing_stop:"Trailing stop hit",take_profit_1:"First target hit",take_profit_2:"Second target hit",time_stop:"Held too long without a win",stagnant:"Not moving"})[r]||(r.startsWith("EMERGENCY")?"Emergency":String(r).replace(/_/g," "));
-function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
+function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered){pf.cash+=recovered;p.out=(p.out||0)+recovered}if(/writeoff|stale/.test(reason))FX().writeoff++;
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
   pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused");talk("risk","trader",2,"warn",null,pf.streak+" losses in a row: short break from buying")}
   if(!recovered&&p.qty<=1e-12&&/writeoff|stale/.test(reason))talk("watcher","risk",2,"loss",p,"Could not sell it: written off");
-  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
+  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth,opened:p.opened,entry:p.entry,exit:p.lastPx||null,in:p.cost0??p.size0,out:p.out??null,failN:p.failN||0});dayTrade(t,p.real);pf.failClosed=(pf.failClosed||0)+(p.failN||0);{const c=pf.closed[pf.closed.length-1];if(!pf.best||c.pnl>pf.best.pnl)pf.best=c;if(!pf.worst||c.pnl<pf.worst.pnl)pf.worst=c}if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
   if(s.liq<p.entryLiq*(1-e.liqTotal))return`liquidity down ${(100*(1-s.liq/p.entryLiq)).toFixed(0)}% vs entry`;

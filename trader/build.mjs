@@ -66,7 +66,7 @@ fs.writeFileSync(path.join(dir, "app.html"), html);   // the single app on its o
 const J = x => JSON.stringify(x).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 const appLive = html.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<!--DESK-->\n');
 const appDemo = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<!--DESK-->\n<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n${art}\n</body>\n</html>\n`;
-const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("host.js") + "\n" + rd("botroom.js");
+const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("host.js") + "\n" + rd("botroom.js") + "\n" + rd("run.js") + "\n" + rd("runui.js");
 const hostPage = `<!doctype html>
 <html lang="en">
 <head>
@@ -96,7 +96,8 @@ ${hostJs}
 </html>
 `;
 fs.writeFileSync(path.join(dir, "index.html"), hostPage);
-const hostArt = `<title>Paper Trader</title>
+const hostArt = `<meta charset="utf-8">
+<title>Paper Trader</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 ${hostCss}

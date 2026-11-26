@@ -368,6 +368,51 @@ body.simple .hdesk [id^="dkp"]{font-size:14px;flex:none}
 }
 .rtest{margin-top:10px;border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--card)),var(--card))}
 .rtest .rtv{margin-top:8px;font-size:13px;font-weight:600}.rtest .chip{margin-top:8px}
+/* ---------- Run controller, honest speed, locks, report ---------- */
+.runp{margin-top:10px;padding:12px}
+.runtop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.seg{display:flex;background:var(--soft);border-radius:14px;padding:3px;gap:3px}
+.seg button{border:0;background:none;color:var(--tx);font-weight:750;font-size:14px;min-height:44px;padding:0 12px;border-radius:11px;cursor:pointer}
+.seg button.on{background:var(--tx);color:var(--bg)}
+.seg button[data-s="paused"].on{background:var(--y);color:#1a1a1a}.seg button[data-s="nonew"].on{background:var(--accent);color:#fff}
+.clockbig b{font-size:17px;font-weight:800;letter-spacing:-.01em}.clockbig span{font-size:12px;color:var(--mut)}
+.spdline{margin-top:8px;font-size:13px}.spdline .lim{color:var(--y)}
+.spdchips{margin-top:8px}.spdchips .chip,.runbtns .chip{min-height:44px;padding:0 14px}
+.rununtil{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13px}
+.rununtil select,.rununtil input{min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--tx);padding:0 8px;font:inherit;font-size:13px}.rununtil input{width:64px}
+.hud{margin-top:10px}.hud summary{cursor:pointer;font-weight:700;font-size:13px;padding:6px 0;list-style:none}.hud summary::-webkit-details-marker{display:none}
+.actlog{margin-top:8px;font-size:12px;color:var(--mut)}.actlog div{padding:2px 0}
+.emerbar{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--rs);color:var(--r);font-size:13.5px}
+.donebar{margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--gs);font-size:13.5px}.donebar .chip{margin-left:6px}
+.restorebar{background:color-mix(in srgb,var(--accent) 14%,var(--card));border-color:var(--accent)}.restorebar .rbtns{display:inline-flex;gap:6px;margin-left:6px}.restorebar .chip{min-height:40px}
+.wl{margin-top:8px;font-size:17px;font-weight:800;letter-spacing:-.01em}.asof{margin-top:2px;font-size:11.5px}
+.fin{padding:8px 0;border-top:1px solid var(--line)}.fin:first-child{border-top:0;padding-top:0}.fin .row{gap:8px}.fin .sub{font-size:11.5px;line-height:1.35}
+.tblw{overflow-x:auto;margin-top:6px}.ftbl{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}.ftbl th,.ftbl td{padding:6px 8px;border-top:1px solid var(--line);text-align:right}.ftbl th:first-child,.ftbl td:first-child{text-align:left}.ftbl th{font-size:11px;color:var(--mut);font-weight:700}.ftbl tfoot td{font-weight:800}
+.lockbar{margin:12px 0 8px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--y) 16%,var(--card));border:1px solid color-mix(in srgb,var(--y) 40%,var(--line));font-size:13px}
+body:not(.fullauto) .lockbar{display:none}
+body.fullauto .fa-lock{opacity:.45;filter:grayscale(.6);pointer-events:auto;cursor:not-allowed}
+body.fullauto .fa-lock *{pointer-events:none}
+body:not(.fullauto) .fa-lock{opacity:1;filter:none}
+body:not(.fullauto) #fa_lockgrp .sub b{}
+.lockbar.shake{animation:shake .35s}@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.unlocked{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.sumbar{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:29;display:flex;gap:4px;justify-content:space-around;padding:6px 10px;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);font-size:12px}
+.sumbar div{display:flex;flex-direction:column;align-items:center;min-width:0}.sumbar span{color:var(--mut);font-size:10.5px;white-space:nowrap}.sumbar b{font-size:13.5px;font-variant-numeric:tabular-nums}
+body.hassum{padding-bottom:150px}
+.overlay{position:fixed;inset:0;z-index:60;background:rgba(5,8,14,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);overflow-y:auto;padding:16px}
+.overlay .rep{max-width:760px;margin:20px auto 80px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.overlay .rep.small{max-width:440px}.rep h3{margin:0;font-size:19px}.rep h4{margin:16px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut)}.rep .chip{min-height:44px}
+.sumtxt{white-space:pre-wrap;font-size:11.5px;background:var(--soft);padding:10px;border-radius:10px;max-height:320px;overflow:auto}
+body.modal-open{overflow:hidden}
+.htoast{position:fixed;left:50%;bottom:calc(130px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:70;max-width:min(92vw,520px);padding:10px 14px;border-radius:12px;background:var(--tx);color:var(--bg);font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.htoast.on{opacity:1;transform:translate(-50%,0)}
+.diag{margin-top:10px}.diag summary{cursor:pointer;list-style:none}.diag summary::-webkit-details-marker{display:none}.diag h4{margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.dgx{font-size:11.5px;padding:2px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
+@media (max-width:520px){.seg button{padding:0 10px;font-size:13px}.clockbig b{font-size:15px}.sumbar{bottom:calc(54px + env(safe-area-inset-bottom,0px))}}
+/* touch targets: at least 44 px for every button and chip */
+.chip,.btn,.deskbar button,.seg button,.viewsw button,.themesw button{min-height:44px}
+.chip{display:inline-flex;align-items:center;justify-content:center}
+
+[title]{cursor:help}.chip[title],button[title]{cursor:pointer}
 
 </style>
 </head>
@@ -489,7 +534,13 @@ const gauss=()=>{let u=0,v=0;while(!u)u=rng();v=rng();return Math.sqrt(-2*Math.l
 
 /* ============================ state ============================ */
 let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")||300;
-let paused=false, vnow=1.76e9, last={}, regime="unknown", regimeOk=0, rejected={}, stats=freshStats();
+// the demo clock starts at a UTC midnight, so "Day 1, Day 2..." on screen, "today" and the daily loss stop all turn over at the same moment
+const SIM0=1759968000;   // 2025-10-09 00:00 UTC
+// small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
+const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
+  async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
+  put(k,v){return this.tx("readwrite",st=>st.put(v,k))},get(k){return this.tx("readonly",st=>st.get(k))},del(k){return this.tx("readwrite",st=>st.delete(k))},clear(){return this.tx("readwrite",st=>st.clear())}};
+let paused=false, vnow=SIM0, last={}, regime="unknown", regimeOk=0, rejected={}, stats=freshStats();
 let S; // {pf, journal[], trades[]}
 const key=()=>"pt_state_"+MODE;
 function newState(cap){return{feed:[],pf:{ag:{},exec:{buys:0,sells:0,failed:0,mev:0,slipSum:0,slipN:0},feesPaid:0,start:cap,cash:cap,positions:{},realized:0,peak:cap,day:"",dayStart:cap,streak:0,pauseUntil:0,entries:[],cool:{},shutdown:false,why:"",closed:[]},journal:[],trades:[],curve:[]}}
@@ -531,7 +582,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-26 15:54";
+const BUILD = "2026-11-26 18:00";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1190,6 +1241,16 @@ const MOCK = {
     for (let m = 0; m < MK_RING; m++) { this.G = m - MK_RING; for (const t of Object.values(this.toks)) this.step(t) }   // warm-up history for established tokens
     this.G = 0;
   },
+  // save / restore (persistence): the whole market is too big to save (hundreds of MB of history), so a save keeps the market clock and
+  // the coins the desk still holds; a restore builds a fresh market at that moment and puts those coins back exactly as they were
+  dump(keep) { const held = {}; for (const k of keep || []) { const t = this.toks[k]; if (t) held[k] = t } return { n: this.n, t0: this.t0, G: this.G, lastMin: this.lastMin, crashUntil: this.crashUntil, major: this.major, majorHist: this.majorHist, vol: this.vol, held } },
+  restore(sv) {
+    const G1 = sv.G; this.toks = {}; this.n = sv.n; this.t0 = sv.t0; this.lastMin = sv.lastMin; this.crashUntil = sv.crashUntil; this.major = sv.major || this.major; this.majorHist = sv.majorHist || []; this.vol = sv.vol || 1;
+    this.G = G1 - MK_RING - 1; for (let i = 0; i < 160; i++) this.spawn(true);
+    for (const t of Object.values(this.toks)) t.genG = G1 - MK_RING - 1;
+    for (let m = 0; m < MK_RING; m++) { this.G = G1 - MK_RING + m; for (const t of Object.values(this.toks)) this.step(t) }
+    this.G = G1; for (const k in (sv.held || {})) this.toks[k] = sv.held[k];
+  },
   pickKind() { let r = rng(), acc = 0; for (const [k, a] of Object.entries(MK_ARCH)) { acc += a.w; if (r < acc) return k } return "dud" },
   spawn(est, forced) {
     const chains = CFG.chains, chain = forced || chains[Math.floor(rng() * chains.length)], n = ++this.n;
@@ -1479,29 +1540,33 @@ async function evaluate(k,snap,src,t,agentId){
   if(!d.ok){stats.vetoed++;talk("risk","committee",1,"no",snap,()=>"No: "+d.why);{const w=d.why.replace(/[0-9.]+/g,"#").slice(0,50);(stats.vwhy||(stats.vwhy={}))[w]=((stats.vwhy||{})[w]||0)+1}feedAdd(snap,src,"vetoed",d.why,{checks:v.checks,score:plan.score,risk:v.risk});if(d.why!=="re-entry cooldown")rejected[k]=t+(CFG.keep.on?5:300);return}
   const usd=d.usd*(v.unverified?0.5:1)*(0.6+0.1*com.ok)*(proven[0].prob?0.4:1)*(ag.swarm?0.5:1);talk("risk","trader",1,"ok",snap,()=>`OK: buy ${fmt(usd,usd<10?2:0)} (${(usd/Math.max(1e-9,equity())*100).toFixed(1)}% of the account)`);
   open(snap,cat,plan,v.risk,sec,usd,t,v.checks,ag.id)}
+// failed / retried accounting (Master "Failed / retried" block): every buy and sell attempt is counted, and every fee burned on a failed one
+const FX=()=>S.pf.fx||(S.pf.fx={buyOk:0,buyFail:0,sellOk:0,sellRev:0,sellDrop:0,sellOther:0,burnBuy:0,burnSell:0,retryOk:0,writeoff:0});
+// finished trades per global simulated day (UTC day of the simulated clock = the Master's Day N)
+function dayTrade(t,pnl){const d=new Date(t*1000).toISOString().slice(0,10),m=S.pf.days||(S.pf.days={}),x=m[d]||(m[d]={n:0,w:0,l:0,made:0,lost:0});x.n++;if(pnl>0){x.w++;x.made+=pnl}else{x.l++;x.lost+=pnl}}
 function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.chain+":"+snap.addr.toLowerCase(),f=simBuy(snap,usd,sec.buyTax||0,cat==="new");
   const tr={t,side:"buy",sym:snap.sym,chain:snap.chain,cat,ok:f.ok,note:f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas};
-  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
-  pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
+  if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;{const x=FX();x.buyFail++;x.burnBuy+=f.gas}S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
+  pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;FX().buyOk++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   S.lastOpenAt=t;pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
     stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
-    size0:f.usd,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
+    size0:f.usd,cost0:f.usd+f.gas,out:0,lastPx:0,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId])};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);talk("trader","watcher",2,"buy",snap,`Bought ${fmt(f.usd,f.usd<10?2:0)}. Watch it: stop -${(+plan.stop).toFixed(1)}%, first target +${(+plan.tp1).toFixed(0)}%`);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 function sellPos(p,snap,frac,reason,urgent,t){const pf=S.pf,qty=frac>=0.999?p.qty:Math.min(p.qty,p.qty0*frac);
   const f=simSell(snap,qty,p.sellTax,urgent||p.attempts>=2,p.attempts,P().blocked(p.chain,p.addr));
   const tr={t,side:"sell",sym:p.sym,chain:p.chain,cat:p.cat,ok:f.ok,note:reason+" · "+f.why,usd:f.usd||0,px:f.px||0,slip:f.slip,fee:f.fee,gas:f.gas,pnl:null};
-  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);talk("trader","watcher",2,"warn",p,`Sell failed (${f.why}), trying again`);
+  if(!f.ok){p.attempts++;pf.exec.failed++;pf.feesPaid+=f.gas;pf.cash-=f.gas;pf.realized-=f.gas;p.real-=f.gas;{const x=FX(),w=String(f.why||"");if(/revert/.test(w))x.sellRev++;else if(/drop/.test(w))x.sellDrop++;else x.sellOther++;x.burnSell+=f.gas}p.failN=(p.failN||0)+1;dayAdd(-f.gas,t);S.trades.unshift(tr);ev("warn","sell_failed",p.sym,`${reason}: ${f.why} (#${p.attempts})`);talk("trader","watcher",2,"warn",p,`Sell failed (${f.why}), trying again`);
     if(p.attempts>=3&&!p.emergency){p.emergency="sell failing repeatedly (possible hidden restriction)";ev("crit","emergency",p.sym,p.emergency)}return false}
-  const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;p.attempts=0;
+  const part=p.qty>0?f.qty/p.qty:1,costPart=p.cost*part,net=f.usd-f.gas,pnl=net-costPart;pf.cash+=net;pf.exec.sells++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.feesPaid+=f.fee+f.gas;pf.realized+=pnl;p.real+=pnl;p.cost-=costPart;p.qty-=f.qty;p.fees+=f.fee+f.gas;{const x=FX();x.sellOk++;if(p.attempts>0)x.retryOk++}p.attempts=0;p.out=(p.out||0)+net;p.lastPx=f.px;
   tr.pnl=pnl;tr.px=f.px;dayAdd(pnl,t);S.trades.unshift(tr);{const mv=(snap.price/p.entry-1)*100,pc=Math.round(part*100);talk("watcher","trader",2,"info",p,`${sayWhy(reason)} (${mv>=0?"+":""}${mv.toFixed(1)}%): sell ${pc>=99?"all":pc+"%"}`);talk("trader","risk",2,pnl>=0?"win":"loss",p,`Sold ${pc>=99?"all":pc+"%"} for ${fmt(net,net<10?2:0)}: ${pnl>=0?"+":"-"}${fmt(Math.abs(pnl))}`)}ev("info","sell",p.sym,`${reason}: net ${fmt(net)} pnl ${pnl>=0?"+":""}${pnl.toFixed(2)} slip ${f.slip.toFixed(2)}% · ${f.why}`);
   if(p.qty<=1e-12||p.qty*snap.price<Math.min(1,(p.size0||1)*0.03))closePos(p,reason,0,t);return true}
 const sayWhy=r=>({stop_loss:"Stop-loss hit",trailing_stop:"Trailing stop hit",take_profit_1:"First target hit",take_profit_2:"Second target hit",time_stop:"Held too long without a win",stagnant:"Not moving"})[r]||(r.startsWith("EMERGENCY")?"Emergency":String(r).replace(/_/g," "));
-function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered)pf.cash+=recovered;
+function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLowerCase();if(recovered){pf.cash+=recovered;p.out=(p.out||0)+recovered}if(/writeoff|stale/.test(reason))FX().writeoff++;
   if(p.cost>1e-6){const l=recovered-p.cost;pf.realized+=l;p.real+=l;dayAdd(l,t)}delete pf.positions[k];pf.cool[k]=t+(CFG.keep.on?CFG.keep.reentrySec:CFG.risk.cooldownH*3600);
   {const A=pf.ag||(pf.ag={}),a=A[p.agent||"launch"]||(A[p.agent||"launch"]={n:0,pnl:0,w:0,r:0});a.n++;a.pnl+=p.real;a.w+=p.real>0?1:0;a.r+=(p.risk0?p.real/p.risk0:0)}
   pf.streak=p.real>0?0:pf.streak+1;if(pf.streak>=CFG.risk.streakPause){if(!CFG.keep.on)pf.pauseUntil=t+CFG.risk.pauseMin*60;ev("warn","pause",p.sym,pf.streak+" losses in a row: entries paused");talk("risk","trader",2,"warn",null,pf.streak+" losses in a row: short break from buying")}
   if(!recovered&&p.qty<=1e-12&&/writeoff|stale/.test(reason))talk("watcher","risk",2,"loss",p,"Could not sell it: written off");
-  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth});if(pf.closed.length>500)pf.closed.shift();
+  const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth,opened:p.opened,entry:p.entry,exit:p.lastPx||null,in:p.cost0??p.size0,out:p.out??null,failN:p.failN||0});dayTrade(t,p.real);pf.failClosed=(pf.failClosed||0)+(p.failN||0);{const c=pf.closed[pf.closed.length-1];if(!pf.best||c.pnl>pf.best.pnl)pf.best=c;if(!pf.worst||c.pnl<pf.worst.pnl)pf.worst=c}if(pf.closed.length>500)pf.closed.shift();
   ev("info","closed",p.sym,`${reason}: total ${p.real>=0?"+":""}${p.real.toFixed(2)} (${r.toFixed(2)}R)`);save()}
 function emergencyReason(p,s,pp,pl){const e=CFG.em;
   if(s.liq<p.entryLiq*(1-e.liqTotal))return`liquidity down ${(100*(1-s.liq/p.entryLiq)).toFixed(0)}% vs entry`;
@@ -1554,33 +1619,24 @@ async function tick(){if(busy)return;busy=true;try{const t=now();await stepFast(
 
 
 
-/* ---- money animations: numbers slide smoothly to their new value; a short, soft color glow marks a real move ----
+/* ---- money animations: numbers change at once to the real value (no counting through in-between numbers); a short, soft color glow marks a real move ----
  * anim(id, value, format, flashMin): the element with that id shows `value`, animated from what it showed before. Works even when the
  * element is re-created by innerHTML (state is kept by id). Glow only when the change is at least `flashMin` (default $0.50, 0 = never)
  * and at most once every 4 seconds, so live prices ticking never make a number unreadable. Respects "reduce motion".
  */
 const ANIM = {}, ANIM_RM = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion:reduce)").matches;
 let animRaf = 0;
-function anim(id, v, f, flashMin) {
+function anim(id, v, f, flashMin) {   // shows the new value at once (never a made-up in-between number), with a short soft glow on a real move
   if (!isFinite(v)) return; let a = ANIM[id]; const fm = flashMin == null ? 0.5 : flashMin;
-  if (!a) { a = ANIM[id] = { shown: v, from: v, to: v, t0: 0, f, dir: 0, flash: 0, base: v, lastFlash: 0 } }
-  a.f = f;
-  if (Math.abs(v - a.to) > 1e-9) {
-    a.from = a.shown; a.to = v; a.t0 = performance.now();
-    if (fm > 0 && Math.abs(v - a.base) >= fm && a.t0 - a.lastFlash > 4000) { a.dir = v > a.base ? 1 : -1; a.flash = a.t0 + 1200; a.lastFlash = a.t0; a.base = v }
-  }
-  const el = typeof document !== "undefined" && document.getElementById(id); if (el) el.textContent = f(a.shown);
-  if (!animRaf) animRaf = requestAnimationFrame(animTick);
+  if (!a) { a = ANIM[id] = { shown: v, to: v, f, dir: 0, flash: 0, base: v, lastFlash: 0 } }
+  a.f = f; a.shown = a.to = v; const n = performance.now();
+  if (fm > 0 && Math.abs(v - a.base) >= fm && n - a.lastFlash > 4000) { a.dir = v > a.base ? 1 : -1; a.flash = n + 1200; a.lastFlash = n; a.base = v }
+  const el = typeof document !== "undefined" && document.getElementById(id); if (el) el.textContent = f(v);
+  if (!animRaf && a.flash > n) animRaf = requestAnimationFrame(animTick);
 }
 function animTick(n) {
   animRaf = 0; let busy = false;
-  for (const id in ANIM) {
-    const a = ANIM[id], el = document.getElementById(id); if (!el) continue;
-    const k = ANIM_RM ? 1 : Math.max(0, Math.min(1, (n - a.t0) / 900)), e = 1 - Math.pow(1 - k, 3);
-    a.shown = a.from + (a.to - a.from) * e; el.textContent = a.f(a.shown);
-    const on = n < a.flash; el.classList.toggle("fl-up", on && a.dir > 0); el.classList.toggle("fl-dn", on && a.dir < 0);
-    if (k < 1 || on) busy = true;
-  }
+  for (const id in ANIM) { const a = ANIM[id], el = document.getElementById(id); if (!el) continue; const on = !ANIM_RM && n < a.flash; el.classList.toggle("fl-up", on && a.dir > 0); el.classList.toggle("fl-dn", on && a.dir < 0); if (on) busy = true }
   if (busy) animRaf = requestAnimationFrame(animTick);
 }
 
@@ -1627,8 +1683,8 @@ const saveFlags=()=>LS.set("pt_flags",JSON.stringify({nw:CFG.nw.enabled,tr:CFG.t
 const saveRisk=()=>{const o={};for(const k of KEYS)o[k]=CFG.risk[k];LS.set("pt_risk",JSON.stringify(o))};
 const pnlTot=p=>p.real+pv(p)-p.cost,pnlPct=p=>pnlTot(p)/(p.size0||p.cost||1)*100;
 const heldTxt=p=>{const h=(now()-p.opened)/3600;return h<1?Math.max(1,Math.round(h*60))+"m":h<48?h.toFixed(1)+"h":Math.round(h/24)+"d"};
-const mockBase=Date.parse(new Date(1.76e9*1000).toISOString().slice(0,10))/1000;
-function tlabel(t,long){if(MODE==="mock"){const s=Math.max(0,t-1.76e9);return"D"+(Math.floor(s/86400)+1)+" "+String(Math.floor(s%86400/3600)).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")}
+const mockBase=SIM0;
+function tlabel(t,long){if(MODE==="mock"){const s=Math.max(0,t-SIM0);return"D"+(Math.floor(s/86400)+1)+" "+String(Math.floor(s%86400/3600)).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")}
   const d=new Date(t*1000);return long?d.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
 function toast(msg,level){toastQ.push({level:level||"info",kind:"note",tok:"",msg})}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast("Copied")}catch(e){const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");toast("Copied")}catch(e2){toast("Copy is not available in this view","warn")}a.remove()}}
@@ -1642,7 +1698,7 @@ function header(){const pf=S.pf,eq=totalEquity(),rt=(eq/totalStart()-1)*100,td=e
   $("sub").innerHTML=`<span class="${rt>=0?"g":"r"}">${pct(rt)}</span> <span class="hide-sm"> all time</span> · <span class="${td>=0?"g":"r"}">${sgn(td,0)}</span> today`;
   const c=$("chip");let cls="st live",tx="Running";
   if(pf.shutdown){cls="st bad";tx="Shutdown"}else if(now()<pf.pauseUntil){cls="st warn";tx="Cooling down"}else if(regime==="danger"||regime==="crash"){cls="st warn";tx="Market danger"}
-  else if(AUTOTRAIN!=null){cls="st dim";tx="Training "+Math.round(AUTOTRAIN*100)+"%"}else if(ffUntil>vnow){cls="st dim";tx="Skipping ahead"}else if(paused){cls="st dim";tx="Entries paused"}else if(MODE==="live"&&health.ok===0&&health.fail>2){cls="st bad";tx="No data"}else if(regime==="unknown"){cls="st dim";tx="Waiting for data"}
+  else if(AUTOTRAIN!=null){cls="st dim";tx="Training "+Math.round(AUTOTRAIN*100)+"%"}else if(ffUntil>vnow){cls="st dim";tx="Skipping ahead"}else if(paused){cls="st dim";tx="No new trades"}else if(MODE==="live"&&health.ok===0&&health.fail>2){cls="st bad";tx="No data"}else if(regime==="unknown"){cls="st dim";tx="Waiting for data"}
   c.className=cls;c.textContent=tx;
   $("clock").textContent=(DESK?deskInfo().n+" desk · ":"")+(MODE==="mock"?`Demo ·${tlabel(vnow)} · ${(()=>{const h=header.sp||(header.sp=[]),n=performance.now();h.push([n,vnow]);while(h.length>2&&n-h[0][0]>4000)h.shift();const r=h.length>1?(h[h.length-1][1]-h[0][1])/((n-h[0][0])/1000):SPEED;return Math.round(r).toLocaleString()})()}x`:`Live · prices ${last.monitor?ago(last.monitor):"…"} ago`)}
 function drainToasts(){const box=$("toasts");let n=0;while(toastQ.length&&n<2){const j=toastQ.shift();if(j.kind==="buy")beep(true);else if(j.kind==="closed")beep(/total \+/.test(j.msg||""));
@@ -1789,7 +1845,8 @@ function twoTap(btn,label,fn){const o=btn.textContent;let armed=0;btn.onclick=()
 function resetRuntime(){rejected={};stats=freshStats();regime="unknown";last={}}
 function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROFILES[k].maxPos===R.maxPos&&PROFILES[k].perHour===R.perHour&&PROFILES[k].totalExp===R.totalExp);
   let h=`<h2>Profile</h2><div class="chips" id="prof">${Object.entries(PROFILES).map(([k,p])=>`<button class="chip ${k===act?"on":""}" data-p="${k}">${p.name}</button>`).join("")}</div><div class="sub" style="margin-top:8px">Wide allows up to 100 open positions. Exposure caps still apply, so each position gets smaller as slots fill.</div>`;
-  if(MODE==="mock")h+=`<h2>Skip ahead</h2><div class="chips" id="ff"><button class="chip" data-s="86400">1 day</button><button class="chip" data-s="259200">3 days</button><button class="chip" data-s="604800">1 week</button></div><div class="sub" style="margin-top:8px">Runs the market fast so you can see how the bot behaves over days. Every outcome in the demo is random; run it a few times (Reset) to see the spread.</div><h2>Demo speed</h2><div class="chips" id="segspeed">${[1,15,60,300,1000,3000,10000,30000].map(s=>`<button class="chip ${s===SPEED?"on":""}" data-v="${s}">${s>=30000?"Max":s.toLocaleString()+"x"}</button>`).join("")}</div>`;
+  if(MODE==="mock"&&hostClock())h+=`<h2>Demo speed and time</h2><div class="panel"><div class="sub">This desk runs on the Master's clock, like every desk, so all desks are always on the same simulated day. Change speed, pause or skip time on the <b>Master</b> page.</div></div>`;
+  else if(MODE==="mock")h+=`<h2>Skip ahead</h2><div class="chips" id="ff"><button class="chip" data-s="86400">1 day</button><button class="chip" data-s="259200">3 days</button><button class="chip" data-s="604800">1 week</button></div><div class="sub" style="margin-top:8px">Runs the market fast so you can see how the bot behaves over days. Every outcome in the demo is random; run it a few times (Reset) to see the spread.</div><h2>Demo speed</h2><div class="chips" id="segspeed">${[1,15,60,300,1000,3000,10000,30000].map(s=>`<button class="chip ${s===SPEED?"on":""}" data-v="${s}">${s>=30000?"Max":s.toLocaleString()+"x"}</button>`).join("")}</div>`;
   h+=`<!--LIVEONLY--><h2>Data source</h2><div class="chips" id="segmode"><button class="chip ${MODE==="live"?"on":""}" data-v="live">Live market</button><button class="chip ${MODE==="mock"?"on":""}" data-v="mock">Demo market</button></div><div class="sub" style="margin-top:8px">Each source keeps its own paper account.</div><button class="btn" id="selftest">Test data connections</button><div id="testres"></div><!--/LIVEONLY-->`;
   h+=`<h2>Security strictness</h2><div class="chips" id="secm">${[["strict","Strict"],["balanced","Balanced"],["loose","Loose"]].map(([k,n])=>`<button class="chip ${CFG.secMode===k?"on":""}" data-m="${k}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:8px">Honeypots, sell restrictions, hidden owners, high taxes and slippage tricks are blocked at every level. Balanced and Loose turn unverified contracts, thin holder counts, concentrated holders and unlocked liquidity into risk points that shrink the position instead of vetoing it. Strict vetoes them, and in practice almost nothing new passes.</div>`;
   h+=`<h2>When data is missing</h2><div class="panel"><label class="tg"><span><b>Keep trading if the security source is down</b><small>Paper money only. Falls back to market-structure checks (sells exist, no wash trading, liquidity) and half-size positions. Off means no trade without a security report.</small></span><input type="checkbox" id="l_sec" ${CFG.lenient.sec?"checked":""}></label><label class="tg"><span><b>Judge the market from the tokens seen</b><small>If the CoinGecko and DexScreener market feeds fail, use the median move of the tokens being scanned.</small></span><input type="checkbox" id="l_reg" ${CFG.lenient.regime?"checked":""}></label></div>`;
@@ -1808,7 +1865,7 @@ function buildSettings(){const R=CFG.risk,act=Object.keys(PROFILES).find(k=>PROF
   h+=`<h2>Chains this ${DESK?"desk":"bot"} trades</h2><div class="chips" id="chainsel">${["solana","base","bsc","arbitrum","ethereum"].map(c=>`<button class="chip ${CFG.chains.includes(c)?"on":""}" data-c="${c}">${CH[c]||c}</button>`).join("")}</div><div class="sub" style="margin-top:6px">Ethereum network fees are high, so small trades there are usually blocked.</div>`;
   if(MODE==="mock")h+=`<h2>Demo market size</h2><div class="chips" id="simsel">${[[1,"1x small"],[5,"5x"],[10,"10x"],[20,"20x real-like"]].map(([v,n])=>`<button class="chip ${CFG.simScale===v?"on":""}" data-v="${v}">${n}</button>`).join("")}</div><div class="sub" style="margin-top:6px">How many new coins the demo market creates (1x is about 470 a day, 20x about 9,400). Bigger markets give more coins to pick from, so more trades and more coins open at once, but use more of your device. Changes apply right away to new coins; your balance is kept.</div>`;
   h+=`<h2>Sounds</h2><div class="chips" id="soundsel"><button class="chip ${LS.get("pt_sound")==="1"?"on":""}" data-v="1">Sound on buys and sells</button><button class="chip ${LS.get("pt_sound")==="1"?"":"on"}" data-v="0">Silent</button></div>`;
-  h+=`<h2>Account</h2><div class="sub">Starting capital (used on reset)</div><input type="number" id="cap" inputmode="numeric" value="${LS.get("pt_cap")||10000}" aria-label="Starting capital" style="margin-top:6px"><div class="chips" id="capq" style="margin-top:8px">${[10,100,1000,10000].map(v=>`<button class="chip" data-c="${v}">$${v.toLocaleString()}</button>`).join("")}</div><div class="sub" style="margin-top:6px">Small balances: under $500 each trade uses about 20% of the account, and only coins whose network fees are small enough get bought (mostly Solana). Under $75 only trades with fees below 2.5% are bought, so it trades very little. Tested: $10 almost no trades, $25–$50 about break-even, $100 or more made money.</div><button class="btn pri" id="toggle">${paused?"Resume new entries":"Pause new entries"}</button><button class="btn" id="exp">Copy account data (JSON)</button><button class="btn red" id="kill">Emergency stop: flatten everything</button><button class="btn" id="rearm">Re-arm after shutdown</button><button class="btn" id="reset">Reset paper account</button>`;
+  h+=`<h2>Account</h2><div class="sub">Starting capital (used on reset)</div><input type="number" id="cap" inputmode="numeric" value="${LS.get("pt_cap")||10000}" aria-label="Starting capital" style="margin-top:6px"><div class="chips" id="capq" style="margin-top:8px">${[10,100,1000,10000].map(v=>`<button class="chip" data-c="${v}">$${v.toLocaleString()}</button>`).join("")}</div><div class="sub" style="margin-top:6px">Small balances: under $500 each trade uses about 20% of the account, and only coins whose network fees are small enough get bought (mostly Solana). Under $75 only trades with fees below 2.5% are bought, so it trades very little. Tested: $10 almost no trades, $25–$50 about break-even, $100 or more made money.</div><button class="btn pri" id="toggle">${paused?"Allow new trades again":"No new trades (open coins can still be sold)"}</button><button class="btn" id="exp">Copy account data (JSON)</button><button class="btn red" id="kill">Emergency stop: flatten everything</button><button class="btn" id="rearm">Re-arm after shutdown</button><button class="btn" id="reset">Reset paper account</button>`;
   h+=`<div class="sub" style="margin:14px 0">Build ${BUILD}</div>`;
   h+=`<div class="sub" style="margin:14px 0">${MODE==="mock"?"Demo mode runs entirely in this page and starts fresh each time.":"iPhone: iOS freezes web pages when the screen locks, so the bot only trades while this app is open (a screen wake lock is requested). For 24/7 use the Python version in paper_trader/."} Pausing entries keeps managing open positions. Paper results do not predict live results; new-token trading is extremely high risk.</div>`;
   $("setcard").innerHTML=h;
@@ -1879,14 +1936,37 @@ if(!LS.get("pt_preset_v9")){savePreset("safe");LS.set("pt_preset_v9","1");LS.set
 if(DESK){const d=deskInfo();CFG.chains=d.chains.slice();CFG.onlyTrend=!!d.trend;if(d.trend)CFG.tr.enabled=true;CFG.core.on=false}   // a desk trades only its own area; the BTC/ETH/SOL sleeve is left to single-app mode
 // every second, tell the Master board how this desk is doing
 let talkSent=0;
-function deskReport(){if(!DESK||!window.parent||window.parent===window)return;if(AUTOTRAIN!=null){try{window.parent.postMessage({pt:1,desk:DESK,hb:1},"*")}catch(e){}return}   // training: just say "alive" (the account in memory is the practice one)
-  try{const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
-  window.parent.postMessage({pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
+// One clock (Master): in the demo the Master owns the simulated clock. It sends "advance to time G"; the desk simulates up to exactly G,
+// then answers with a report taken at G, so every number on the Master comes from the same simulated moment. No "advance", no time passes.
+const hostClock=()=>!!(DESK&&MODE==="mock"&&window.parent&&window.parent!==window);
+function deskSnap(){const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now()*1000).toISOString().slice(0,10),td=pf.closed.filter(c=>new Date(c.t*1000).toISOString().slice(0,10)===d0);
+  const fx=pf.fx||{},dd=new Date(now()*1000).toISOString().slice(0,10),dy=(pf.days||{})[dd]||{n:0,made:0,lost:0},lc=pf.closed[pf.closed.length-1];
+  return{pt:1,desk:DESK,name:deskInfo().n,eq:totalEquity(),start:totalStart(),w:T.w,wn:T.wn,l:T.l,ln:T.ln,open:Object.keys(pf.positions).length,openPl:Object.values(pf.positions).reduce((a,p)=>a+pv(p)-p.cost,0),
     today:td.reduce((a,c)=>a+c.pnl,0),todayN:td.length,mode:curPreset(),simScale:CFG.simScale,checks:stats.scanned||0,talk:TALK.filter(m=>m.i>talkSent).slice(-16),tc:TALKC,ags:AGENTS.filter(a=>!a.swarm&&agentOn(a.id)&&(a.scope!=="est"||CFG.tr.enabled)&&(a.scope==="est"||!CFG.onlyTrend)).map(a=>[a.id,a.name]),feed:S.feed.slice(0,6).map(f=>({t:f.t,sym:f.sym,chain:f.chain,o:f.outcome,d:String(f.detail||"").slice(0,64)})),speed:SPEED,live:MODE==="live",paused:!!paused,shutdown:!!pf.shutdown,
     ...(()=>{const c=S.curve,tn=now(),eq=totalEquity(),at=sec=>{let v=null;for(let i=c.length-1;i>=0;i--){if(c[i][0]<=tn-sec){v=c[i][1];break}}return v==null?(c.length?c[0][1]:eq):v};
       return{spark:c.slice(-40).map(x=>+x[1].toFixed(2)).concat([+eq.toFixed(2)]),ch1h:eq-at(3600),ch24h:eq-at(86400),hours:c.length?Math.max(0,(tn-c[0][0])/3600):0}})(),
-    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||""},"*");talkSent=talkN}catch(e){}}
-setInterval(deskReport,1000);
+    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||"",vnow:MODE==="mock"?vnow:now(),fx,yieldEarned:pf.yieldEarned||0,days:pf.days||{},todayN:dy.n,today:dy.made+dy.lost,buysOk:fx.buyOk??pf.exec.buys,
+    openPl:Object.values(pf.positions).reduce((a,p)=>a+p.real+pv(p)-p.cost,0),
+    lastTrade:lc?{sym:lc.sym,reason:lc.reason,pnl:lc.pnl,t:lc.t}:null,best:pf.best?{sym:pf.best.sym,pnl:pf.best.pnl,reason:pf.best.reason,t:pf.best.t,opened:pf.best.opened??pf.best.t-pf.best.held*3600,entry:pf.best.entry??null,exit:pf.best.exit??null}:null,worst:pf.worst?{sym:pf.worst.sym,pnl:pf.worst.pnl,reason:pf.worst.reason,t:pf.worst.t,opened:pf.worst.opened??pf.worst.t-pf.worst.held*3600,entry:pf.worst.entry??null,exit:pf.worst.exit??null}:null,
+    tail:pf.closed.slice(-8).map(c=>({sym:c.sym,chain:c.chain,pnl:c.pnl,reason:c.reason,t:c.t,opened:c.opened??(c.t-c.held*3600),entry:c.entry??null,exit:c.exit??null,in:c.in??c.size,out:c.out??null})),
+    pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.cost0||p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency,att:p.attempts||0,failN:p.failN||0})),failClosed:pf.failClosed||0}}
+function deskReport(extra){if(!DESK||!window.parent||window.parent===window)return;if(AUTOTRAIN!=null){try{window.parent.postMessage({pt:1,desk:DESK,hb:1},"*")}catch(e){}return}   // training: just say "alive" (the account in memory is the practice one)
+  try{window.parent.postMessage(Object.assign({pt:1,desk:DESK},deskSnap(),extra||{}),"*");talkSent=talkN}catch(e){try{window.parent.postMessage({pt:1,desk:DESK,err:String(e&&e.message||e)},"*")}catch(e2){}}}
+// under the Master's clock a desk reports only at the Master's time
+setInterval(()=>{if(!hostClock()||(deskReady&&!deskBusy&&vnow===deskTarget))deskReport()},1000);
+// ---- stepping to the Master's time ----
+let deskTarget=0,deskStp=10,deskBusy=false,deskReady=false;
+const yieldNow=(()=>{const ch=new MessageChannel(),q=[];ch.port1.onmessage=()=>{const f=q.shift();if(f)f()};return()=>new Promise(r=>{q.push(r);ch.port2.postMessage(0)})})();
+async function deskWork(){if(deskBusy||!deskReady)return;deskBusy=true;try{while(vnow<deskTarget){const t0=performance.now();while(vnow<deskTarget&&performance.now()-t0<8){const d=Math.min(deskStp,deskTarget-vnow);vnow+=d;await tick()}if(vnow<deskTarget)await yieldNow()}}catch(e){try{window.parent.postMessage({pt:1,desk:DESK,err:"tick: "+String(e&&e.message||e)},"*")}catch(e2){}}finally{deskBusy=false}
+  if(vnow>=deskTarget)deskReport({ack:vnow})}
+// ---- saving and restoring this desk (IndexedDB), always at a time the Master chose, so every desk is saved at the same moment ----
+async function deskSave(G){if(!hostClock()||vnow!==G)return false;const keep=Object.values(S.pf.positions).map(p=>p.addr.toLowerCase()).concat(Object.values(S.shadow||{}).map(x=>String(x.addr).toLowerCase()));
+  const st={};for(const k of["scanned","uniq","bought","vetoed","sec","strat","scamSeen","scamBought","junkSeen","gated","lessonVeto"])if(typeof stats[k]==="number")st[k]=stats[k];
+  await IDB.put("desk"+DESK,{v:1,savedAt:Date.now(),vnow,S,stats:st,talkc:Object.assign({},TALKC),talkN,mock:MOCK.dump(keep),simScale:CFG.simScale,regime,paused:!!paused});return true}
+async function deskRestore(){let sv=null;try{sv=await IDB.get("desk"+DESK)}catch(e){}if(!sv||!sv.S||!sv.mock)return false;
+  S=sv.S;vnow=sv.vnow;Object.assign(stats,sv.stats||{});Object.assign(TALKC,sv.talkc||{});talkN=sv.talkN||0;talkSent=talkN;if(sv.simScale)CFG.simScale=sv.simScale;MOCK.restore(sv.mock);regime=sv.regime||"unknown";regimeOk=vnow;paused=!!sv.paused;
+  if(S.shadow)for(const k of Object.keys(S.shadow)){const x=S.shadow[k];if(!x||!MOCK.toks[String(x.addr).toLowerCase()])delete S.shadow[k]}
+  return true}
 // Master risk controls: applied on top of the desk's mode (size multiplier, stop-loss, take-profit, max open coins, daily loss limit)
 function applyMasterRisk(){let r=null;try{r=JSON.parse(LS.get("pt_mrisk")||"null")}catch(e){}if(!r)return;const R=CFG.risk;
   if(r.size){R.perTradePct*=r.size;R.posNew*=r.size;R.posTrend*=r.size}if(r.stop){CFG.quick.stop=r.stop}if(r.tp1){CFG.quick.tp1=Math.max(r.tp1,CFG.quick.stop*0.8);CFG.quick.tp2=Math.max(CFG.quick.tp2,r.tp1*2.5)}
@@ -1909,6 +1989,10 @@ async function closeAllPositions(){const ps=Object.values(S.pf.positions);if(!ps
 // Master settings: the Master board sends one command to every desk
 function resetAccount(c){LS.set("pt_cap",c);LS.del("pt_kill_"+MODE);S=newState(c);seedPretrained();resetRuntime();save();if(MODE==="mock")boot();else{S.curve=[[now(),totalEquity()]];render()}}
 window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.source!==window.parent)return;
+  if(m.ptcmd==="adv"){if(hostClock()&&deskReady){deskTarget=Math.max(deskTarget,+m.v||0);deskStp=+m.stp||10;if(vnow>=deskTarget&&!deskBusy)deskReport({ack:vnow});else deskWork()}return}
+  if(m.ptcmd==="save"){deskSave(+m.v).then(ok=>deskReport({saved:+m.v,ok})).catch(err=>deskReport({saved:+m.v,ok:false,saveErr:String(err&&err.message||err)}));return}
+  if(m.ptcmd==="hold"){holdLoops=!!m.v;deskReport();return}
+  if(m.ptcmd==="snap"){deskReport();return}
   if(m.ptcmd==="preset"){savePreset(m.v);render()}
   else if(m.ptcmd==="speed"){SPEED=+m.v||300;LS.set("pt_speed",SPEED)}
   else if(m.ptcmd==="mode"&&!DEMO_ONLY&&(m.v==="live"||m.v==="mock")&&m.v!==MODE){MODE=m.v;LS.set("pt_mode",MODE);boot()}
@@ -1921,7 +2005,7 @@ window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.s
   else if(m.ptcmd==="kill"){LS.set("pt_kill_"+MODE,"1");tick()}
   else if(m.ptcmd==="rearm"){LS.del("pt_kill_"+MODE);S.pf.shutdown=false;S.pf.why="";S.pf.peak=equity();S.pf.streak=0;save();render()}
   else if(m.ptcmd==="closeall"){closeAllPositions()}
-  else if(m.ptcmd==="skip"&&MODE==="mock"){ffUntil=vnow+(+m.v||3600)}
+  else if(m.ptcmd==="skip"&&MODE==="mock"&&!hostClock()){ffUntil=vnow+(+m.v||3600)}
   else if(m.ptcmd==="risk"){if(m.v)LS.set("pt_mrisk",JSON.stringify(m.v));else LS.del("pt_mrisk");savePreset(curPreset());render()}
   deskReport()});
 // a desk that is not on screen skips drawing (its trading keeps running), so the Master board's animations stay smooth
@@ -1950,7 +2034,12 @@ for(const ev2 of["pointerup","pointerleave","pointercancel"])cw.addEventListener
 async function wake(){try{if(navigator.wakeLock)await navigator.wakeLock.request("screen")}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){wake();if(MODE==="live"){stepFast(now());stepSlow(now());stepScan(now())}}});
 function boot(){timers.forEach(clearInterval);timers=[];SEED=MODE==="mock"?(Math.random()*1e9|0):(Date.now()&0xffffff);rng=mulberry(SEED);load();last={};rejected={};stats=freshStats();regime="unknown";rows.clear();$("plist").innerHTML="";
-  if(MODE==="mock"){LS.del("pt_kill_mock");vnow=1.76e9;MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]];let acc=0;
+  if(MODE==="mock"&&hostClock()){LS.del("pt_kill_mock");deskReady=false;const P=window.parent,G=(P.__ptClock&&P.__ptClock.g)||SIM0;
+    (async()=>{let restored=false;if(P.__ptRestore){try{restored=await deskRestore()}catch(e){restored=false}}
+      if(!restored){vnow=G;MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]]}
+      deskTarget=vnow;deskReady=true;deskReport({ready:1,restored,ack:vnow});render()})();
+    timers.push(setInterval(()=>render(),500))}
+  else if(MODE==="mock"){LS.del("pt_kill_mock");vnow=SIM0;MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]];let acc=0;
     timers.push(setInterval(async()=>{if(busyUI||holdLoops)return;busyUI=true;try{if(ffUntil>vnow){let n=0;while(vnow<ffUntil&&n++<700){vnow+=10;await tick()}if(vnow>=ffUntil){ffUntil=0;toast("Caught up")}render();return}acc=Math.min(acc+SPEED*0.25,SPEED*2);const stp=SPEED>=30000?60:SPEED>=3000?30:SPEED>=1000?15:CFG.tick,t0=performance.now();const bud=deskBudget();while(acc>=stp&&performance.now()-t0<bud){acc-=stp;vnow+=stp;await tick()}}finally{busyUI=false}render()},250))}
   else{regimeOk=now();if(!S.curve.length)S.curve=[[now(),totalEquity()]];
     const lastRun=+LS.get("pt_last_"+MODE)||0,gap=now()-lastRun;

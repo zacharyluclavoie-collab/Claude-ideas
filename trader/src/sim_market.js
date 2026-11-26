@@ -49,6 +49,16 @@ const MOCK = {
     for (let m = 0; m < MK_RING; m++) { this.G = m - MK_RING; for (const t of Object.values(this.toks)) this.step(t) }   // warm-up history for established tokens
     this.G = 0;
   },
+  // save / restore (persistence): the whole market is too big to save (hundreds of MB of history), so a save keeps the market clock and
+  // the coins the desk still holds; a restore builds a fresh market at that moment and puts those coins back exactly as they were
+  dump(keep) { const held = {}; for (const k of keep || []) { const t = this.toks[k]; if (t) held[k] = t } return { n: this.n, t0: this.t0, G: this.G, lastMin: this.lastMin, crashUntil: this.crashUntil, major: this.major, majorHist: this.majorHist, vol: this.vol, held } },
+  restore(sv) {
+    const G1 = sv.G; this.toks = {}; this.n = sv.n; this.t0 = sv.t0; this.lastMin = sv.lastMin; this.crashUntil = sv.crashUntil; this.major = sv.major || this.major; this.majorHist = sv.majorHist || []; this.vol = sv.vol || 1;
+    this.G = G1 - MK_RING - 1; for (let i = 0; i < 160; i++) this.spawn(true);
+    for (const t of Object.values(this.toks)) t.genG = G1 - MK_RING - 1;
+    for (let m = 0; m < MK_RING; m++) { this.G = G1 - MK_RING + m; for (const t of Object.values(this.toks)) this.step(t) }
+    this.G = G1; for (const k in (sv.held || {})) this.toks[k] = sv.held[k];
+  },
   pickKind() { let r = rng(), acc = 0; for (const [k, a] of Object.entries(MK_ARCH)) { acc += a.w; if (r < acc) return k } return "dud" },
   spawn(est, forced) {
     const chains = CFG.chains, chain = forced || chains[Math.floor(rng() * chains.length)], n = ++this.n;

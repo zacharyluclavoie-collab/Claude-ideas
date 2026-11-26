@@ -1,6 +1,8 @@
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
 <div id="hmaster" class="hpane">
   <div class="hero"><div class="hero-top"><span class="hero-lab">All desks</span><span class="hero-ctl"><span class="viewsw" id="viewsw"><button data-v="simple">Simple</button><button data-v="full">Full</button></span><span class="themesw" id="themesw"><button data-v="dark" aria-label="Dark theme">🌙</button><button data-v="light" aria-label="Light theme">☀️</button><button data-v="auto" aria-label="Match device">A</button></span></span></div><div class="eq" id="h_eq">$0</div><div class="hero-sub" id="h_sub">Starting desks…</div><div class="hero-pills"><div class="hero-pct" id="h_pct"></div><div class="hero-auto fa" id="h_fa"></div><div class="hero-auto" id="h_auto"></div><div class="bestchk" id="h_best"></div></div></div>
+  <div class="tipbar restorebar" id="h_restore" hidden></div>
+  <div class="panel runp" id="h_run"></div>
   <div class="tipbar" id="fa_tip" hidden></div>
   <div class="panel rtest" id="h_rtest" hidden></div>
   <details class="guide" id="guide"><summary>👋 New here? How it works</summary>
@@ -18,8 +20,12 @@
     </div></details>
   <div class="ticker" id="ticker"><div class="tk-track" id="tk_track"></div></div>
   <main><div class="mgrid"><div class="mcol">
-    <div class="panel dash" style="margin-top:12px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" class="dash-tot">$0</b></div>
+    <div class="panel dash" style="margin-top:12px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" class="dash-tot">$0</b></div><div class="wl" id="h_wl"></div><div class="sub asof" id="h_asof"></div>
       <div class="kv" id="h_kv"></div><div class="kv kv2" id="h_rate"></div></div>
+    <h2>Coins open right now <small id="h_opencount"></small></h2>
+    <div class="panel" id="h_open"></div>
+    <h2>Finished trades <small id="h_fincount"></small></h2>
+    <div class="panel" id="h_fin"></div>
     <div class="panel br-home"><div class="row"><b class="br-hh">🤖 Bot room <span class="livepill"><i></i>LIVE</span></b><button class="chip br-go" id="br_open">Full room →</button></div>
       <div id="m_botslot"></div><div id="m_chat" class="m-chat"><div class="sub">The bots start talking as soon as the desks scan…</div></div></div>
   </div><div class="mcol">
@@ -27,12 +33,23 @@
     <div class="panel" id="h_feed"></div>
     <h2>Profit / loss, all desks <small>live</small></h2>
     <div class="panel"><div id="h_chart" style="height:110px"></div></div>
-    <h2>Coins open right now <small id="h_opencount"></small></h2>
-    <div class="panel" id="h_open"></div>
+    <h2 class="fullonly">Failed and retried <small>buys and sells that did not go through</small></h2>
+    <div class="panel fullonly" id="h_fail"></div>
     <h2>Desks <small>tap one to open it</small></h2>
     <div id="h_desks"></div>
     <h2 class="fullonly">Master settings <small>apply to every desk</small></h2>
     <div class="panel fullonly" id="h_set"></div>
+    <details class="guide fullonly" id="h_how"><summary>📐 How the numbers work</summary><div class="gbody">
+      <p><b>One clock.</b> The Master runs one simulated clock (Day N · hh:mm). Every desk is always at exactly that time, so all desks turn over to a new day together, and every number on this page comes from the same simulated moment ("As of" under the total).</p>
+      <p><b>Trade.</b> A coin that was bought (the buy went through) and then sold (the sell went through) or written off by the logged rule. A failed buy is never a trade. Win rate = wins ÷ (wins + losses), rounded to a whole %.</p>
+      <p><b>Trades today / made / lost today.</b> Trades <i>closed</i> during the current simulated day (Day N, midnight to midnight on the one clock). They reset only at simulated midnight; each reset is written in the activity log.</p>
+      <p><b>Last hour / last 24 hours.</b> Change in balance over the last 1 / 24 simulated hours. <b>Per hour / per day.</b> Total profit divided by the simulated time the run has been going.</p>
+      <p><b>Open now.</b> Profit or loss on coins still held, including any part already sold. <b>Failed and retried.</b> Every buy and sell attempt; fees burned on failed ones are inside each desk's profit.</p>
+      <p><b>Speed.</b> "Selected" is the speed you chose; "actual" is measured: simulated seconds that really passed per real second over the last 10 seconds. All desks share one browser thread, so the actual speed depends on the device.</p>
+      <p><b>Paused vs No new trades.</b> Paused stops the clock: nothing on the page changes. No new trades keeps the clock running and lets open coins be sold, but buys nothing new. Emergency stop freezes everything (sells nothing) until you tap Run twice.</p>
+      <p><b>Saving.</b> The run is saved in this browser every few seconds and whenever you pause; after a reload you can Resume or Start over. Export makes a file you can import later.</p>
+    </div></details>
+    <details class="panel fullonly diag" id="h_diag"><summary><b>🩺 Diagnostics</b> <span class="sub">checks on every snapshot, settings log, speed, saving, errors</span></summary><div id="dg_body"></div></details>
   </div></div>
     <div class="sub" style="margin:14px 2px 0">Each desk is a full copy of the bot with its own paper account, settings and agents, trading one area of the market. All of them run at the same time; this board adds them up. Open a desk to change its mode (it starts on Lots of trades) or its starting balance.</div>
   </main>
@@ -51,4 +68,8 @@
   <div class="sub" style="margin:14px 2px 0">Every message is a real decision a bot in one of the desks just made: the Scanner finds coins, the Scam filter drops fakes, the Agents pick the ones they like, Security checks for scams, the Committee votes, the Risk manager sizes the trade, the Trader buys and sells, and the Watcher guards every coin you hold. Routine messages are sampled so you can read them; the counters show all the work. Pretend money only.</div>
 </div>
 <div id="hframes"></div>
+<div class="sumbar" id="sumbar" hidden></div>
 <div class="deskbar" id="deskbar"></div>
+<div class="overlay" id="h_report" hidden></div>
+<div class="overlay" id="h_modal" hidden></div>
+<div class="htoast" id="htoast" role="status"></div>
