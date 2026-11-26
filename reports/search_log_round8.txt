@@ -1,0 +1,27 @@
+Round 8: Lots of trades (round-2 #9 + scam filters) vs Max trades (round-2 #8) vs Max trades + scam filters. Demo market, 2 simulated days per market.
+
+Training markets (seeds 1401-1406, 5x):
+lots now                   ret/day 2.731% trades/day 134 open 4.5 win 56% worst 1.527 scams 30 mdd 1.39% losing 0/6
+max trades                 ret/day 7.140% trades/day 191 open 6.4 win 53% worst 2.155 scams 167 mdd 1.29% losing 0/6
+max trades + scam filters  ret/day 8.213% trades/day 179 open 5.5 win 53% worst 5.561 scams 33 mdd 1.37% losing 0/6
+
+Unseen markets (seeds 1451-1458, 5x):
+lots now                   ret/day 4.663% trades/day 186 win 58% worst 3.662 scams 59 mdd 1.09% losing 0/8
+   per market %/day: 3.76 5.11 3.66 5.14 4.77 4.43 5.12 5.31
+max trades + scam filters  ret/day 7.543% trades/day 192 win 51% worst 5.283 scams 61 mdd 1.22% losing 0/8
+   per market %/day: 8.84 7.29 5.28 7.85 12.41 6.07 6.23 6.37
+DONE
+
+Unseen markets (seeds 1451-1454, 1x):
+lots now                   ret/day 2.542% trades/day 56 win 60% worst 0.640 scams 9 mdd 0.37% losing 0/4
+   per market %/day: 4.35 0.64 2.30 2.88
+max trades + scam filters  ret/day 3.719% trades/day 60 win 55% worst 2.654 scams 10 mdd 0.62% losing 0/4
+   per market %/day: 5.75 2.81 2.65 3.67
+DONE
+
+Unseen markets (seeds 1451-1454, 20x):
+lots now                   ret/day 3.518% trades/day 243 win 53% worst 0.711 scams 38 mdd 1.65% losing 0/4
+   per market %/day: 2.36 5.22 5.78 0.71
+max trades + scam filters  ret/day 6.427% trades/day 236 win 48% worst 2.965 scams 38 mdd 1.62% losing 0/4
+   per market %/day: 7.01 2.97 5.71 10.03
+DONE

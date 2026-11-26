@@ -107,3 +107,41 @@ start $50, 2 days, 6 seeds: mean return -1.18%  trades/run 3.8
 {"eq":92.10707608352314,"trades":38,"open":0,"win":17,"chains":"solana","veto":"daily loss limit reached 14860; network fees #% of a #$ trade are too hi 628"}
 {"eq":89.40053158765812,"trades":15,"open":1,"win":5,"chains":"solana","veto":"daily loss limit reached 7520; market regime danger 3392"}
 start $100, 2 days, 6 seeds: mean return -5.56%  trades/run 53.2
+
+== round 8 Lots of trades (Max trades + scam filters)
+
+== $100
+{"eq":173.23842633007243,"trades":222,"open":5,"win":109,"chains":"solana","veto":"paused after losses 4104; re-entry cooldown 787"}
+{"eq":79.45162958380877,"trades":75,"open":0,"win":33,"chains":"solana","veto":"paused after losses 948; size # below min (agent) 100"}
+{"eq":81.53903794957118,"trades":79,"open":0,"win":35,"chains":"solana","veto":"daily loss limit reached 21536; paused after losses 720"}
+{"eq":171.6417983612743,"trades":203,"open":0,"win":103,"chains":"solana","veto":"paused after losses 1322; re-entry cooldown 1173"}
+{"eq":87.17389327988269,"trades":128,"open":3,"win":56,"chains":"solana","veto":"daily loss limit reached 10432; paused after losses 3780"}
+{"eq":104.60132756804371,"trades":145,"open":2,"win":70,"chains":"solana","veto":"daily loss limit reached 15116; market regime danger 2138"}
+start $100, 2 days, 6 seeds: mean return 16.27%  trades/run 142.0
+
+== $200
+{"eq":216.66550168622132,"trades":75,"open":4,"win":35,"chains":"solana","veto":"daily loss limit reached 25359; paused after losses 1248"}
+{"eq":311.7414353625768,"trades":249,"open":3,"win":129,"chains":"solana","veto":"paused after losses 3038; re-entry cooldown 1299"}
+{"eq":299.2759860052381,"trades":229,"open":4,"win":116,"chains":"solana","veto":"daily loss limit reached 4316; re-entry cooldown 3167"}
+{"eq":314.5497573995568,"trades":146,"open":3,"win":79,"chains":"solana","veto":"market regime danger 6770; daily loss limit reached 2246"}
+{"eq":268.5284715991816,"trades":64,"open":4,"win":32,"chains":"solana","veto":"daily loss limit reached 22772; paused after losses 2676"}
+{"eq":238.45083089408132,"trades":155,"open":0,"win":80,"chains":"solana","veto":"market regime danger 4036; daily loss limit reached 3076"}
+start $200, 2 days, 6 seeds: mean return 37.43%  trades/run 153.0
+
+== $100, at most 50% invested
+{"eq":89.70141422038412,"trades":58,"open":0,"win":20,"chains":"solana","veto":"daily loss limit reached 21070; paused after losses 2496"}
+{"eq":152.4983993221949,"trades":198,"open":1,"win":94,"chains":"solana","veto":"paused after losses 5508; re-entry cooldown 633"}
+{"eq":104.7533034402363,"trades":107,"open":1,"win":49,"chains":"solana","veto":"daily loss limit reached 16130; paused after losses 648"}
+{"eq":122.61258111874793,"trades":201,"open":0,"win":97,"chains":"solana","veto":"daily loss limit reached 5450; paused after losses 3723"}
+{"eq":120.42896516968021,"trades":196,"open":0,"win":86,"chains":"solana","veto":"daily loss limit reached 7304; paused after losses 2028"}
+{"eq":96.88646096145897,"trades":58,"open":3,"win":23,"chains":"solana","veto":"daily loss limit reached 18746; market regime danger 5064"}
+start $100, 2 days, 6 seeds: mean return 14.48%  trades/run 136.3
+
+== $200, at most 50% invested
+{"eq":184.10754513806194,"trades":27,"open":4,"win":12,"chains":"solana","veto":"daily loss limit reached 21738; size # below min (agent) 121"}
+{"eq":300.99778406613484,"trades":184,"open":1,"win":89,"chains":"solana","veto":"paused after losses 2160; re-entry cooldown 1052"}
+{"eq":399.67626007220673,"trades":188,"open":3,"win":100,"chains":"solana","veto":"paused after losses 1644; size # below min (agent) 397"}
+{"eq":215.6908939419565,"trades":204,"open":0,"win":87,"chains":"solana","veto":"paused after losses 4992; daily loss limit reached 4862"}
+{"eq":258.93492578854364,"trades":187,"open":2,"win":98,"chains":"solana","veto":"paused after losses 3246; re-entry cooldown 1089"}
+{"eq":287.3691707717332,"trades":194,"open":5,"win":96,"chains":"solana","veto":"paused after losses 5232; market regime danger 2222"}
+start $200, 2 days, 6 seeds: mean return 37.23%  trades/run 164.0
