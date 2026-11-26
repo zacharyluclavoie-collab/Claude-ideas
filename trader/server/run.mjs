@@ -15,6 +15,7 @@ const dir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 const args = process.argv.slice(2);
 // --test: the real-price paper test (one bot on Solana, Base, BSC and Arbitrum with $100 of pretend money, best tested mode, results saved in ./real-test).
 // One bot is used because the desks share the free data limits: tested live, one bot checked about 3x more real coins per minute than 5 desks.
+if (args.includes("--test") && !args.includes("--no-record") && !args.includes("--record")) args.push("--record");   // the test also records the real market, so it can be replayed fast later
 if (args.includes("--test")) for (const [k, v] of [["desks", "1"], ["cap", "100"], ["preset", "lots"], ["core", "0"], ["chains", "solana,base,bsc,arbitrum"], ["state", "real-test"]]) if (!args.includes("--" + k)) args.push("--" + k, v);
 const opt = (n, d) => { const i = args.indexOf("--" + n); return i < 0 ? d : (args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : true) };
 const DEMO = !!opt("demo", false), SPEED = +opt("speed", 60) || 60, PORT = +opt("port", 8787), TOKEN = opt("token", ""), STATE = path.resolve(opt("state", "state"));
@@ -61,6 +62,9 @@ function makeDesk(i) {   // i = 0 for the single all-chain bot, 1..N for desks
   return d;
 }
 const desks = NDESK === 1 ? [makeDesk(0)] : [...Array(NDESK)].map((_, k) => makeDesk(k + 1));
+// --record: also follow every new coin from launch and save it (STATE/market-data/*.jsonl, about 70 MB a day), sharing the free data limits with the bot.
+// node recorder/replay.mjs <state>/market-data   then replays it through the real engine as fast as the computer allows.
+if (!DEMO && args.includes("--record")) import("../recorder/record.mjs").then(m => m.startRecorder({ out: path.join(STATE, "market-data"), hours: 1e6, every: 60, max: 200, chains: CHAINS.length ? CHAINS : null, shared: SHARED_RL, log: x => console.log(x) })).catch(e => console.error("recorder failed:", e.message));
 if (!DEMO) { let k = 0; const nextTrain = async () => { const d = desks[k++ % desks.length]; if (d.train) await d.train() }; setTimeout(function loop() { nextTrain().finally(() => setTimeout(loop, 120000)) }, 15000) }
 // Full Auto (runner): a desk that stopped itself after a bad day is restarted when a new day begins
 const lastDay = {}; setInterval(() => { for (const d of desks) { try { const st = JSON.parse(d.E(`JSON.stringify({s:!!S.pf.shutdown,day:new Date(now()*1000).toISOString().slice(0,10)})`));
