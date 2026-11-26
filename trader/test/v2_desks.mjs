@@ -10,7 +10,7 @@ export async function runDesk(d, { seed = 424242, days = 14, money = {}, step = 
     Object.assign(CFG.money,${JSON.stringify(money)});MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]];`);
   const per = Math.round(86400 / step), eqs = [];
   for (let k = 0; k < days * 24; k++) { await ev(ctx, `__run(${per / 24},${step})`); eqs.push(+ev(ctx, "Math.round(totalEquity()*100)")); if (onDay && (k + 1) % 24 === 0) onDay(ctx, (k + 1) / 24) }
-  const r = JSON.parse(ev(ctx, `JSON.stringify((()=>{const pf=S.pf,T=pf.tot||{w:0,l:0,wn:0,ln:0},C=x=>Math.round((x||0)*100),fx=pf.fx||{};let openC=0,pvC=0;for(const p of Object.values(pf.positions)){const v=C(pv(p));pvC+=v;openC+=C(p.real)+v-C(p.cost)}
+  const r = JSON.parse(ev(ctx, `JSON.stringify((()=>{const pf=S.pf,T=pf.tot||{w:0,l:0,wn:0,ln:0},C=x=>Math.round((x||0)*100),fx=pf.fx||{};let openC=0,pvS=0;for(const p of Object.values(pf.positions)){pvS+=pv(p);openC+=C(p.real)-C(p.cost)}const pvC=C(pvS);openC+=pvC;
     return{eq:C(pf.cash)+pvC,start:C(pf.start),w:C(T.w),l:C(T.l),wn:T.wn||0,ln:T.ln||0,open:openC,openN:Object.keys(pf.positions).length,bb:C(fx.burnBuy),bs:C(fx.burnSell),buyFail:fx.buyFail||0,sellFail:(fx.sellRev||0)+(fx.sellDrop||0)+(fx.sellOther||0),
       woN:pf.woN||0,wo:C(pf.woLoss),worst:pf.worst?{sym:pf.worst.sym,pnl:pf.worst.pnl,reason:pf.worst.reason}:null,ftc:pf.ftcN||0,bank:(pf.bankLog||[]).length,mem:stats.memInfl||0,memFlip:stats.memFlip||0,preSkip:stats.preSkip||0,preHalf:stats.preHalf||0,memG:pf.memG||{},
       scamBought:stats.scamBought||0,exits:pf.exits||{},audits:(pf.audits||[]).filter(a=>/writeoff/.test(a.reason))}})())`));

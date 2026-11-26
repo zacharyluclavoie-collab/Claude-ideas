@@ -249,7 +249,7 @@ function checkInvariants(sn, rr, trades) {
   if (todayPrev && todayPrev.dk === sn.dk) { const dTd = t.todayN - todayPrev.n, dTr = trades - todayPrev.trades; if (dTd !== dTr) bad.push(`trades today moved ${todayPrev.n} → ${t.todayN} while ${dTr} trades closed`) } else if (todayPrev && t.todayN !== 0 && sn.g % 86400 === HSIM0 % 86400) bad.push(`trades today did not reset at midnight (${t.todayN})`);
   if (full) todayPrev = { dk: sn.dk, n: t.todayN, trades };
   for (const [d, r] of rs) { const x = sn.desks[d], nm = DN[d - 1]; if (r.buysOk != null && r.buysOk !== r.wn + r.ln + r.open) bad.push(`${nm}: ${r.buysOk} coins bought, but ${r.wn} won + ${r.ln} lost + ${r.open} open = ${r.wn + r.ln + r.open}`);
-    if (r.mc && Math.abs(Math.round(r.eq * 100) - r.mc.eq) > (r.open || 0) + 1) bad.push(`${nm}: balance in cents ${D$(r.mc.eq)} does not match the desk's own balance ${D$(Math.round(r.eq * 100))} (money outside the counted accounts)`);
+    if (r.mc && Math.abs(Math.round(r.eq * 100) - r.mc.eq) > 1) bad.push(`${nm}: balance in cents ${D$(r.mc.eq)} does not match the desk's own balance ${D$(Math.round(r.eq * 100))} (money outside the counted accounts)`);
     if (x.eq - x.start !== x.w + x.l + x.openPl - x.bb + x.y) bad.push(`${nm}: profit ${SG$(x.eq - x.start)} vs won + lost + open − failed-buy fees + interest ${SG$(x.w + x.l + x.openPl - x.bb + x.y)}`) }
   if (full) { if (trades < maxTrades) bad.push(`total trades went down ${maxTrades} → ${trades}`); maxTrades = Math.max(maxTrades, trades) }
   const daySum = Object.values(sn.days).reduce((a, x) => a + x.n, 0); if (daySum !== trades) bad.push(`daily table adds up to ${daySum} trades, total ${trades}`);
