@@ -38,8 +38,8 @@ let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")|
 const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 // money features (Spec V2, Part 3). The Master owns these and sends them to every desk. Only the ladder is on by default (it only protects).
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
-  // V3 Tier 1: the sell-block war (Ideas 1–6) ships ON; every other V3 money feature is OFF until proven
-  probe:true,probeTax:10,probeFirst:true,instant:true,warn:true,finger:true,fingerSim:0.8,lossCap:true,capUsd:15,
+  // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
+  probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
   sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false};
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
