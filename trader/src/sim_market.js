@@ -135,6 +135,8 @@ const MOCK = {
     if (t.q < 120 || (!t.est && t.h < 0.003 && age > 2880 && t.q < 4000)) t.dead = true;
   },
   isBlocked(t, age) { if (t.kind === "honey") return true; if (t.kind === "stealth") return age >= t.blockAfter; return false },
+  // a sell simulated on a dust amount right now (like a pre-flight eth_call): free, and it shows exactly what a real sell would hit today
+  probe(chain, addr) { const t = this.toks[String(addr).toLowerCase()]; if (!t) return null; return { blocked: this.isBlocked(t, this.G - t.genG), tax: Math.max(t.tax0 || 0, t.sellTax || 0) } },
   blocked(chain, addr) { const t = this.toks[addr.toLowerCase()]; return !!(t && this.isBlocked(t, this.G - t.genG)) },
 
   advance() {

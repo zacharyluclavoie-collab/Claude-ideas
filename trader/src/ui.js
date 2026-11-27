@@ -306,7 +306,7 @@ function deskSnap(){const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now(
       return{spark:c.slice(-40).map(x=>+x[1].toFixed(2)).concat([+eq.toFixed(2)]),ch1h:eq-at(3600),ch24h:eq-at(86400),hours:c.length?Math.max(0,(tn-c[0][0])/3600):0}})(),
     pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency})),r20:(()=>{const c=pf.closed.slice(-20);return{n:c.length,pnl:c.reduce((a,x)=>a+x.pnl,0),w:c.filter(x=>x.pnl>0).length}})(),closedN:pf.closed.length+(pf.tot?0:0),day:d0,mrisk:LS.get("pt_mrisk")||"",custom:!!(LS.get("pt_mrisk")||LS.get("pt_exits")||LS.get("pt_chains")),data:typeof health!=="undefined"&&(health.ok+health.fail)?Math.round(100*health.ok/(health.ok+health.fail)):null,dataErr:typeof health!=="undefined"?String(health.lastErr||"").slice(0,80):"",lastBuyT:(S.journal.find(j=>j.kind==="buy")||{}).t||0,nowT:now(),status:($("chip")||{}).textContent||"",clock:MODE==="mock"?tlabel(vnow):"",scanned:stats.uniq||0,last:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).msg||"",lastSym:(S.journal.find(j=>j.kind==="buy"||j.kind==="closed")||{}).tok||"",vnow:MODE==="mock"?vnow:now(),fx,yieldEarned:pf.yieldEarned||0,days:pf.days||{},todayN:dy.n,today:dy.made+dy.lost,buysOk:fx.buyOk??pf.exec.buys,
     openPl:Object.values(pf.positions).reduce((a,p)=>a+p.real+pv(p)-p.cost,0),
-    lastTrade:lc?{sym:lc.sym,reason:lc.reason,pnl:lc.pnl,t:lc.t}:null,posKey:Object.values(pf.positions).map(p=>p.sym+"@"+(+p.entry).toPrecision(6)+":"+(+p.qty).toPrecision(6)).sort().join(","),
+    lastTrade:lc?{sym:lc.sym,reason:lc.reason,pnl:lc.pnl,t:lc.t}:null,v3:v3Stats(),m3h:v3Drain(),posKey:Object.values(pf.positions).map(p=>p.sym+"@"+(+p.entry).toPrecision(6)+":"+(+p.qty).toPrecision(6)).sort().join(","),
     mc:(()=>{const C=x=>Math.round((x||0)*100),ps=Object.values(pf.positions);let pvS=0,openC=0;for(const p of ps){pvS+=pv(p);openC+=C(p.real)-C(p.cost)}const pvC=C(pvS);openC+=pvC;const fx=pf.fx||{};return{eq:C(pf.cash)+pvC,start:C(pf.start),w:C(T.w),l:C(T.l),open:openC,bb:C(fx.burnBuy),bs:C(fx.burnSell),y:C(pf.yieldEarned),wo:C(pf.woLoss),flat:C(pf.flatEst)}})(),
     dayc:Object.fromEntries(Object.entries(pf.days||{}).map(([k,x])=>[k,{n:x.n,w:x.w,l:x.l,made:Math.round(x.made*100),lost:Math.round(x.lost*100)}])),
     exits:pf.exits||{},audits:(pf.audits||[]).slice(-12),woN:pf.woN||0,memG:pf.memG||{},memInfl:stats.memInfl||0,memFlip:stats.memFlip||0,preSkip:stats.preSkip||0,preHalf:stats.preHalf||0,
@@ -356,6 +356,7 @@ window.addEventListener("message",e=>{const m=e.data;if(!DESK||!m||!m.ptcmd||e.s
   if(m.ptcmd==="save"){deskSave(+m.v,m.id).then(ok=>deskReport({saved:+m.v,ok})).catch(err=>deskReport({saved:+m.v,ok:false,saveErr:String(err&&err.message||err)}));return}
   if(m.ptcmd==="hold"){holdLoops=!!m.v;deskReport();return}
   if(m.ptcmd==="snap"){deskReport();return}
+  if(m.ptcmd==="v3"){v3Apply(m.v||{});return}   // the Master's hourly V3 message (shared memory, holdings, portfolio size)
   if(m.ptcmd==="money"){Object.assign(CFG.money,m.v||{});deskReport();return}   // money features: the Master owns them (Spec V2 Part 3)
   if(m.ptcmd==="preset"){savePreset(m.v);render()}
   else if(m.ptcmd==="speed"){SPEED=+m.v||300;LS.set("pt_speed",SPEED)}

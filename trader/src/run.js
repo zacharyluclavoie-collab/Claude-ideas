@@ -10,10 +10,12 @@ const PEND = {}, ACK = {}, READY = {}, DIAG = [], SETLOG = [], ACTLOG = [], SPD 
 const RESTORE = window.__ptRestore || null;
 const DCFG = {};
 let SNAPT = { g: CLK.g, real: Date.now() }, SNAP = null, NEXT = null, snapId = 0, saving = null, lastSave = 0, lastSaveTrades = 0, skipTo = 0, budget = 0, stepAt = performance.now(), bootAt = Date.now(), waitN = 0, stepN = 0, drawTimer = 0;
-let lastSig = "", restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
+let saveBad = 0, saveOkAt = 0, v3LastHour = 0, lastSig = "", restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
 const KEEP = (RESTORE && RUNSV) ? RUNSV : {};
 let DAYS = KEEP.days || {}, DSTATE = KEEP.dstate || {}, DD = KEEP.dd || { peak: 0, peakG: 0, max: 0, pct: 0, from: 0, to: 0 }, SID = KEEP.sid || 0, SAVES = KEEP.saves || [], MODELOG = KEEP.modelog || {}, ALLOC = KEEP.alloc || {}, ALLOCLOG = KEEP.alloclog || [];
-let MONEY = Object.assign({ ladder: true, slipPlus: 1, prebuy: false, ftc: false, bank: false, bankTarget: 150, memory: false, cold: false, smart: false, tournament: false }, (() => { try { return JSON.parse(localStorage.getItem("pt_host_money") || "{}") } catch (e) { return {} } })(), KEEP.money || {});
+const V3DEF = { probe: true, probeTax: 10, probeFirst: true, instant: true, warn: true, finger: true, fingerSim: 0.8, lossCap: true, capUsd: 15, sigWeight: false, phase: false, brake: false, expSize: false, cold2: false, trailLadder: false, reentry: false, dead: false, deadH: 6, sameCoin: false, sameCoinPct: 5, stair: false, governor: false };
+let V3ST = KEEP.v3st || {}, PENDM = KEEP.pendm || [], V3LOG = KEEP.v3log || [];   // the Master's hourly V3 state, memory waiting for the next hour, stair/governor log
+let MONEY = Object.assign({ ladder: true, slipPlus: 1, prebuy: false, ftc: false, bank: false, bankTarget: 150, memory: false, cold: false, smart: false, tournament: false }, V3DEF, (() => { try { return JSON.parse(localStorage.getItem("pt_host_money") || "{}") } catch (e) { return {} } })(), KEEP.money || {});
 if (RUNSV && RESTORE) { (RUNSV.setlog || []).forEach(x => SETLOG.push(x)); (RUNSV.actlog || []).forEach(x => ACTLOG.push(x)) }
 function isLive() { return Object.values(R).some(r => r.live) }
 function dayN(g) { return Math.floor((g - CLK.g0) / 86400) + 1 }
@@ -55,7 +57,7 @@ function runIn(m) {
   if (m.saved != null) saveAck(m);
   if (m.live) { R[m.desk] = m; SNAP = buildSnap(R, Date.now() / 1000); SNAPT = { g: Date.now() / 1000, real: Date.now(), live: true }; return }
   if (m.vnow == null) return;
-  PEND[m.desk] = m; if (m.ack != null) ACK[m.desk] = m.ack;
+  PEND[m.desk] = m; if (m.ack != null) ACK[m.desk] = m.ack; if (m.m3h && m.m3h.out && m.m3h.out.length) PENDM.push(...m.m3h.out);
   { const o = DCFG[m.desk], k = { mode: m.mode, paused: !!m.paused }; if (o && READY[m.desk]) { if (o.mode !== k.mode) setLog(`${DN[m.desk - 1]}: mode`, MODEN[o.mode] || o.mode, MODEN[k.mode] || k.mode); if (o.paused !== k.paused) setLog(`${DN[m.desk - 1]}: no new trades`, o.paused ? "on" : "off", k.paused ? "on" : "off") } DCFG[m.desk] = k }   // every desk setting change is logged, whoever made it (you, Full Auto, the tournament, the desk page)
   if (m.ready && !READY[m.desk]) {
     READY[m.desk] = true; sendMoney(m.desk);
@@ -76,6 +78,8 @@ function commit(ds) {
   lastSig = sig;
   const sn = buildSnap(rr, CLK.g); NEXT = { rr, sn };
   afterCommit(sn, rr);
+  if ((CLK.g - HSIM0) % 3600 === 0 && CLK.g !== v3LastHour && ds.length >= NDESK && !isLive()) { v3LastHour = CLK.g; const reps = ds.map(d => ({ out: [], held: (rr[d].m3h || {}).held || {}, eq: (rr[d].m3h || {}).eq || 0 })); if (reps.length) reps[0].out = PENDM.splice(0);
+    const r = v3Hour(V3ST, reps, MONEY, CLK.g); for (const x of r.log) { V3LOG.push(x); actLog(x.kind === "stair" ? `Daily profit stair: day ${x.dayPct}% → new buys at ${x.f}x` : x.kind === "governor on" ? `Drawdown governor ON: balance ${x.dd}% below its peak; one size step down, sell test tighter` : `Drawdown governor OFF after ${x.hours} h (trough ${D$(x.trough)})`) } for (const d of ds) post(d, { ptcmd: "v3", v: r.msg }) }
   const still = CLK.state === "paused" || CLK.state === "emergency" || CLK.done || restoreWait, n = performance.now();
   if (still || n - drawAt >= 250) applyNext(); else if (!drawTimer) drawTimer = setTimeout(() => { drawTimer = 0; applyNext() }, 250 - (n - drawAt));   // the screen: at most 4 times a second (Fix 10)
 }
@@ -98,6 +102,7 @@ function clkStep() {
   else if (running) { const Q = stepQ(CLK.speed), k = Math.floor(budget / Q); if (!k) return; target = CLK.g + k * Q; budget -= k * Q }
   else return;
   const mid = HSIM0 + (Math.floor((CLK.g - HSIM0) / 86400) + 1) * 86400; if (target > mid) target = mid;   // stop exactly at every simulated midnight
+  { const hr = HSIM0 + (Math.floor((CLK.g - HSIM0) / 3600) + 1) * 3600; if (target > hr) target = hr }   // and at every simulated hour: the V3 hourly relay happens at exactly the same simulated moment on any computer
   if (CLK.until && !CLK.done && target > CLK.until) target = CLK.until;
   if (target <= CLK.g) return;
   CLK.g = target; for (const d of ds) advance(d, target);
@@ -176,15 +181,15 @@ function doSave(why) {
   if (saving || isLive() || leaving || readOnly || restoreWait) return; const ds = readyDesks();
   if (!ds.length || !ds.every(d => ACK[d] === CLK.g && (PEND[d] || {}).vnow === CLK.g)) { if (why !== "auto" && why !== "trade closed") setTimeout(() => doSave(why), 300); return }
   const rr = {}; for (const d of ds) rr[d] = PEND[d]; const sn = buildSnap(rr, CLK.g); snapId--;
-  lastSave = Date.now(); const id = SID + 1; saving = { id, g: CLK.g, need: new Set(ds), ok: true, why, t0: Date.now(), stamp: stampOf(sn, rr), sn, keep: JSON.parse(JSON.stringify({ days: DAYS, dstate: DSTATE, dd: DD, modelog: MODELOG, alloc: ALLOC, alloclog: ALLOCLOG.slice(-200), money: MONEY })) };   // everything the run record holds, from this same moment
+  lastSave = Date.now(); const id = SID + 1; saving = { id, g: CLK.g, need: new Set(ds), ok: true, why, t0: Date.now(), stamp: stampOf(sn, rr), sn, keep: JSON.parse(JSON.stringify({ v3st: V3ST, pendm: PENDM, v3log: V3LOG.slice(-200), days: DAYS, dstate: DSTATE, dd: DD, modelog: MODELOG, alloc: ALLOC, alloclog: ALLOCLOG.slice(-200), money: MONEY })) };   // everything the run record holds, from this same moment
   for (const d of ds) post(d, { ptcmd: "save", v: CLK.g, id });
   setTimeout(() => { if (saving && saving.id === id) finishSave(false, "a desk did not answer in 6 s") }, 6000);
 }
 function saveAck(m) { if (!saving || m.saved !== saving.g) return; if (!m.ok) { saving.ok = false; saving.err = m.saveErr || "save refused" } saving.need.delete(m.desk); if (!saving.need.size) finishSave(saving.ok) }
 function finishSave(ok, err) {
   const sv = saving; saving = null; if (!sv) return;
-  if (!ok) { diag("storage", `save #${sv.id} failed at ${simLabel(sv.g)}: ${err || sv.err} (the previous save stays the one to restore)`); return }
-  SID = sv.id; lastSaveG = sv.g; lastSaveTrades = sv.stamp.trades; SAVES.push({ id: sv.id, g: sv.g, stamp: sv.stamp, savedAt: Date.now(), why: sv.why, keep: sv.keep }); while (SAVES.length > 3) { const old = SAVES.shift(); for (let d = 1; d <= NDESK; d++) IDB.del("desk" + d + "#" + old.id).catch(() => {}) }
+  if (!ok) { saveBad = Date.now(); diag("storage", `save #${sv.id} failed at ${simLabel(sv.g)}: ${err || sv.err} (the previous save stays the one to restore)`); return }
+  saveBad = 0; saveOkAt = Date.now(); SID = sv.id; lastSaveG = sv.g; lastSaveTrades = sv.stamp.trades; SAVES.push({ id: sv.id, g: sv.g, stamp: sv.stamp, savedAt: Date.now(), why: sv.why, keep: sv.keep }); while (SAVES.length > 3) { const old = SAVES.shift(); for (let d = 1; d <= NDESK; d++) IDB.del("desk" + d + "#" + old.id).catch(() => {}) }
   writeRun(sv);
   if (sv.why !== "auto" && sv.why !== "trade closed") diag("storage", `save #${sv.id} at ${simLabel(sv.g)} (${sv.why}): ${D$(sv.stamp.eq)}, ${sv.stamp.trades} trades, in ${Date.now() - sv.t0} ms`);
   setTimeout(() => { if (cur === 0) draw() }, 0);
@@ -192,7 +197,7 @@ function finishSave(ok, err) {
 let handState = null;   // the state a tab that takes over should continue in
 function runRecord(sv) {
   return { v: 2, sid: sv.id, g: sv.g, stamp: sv.stamp, saves: SAVES.slice(-3), g0: CLK.g0, seed: CLK.seed, speed: CLK.speed, state: handState || CLK.state, until: CLK.until, untilMode: CLK.untilMode, done: CLK.done, startedAt: CLK.startedAt, realRun: CLK.realRun, nd: NDESK,
-    days: sv.keep.days, dstate: sv.keep.dstate, dd: sv.keep.dd, money: sv.keep.money, modelog: sv.keep.modelog, alloc: sv.keep.alloc, alloclog: sv.keep.alloclog, savedAt: Date.now(), bal: sv.stamp.eq / 100, trades: sv.stamp.trades, setlog: SETLOG.slice(0, 300), actlog: ACTLOG.slice(0, 60) } }
+    v3st: sv.keep.v3st, pendm: sv.keep.pendm, v3log: sv.keep.v3log, days: sv.keep.days, dstate: sv.keep.dstate, dd: sv.keep.dd, money: sv.keep.money, modelog: sv.keep.modelog, alloc: sv.keep.alloc, alloclog: sv.keep.alloclog, savedAt: Date.now(), bal: sv.stamp.eq / 100, trades: sv.stamp.trades, setlog: SETLOG.slice(0, 300), actlog: ACTLOG.slice(0, 60) } }
 function writeRun(sv) { if (leaving || readOnly) return; try { localStorage.setItem(RUNK, JSON.stringify(runRecord(sv))) } catch (e) { diag("storage", "could not write the save record: " + e.message) } }
 setInterval(() => { if ((CLK.state === "running" || CLK.state === "nonew") && !restoreWait && !readOnly) CLK.realRun += 1000 }, 1000);
 function startOver(cap) {
@@ -256,6 +261,7 @@ function checkInvariants(sn, rr, trades) {
     if (x.eq - x.start !== x.w + x.l + x.openPl - x.bb + x.y) bad.push(`${nm}: profit ${SG$(x.eq - x.start)} vs won + lost + open − failed-buy fees + interest ${SG$(x.w + x.l + x.openPl - x.bb + x.y)}`) }
   if (full) { if (trades < maxTrades) bad.push(`total trades went down ${maxTrades} → ${trades}`); maxTrades = Math.max(maxTrades, trades) }
   const daySum = Object.values(sn.days).reduce((a, x) => a + x.n, 0); if (daySum !== trades) bad.push(`daily table adds up to ${daySum} trades, total ${trades}`);
+  if (full) { let L = 0, N = 0, cut = false; for (const [, r] of rs) if (r.v3) { for (const b of r.v3.enemy.blocks) { L += Math.round(b.loss * 100); N++ } if (r.v3.enemy.blocks.length >= 20) cut = true } if (!cut && (L !== t.wo || N !== t.woN)) bad.push(`enemy tracker: listed write-offs ${D$(L)} (${N}) vs trade list ${D$(t.wo)} (${t.woN})`) }   // V3-8
   const rec = reconcile(sn); if (rec.unexplained !== 0) bad.push(`report does not reconcile: unexplained ${SG$(rec.unexplained)}`);
   const rows = dayRows(sn); if (rows.length !== dayN(sn.g) - ((sn.g - CLK.g0) % 86400 === 0 && sn.g > CLK.g0 ? 1 : 0) && rows.length) bad.push(`daily table has ${rows.length} rows for ${dayN(sn.g)} days`);
   const chain = full && rows.filter(r => r.eod != null).find(r => r.chainErr); if (chain) bad.push(`Day ${chain.day}: end balance does not follow from the day before (off ${SG$(chain.chainErr)})`);
@@ -289,7 +295,7 @@ function bankOf(k) { const out = []; for (const [d, r] of Object.entries(R)) for
 /* ---- money features: the Master owns the toggles and sends them to every desk (Part 3) ---- */
 function sendMoney(d) { const v = Object.assign({}, MONEY, { alloc: ALLOC[d] || 1 }); delete v.tournament; post(d, { ptcmd: "money", v }) }
 function setMoney(k, v) { if (MONEY[k] === v) return; setLog("Money: " + (MONEYN[k] || k), String(MONEY[k]), String(v)); MONEY[k] = v; try { localStorage.setItem("pt_host_money", JSON.stringify(MONEY)) } catch (e) {} for (const d of readyDesks()) sendMoney(d); if (k === "tournament" && v) startTournament(); if (k === "smart" && !v) { for (const d of readyDesks()) ALLOC[d] = 1; for (const d of readyDesks()) sendMoney(d) } buildMoney() }
-const MONEYN = { ladder: "Write-off ladder", slipPlus: "Ladder extra slippage %", prebuy: "Pre-buy sellability check", ftc: "Failed-sell cost control", bank: "Bank the day", bankTarget: "Bank-the-day target $", memory: "Coin pattern memory", cold: "Cold-desk size steps", smart: "Smart allocation", tournament: "Mode tournament" };
+const MONEYN = { probe: "Sell test before buy", warn: "Sell-block warning", finger: "Block fingerprints", probeFirst: "Probe-first entries", instant: "Instant 10% sell test", lossCap: "Loss cap (unproven coins)", brake: "Loss-streak brake", cold2: "Cold/hot sizing v2", expSize: "Expectancy sizing", sigWeight: "Signal down-weight", trailLadder: "Trailing-stop ladder", reentry: "Re-entry after take-profit", dead: "Dead-money exit", sameCoin: "Same-coin guard", stair: "Daily profit stair", governor: "Drawdown governor", ladder: "Write-off ladder", slipPlus: "Ladder extra slippage %", prebuy: "Pre-buy sellability check", ftc: "Failed-sell cost control", bank: "Bank the day", bankTarget: "Bank-the-day target $", memory: "Coin pattern memory", cold: "Cold-desk size steps", smart: "Smart allocation", tournament: "Mode tournament" };
 const TMODES = ["lots", "max", "most", "runner", "tight"];
 function startTournament() { const ds = readyDesks(); ds.forEach((d, i) => { const m = i === 0 ? "lots" : TMODES[i % TMODES.length]; sendTo(d, "preset", m); (MODELOG[isoDay(CLK.g)] || (MODELOG[isoDay(CLK.g)] = {}))[d] = m }); actLog(`Mode tournament on: ${ds.map((d, i) => DN[d - 1] + " " + (MODEN[i === 0 ? "lots" : TMODES[i % TMODES.length]])).join(", ")}. ${DN[ds[0] - 1]} stays on Lots of trades as the control.`) }
 function onMidnight(sn, rr, pd) {

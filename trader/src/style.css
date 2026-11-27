@@ -407,3 +407,20 @@ body.modal-open{overflow:hidden}
 .ftbl.recon td:last-child{text-align:right;font-variant-numeric:tabular-nums}.bcr{display:block;font-size:10.5px;color:var(--mut)}.bcr.off{color:var(--y);font-weight:700}
 #h_dash .kv{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .rununtil select{width:auto;max-width:100%}.rununtil input{width:64px!important}
+/* V3: enemy tracker, form sparklines, honesty footer, save badge, density modes */
+.enemy{border-left:3px solid #ff5a3c}.ens{font-size:12px;padding:3px 0;border-top:1px dashed var(--line)}.ens.bad{color:#ff7a5c}
+.form{white-space:nowrap}.spark{vertical-align:middle;margin-left:4px}.spark path{fill:none;stroke-width:1.6}.spark.pos path{stroke:var(--g)}.spark.neg path{stroke:var(--r)}
+.honesty{font-size:11px;color:var(--mut);text-align:center;padding:8px 12px;letter-spacing:.02em}.rep .honesty{text-align:left;padding:0 0 6px}
+.savebadge{font-size:11px;color:var(--mut);margin-top:4px}.savebadge.bad{color:#ff5a3c;font-weight:700}
+#densw{margin-right:6px}
+.num,.kv b,.ftbl td,#h_eq,#h_tot{font-variant-numeric:tabular-nums}
+body.dens-compact .panel{padding:10px 12px}body.dens-compact h2{margin:12px 2px 6px}
+body.dens-dense{font-size:12px}body.dens-dense .panel{padding:8px 10px;margin-bottom:6px}body.dens-dense h2{margin:8px 2px 4px;font-size:11px}
+body.dens-dense .hero{padding:10px 12px}body.dens-dense .hero-pills,body.dens-dense .guide,body.dens-dense .ticker,body.dens-dense .br-home,body.dens-dense #h_fin,body.dens-dense #h_fincount,body.dens-dense #h_feed,body.dens-dense #h_rate2,body.dens-dense .h2top{display:none}
+body.dens-dense .eq{font-size:28px}body.dens-dense .chip,body.dens-dense button{min-height:36px}body.dens-dense .kv div span{font-size:11px}body.dens-dense .enemy .ens{display:none}
+body.dens-dense #h_desks .dcard{padding:6px 10px}body.dens-dense #h_desks .dcard .dsel,body.dens-dense #h_desks .dcard .spark-big{display:none}
+.hero-top{flex-wrap:wrap;gap:6px}.hero-ctl{flex-wrap:wrap;display:flex;gap:6px;max-width:100%}
+.sumbar{background:var(--bg)!important}
+body.dens-dense .themesw,body.dens-compact .themesw{display:none}body.dens-dense .spdline{display:none}body.dens-dense .spdchips .chip{min-height:32px;padding:4px 8px}
+body.dens-dense .hero-sub{font-size:11px}body.dens-dense #h_asof{display:none}body.dens-dense .runtop .clockbig b{font-size:15px}
+html,body{overflow-x:hidden}

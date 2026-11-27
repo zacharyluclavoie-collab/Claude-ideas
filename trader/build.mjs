@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";   // works with spaces in folder names
 import path from "node:path";
 const dir = path.dirname(fileURLToPath(new URL(import.meta.url)));
 const rd = f => fs.readFileSync(path.join(dir, "src", f), "utf8");
-const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "agents.js", "learn.js", "train.js", "execution.js", "providers_live.js", "sim_market.js", "backtest_summary.js", "majors.js", "engine.js"];
+const ENGINE_FILES = ["core.js", "security.js", "strategy.js", "risk.js", "agents.js", "learn.js", "train.js", "execution.js", "providers_live.js", "sim_market.js", "backtest_summary.js", "majors.js", "engine.js", "v3.js", "v3hour.js"];
 const BUILD = new Date().toISOString().slice(0, 16).replace("T", " ");
 let tuneJs = "";
 try { const t = JSON.parse(fs.readFileSync(path.join(dir, "src", "agent_tune.json"), "utf8")); tuneJs = "\n/* trained agent settings (test/train_agents.mjs, validated on unseen markets) */\nObject.assign(AGENT_TUNE, " + JSON.stringify(t) + ");\n" } catch (e) {}
@@ -66,7 +66,7 @@ fs.writeFileSync(path.join(dir, "app.html"), html);   // the single app on its o
 const J = x => JSON.stringify(x).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 const appLive = html.replace('<meta charset="utf-8">\n', '<meta charset="utf-8">\n<!--DESK-->\n');
 const appDemo = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<!--DESK-->\n<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n${art}\n</body>\n</html>\n`;
-const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("host.js") + "\n" + rd("botroom.js") + "\n" + rd("run.js") + "\n" + rd("runui.js");
+const hostCss = rd("style.css"), hostBody = rd("host.html"), hostJs = rd("anim.js") + "\n" + rd("v3hour.js") + "\n" + rd("host.js") + "\n" + rd("botroom.js") + "\n" + rd("run.js") + "\n" + rd("runui.js");
 const hostPage = `<!doctype html>
 <html lang="en">
 <head>

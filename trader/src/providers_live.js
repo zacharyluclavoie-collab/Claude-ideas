@@ -147,6 +147,7 @@ const LIVE = {
     const r = d && d.result && d.result[lc]; if (!r) return null; const sd = parseGoPlusEvm(r); return sd.honeypot == null && sd.sellTax == null && sd.holders == null ? null : sd;   // empty report = not indexed yet
   },
   blocked() { return false },
+  probe() { return null },   // live: no free sell simulation wired yet, so the sell test is skipped (the security checks still run)
   // One-tap check you can run on the phone: reachability (CORS / network) AND that the response shape still parses.
   async selfTest() {
     const out = [], raw = async url => { const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 12000); try { const r = await fetch(url, { signal: ctl.signal, headers: { accept: "application/json" } }); if (!r.ok) throw new Error("HTTP " + r.status); return await r.json() } finally { clearTimeout(to) } };

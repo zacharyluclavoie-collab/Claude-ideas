@@ -116,7 +116,7 @@ function draw() {
   $h("h_sub").innerHTML = n ? `<span class="${pl >= 0 ? "g" : "r"}">${sg(pl)}</span> all time · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks · ${isLive() ? "live prices" : simLabel(SNAPT.g) + " · " + STATEN[CLK.state].toLowerCase()}` : "Starting " + NDESK + " desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
   { const wr = t.wn + t.ln ? t.wn / (t.wn + t.ln) : 0, C = 2 * Math.PI * 15.5, ring = $h("h_ring"); if (ring) { ring.style.strokeDasharray = (wr * C).toFixed(1) + " " + C.toFixed(1) } $h("h_ringlab").textContent = t.wn + t.ln ? "win rate " + Math.round(wr * 100) + "% · " + (t.wn + t.ln) + " trades" : "win rate –" }
-  if (SNAP) $h("h_kv").dataset.snap = SNAP.id; drawWL(t); drawSumbar(); drawFinished(); drawFailed(); drawDash(); drawRun(); if (typeof brDrawStage === "function" && brStageVis) brDrawStage(); if (Date.now() - tickAt > 3000) { tickAt = Date.now(); drawTicker() }   // every live label from this same snapshot
+  if (SNAP) $h("h_kv").dataset.snap = SNAP.id; drawWL(t); drawSumbar(); drawFinished(); drawFailed(); drawDash(); drawV3(); drawRun(); if (typeof brDrawStage === "function" && brStageVis) brDrawStage(); if (Date.now() - tickAt > 3000) { tickAt = Date.now(); drawTicker() }   // every live label from this same snapshot
   anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
   const pc = (k, w) => k + (k === 1 ? " " + w : " " + w + "s");
   $h("hk_wn").textContent = pc(t.wn, "coin"); $h("hk_ln").textContent = pc(t.ln, "coin"); $h("hk_on").textContent = pc(t.open, "coin");
