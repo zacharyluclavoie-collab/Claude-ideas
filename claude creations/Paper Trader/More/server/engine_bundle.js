@@ -40,7 +40,7 @@ const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
   // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
   probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
-  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1};
+  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1,sizeMul:1,stopConfirm:0,tp100:false};
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
   async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
@@ -87,7 +87,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 05:55";
+const BUILD = "2026-11-27 16:34";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1141,7 +1141,8 @@ async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions),shs=Objec
     if(p.emergency){if(p.attempts>=CFG.em.maxAttempts){ev("crit","writeoff",p.sym,"cannot sell after "+p.attempts+" attempts"+(CFG.money.ladder?" (ladder ran: wider slippage, any price, escalated)":"")+": written off");p.qty=0;closePos(p,"writeoff_unsellable",0,t)}
       else sellPos(p,s,1,"EMERGENCY: "+p.emergency,true,t);continue}
     if(v3Manage(p,s,t))continue;adjustStop(p,s);const px=s.price,held=(t-p.opened)/3600,maxHold=p.cat==="new"?CFG.nw.maxHoldH:CFG.tr.maxHoldH;
-    if(px<=p.stop)sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
+    {const sc=+(CFG.money||{}).stopConfirm||0;if(px>p.stop)p.stopSince=0;else if(sc>0&&p.stop<=p.entry&&!p.stopSince)p.stopSince=t;}   // V5: a stop-loss (not a trailing stop) can wait N minutes for the breach to hold
+    if(px<=p.stop&&!(+(CFG.money||{}).stopConfirm>0&&p.stop<=p.entry&&t-p.stopSince<(+(CFG.money||{}).stopConfirm)*60))sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
     else if(!p.tp1Done&&px>=p.tp1){if(sellPos(p,s,CFG.tp1Frac,"take_profit_1",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp1Done=true}
     else if(p.tp1Done&&!p.tp2Done&&px>=p.tp2){if(sellPos(p,s,CFG.tp2Frac,"take_profit_2",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp2Done=true}
     else if(held>=maxHold&&!p.tp1Done)sellPos(p,s,1,"time_stop",false,t)
@@ -1219,6 +1220,7 @@ function v3Size(usd, snap, ag, t, com) {
   if (MN.cold2) { f *= v3cold2(t).f }
   if (MN.expSize) { const sb = m.sb[ag.id]; if (sb && sb.n >= 30) { const e = sb.pnl / sb.n; const b = e >= 2 ? 1.5 : e >= 0.5 ? 1 : e >= 0 ? 0.5 : (com && com.ok >= CFG.committeeMin + 2 ? 0.5 : 0); if (!b) return { usd: 0, why: `setup expectancy ${fmt(e)} below $0: skipped` }; f *= b } }
   if (MN.stair || MN.governor) f *= m.v3s.f || 1;
+  if (+MN.sizeMul && +MN.sizeMul !== 1) f *= +MN.sizeMul;   // V5 lever 1: position size multiplier
   if (MN.reentry && m.reent[addr] > t) { f *= 0.5; notes.push("re-entry") }
   usd = Math.min(usd * f, S.pf.cash * 0.95);
   const proven = !!m.prov[addr] && !needProbe; let probe = null;
@@ -1253,6 +1255,7 @@ function v3Manage(p, s, t) {
   if (MN.warn && t >= (V.q || 0)) { V.q = t + 900; const pr = P().probe ? P().probe(p.chain, p.addr) : null, thr = (+MN.probeTax || 10) * (m.v3s.gov ? 0.5 : 1);
     if (pr && (pr.blocked || pr.tax > thr)) { m.enemy.warn++; V.warned = true; talk("watcher", "risk", 2, "warn", p, `Sell starting to block on ${p.sym} — exiting what we can now`); ev("crit", "sell_block_warning", p.sym, pr.blocked ? "sell quote blocked" : `sell tax ${pr.tax.toFixed(0)}%`);
       sellPos(p, s, 0.25, "sell_block_warning", true, t); if (S.pf.positions[key] && !p.emergency) p.emergency = "sell test failing: exiting"; return true } }
+  if (MN.tp100 && !V.tp100 && s.price >= p.entry * 2) { V.tp100 = true; sellPos(p, s, 0.5, "take_profit_100", false, t); return true }   // V5 lever 4: at +100% sell half, the rest trails
   if (MN.pyramid && !V.pyr && s.price >= p.entry * 1.5 && p.stop > p.entry) { V.pyr = true; const pr = P().probe ? P().probe(p.chain, p.addr) : null;   // Idea C1: add to a proven winner once, after a fresh sell test
     if (!pr || (!pr.blocked && pr.tax <= (+MN.probeTax || 10))) { const add = v3c(Math.min(p.size0 * 0.4, S.pf.cash * 0.5)); if (add >= 1 && v3Add(p, s, add, t)) { m.pyr = (m.pyr || 0) + 1; V.pyrAdd = add; ev("info", "pyramid", p.sym, `winner +${Math.round((s.price / p.entry - 1) * 100)}%: added ${fmt(add)}`) } } return true }
   if (MN.dead && (t - p.opened) / 3600 >= (+MN.deadH || 6) && Math.abs(s.price / p.entry - 1) < 0.02) { sellPos(p, s, 1, "dead_money", false, t); return true }
