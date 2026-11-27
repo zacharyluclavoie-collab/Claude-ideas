@@ -27,7 +27,7 @@ function dateLabel(g) { return new Date(g * 1000).toLocaleDateString(undefined, 
 function stepQ(sp) { return 30 }   // one tick size (30 simulated seconds) at EVERY speed: the same seed then gives the same run at 1x, 1,000x or 10,000x
 const D$ = c => money(c / 100), SG$ = c => sg(c / 100);   // display only: money lives in integer cents
 function diag(kind, msg) { DIAG.unshift({ t: Date.now(), g: CLK.g, kind, msg }); if (DIAG.length > 300) DIAG.length = 300; if (kind === "invariant" || kind === "error") drawDiag() }
-function actLog(msg) { ACTLOG.unshift({ t: Date.now(), g: CLK.g, msg }); if (ACTLOG.length > 80) ACTLOG.length = 80; drawActLog() }
+function actLog(msg) { ACTLOG.unshift({ t: Date.now(), g: CLK.g, rid: CLK.startedAt, msg }); if (ACTLOG.length > 80) ACTLOG.length = 80; drawActLog() }
 function setLog(name, a, b) { SETLOG.unshift({ t: Date.now(), g: CLK.g, name, a: String(a), b: String(b) }); if (SETLOG.length > 300) SETLOG.length = 300; drawSetLog(); drawDiag(); if (CLK.state === "paused" && !restoreWait && name !== "Export") setTimeout(() => doSave("setting changed"), 50) }   // a change made while paused is saved too
 function toast(msg) { const el = $h("htoast"); if (!el) return; el.textContent = msg; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 3200) }
 const post = (d, o) => { const f = document.querySelectorAll(".hframe")[d - 1]; try { f.contentWindow.postMessage(o, "*") } catch (e) {} };
@@ -201,8 +201,8 @@ function runRecord(sv) {
 function writeRun(sv) { if (leaving || readOnly) return; try { localStorage.setItem(RUNK, JSON.stringify(runRecord(sv))) } catch (e) { diag("storage", "could not write the save record: " + e.message) } }
 setInterval(() => { if ((CLK.state === "running" || CLK.state === "nonew") && !restoreWait && !readOnly) CLK.realRun += 1000 }, 1000);
 function startOver(cap) {
-  try { if (CLK.until && !CLK.done) localStorage.setItem("pt_host_until", JSON.stringify({ d: (CLK.until - CLK.g0) / 86400, m: CLK.untilMode })); else localStorage.removeItem("pt_host_until") } catch (e) {}   // the Run until target carries over to the new run
-  leaving = true; CLK.state = "paused";
+  try { if (CLK.until) localStorage.setItem("pt_host_until", JSON.stringify({ d: (CLK.until - CLK.g0) / 86400, m: CLK.untilMode })); else localStorage.removeItem("pt_host_until") } catch (e) {}   // the Run until target carries over to the new run
+  leaving = true; CLK.state = "paused"; ACTLOG.length = 0; SETLOG.length = 0;
   try { localStorage.removeItem(RUNK); localStorage.removeItem("pt_host_hist2"); for (let i = 1; i <= 25; i++) { localStorage.setItem("d" + i + "_pt_cap", String(cap)); localStorage.setItem("d" + i + "_pt_reset_pending", "1") } } catch (e) {}
   const done = () => location.reload(); try { IDB.clear().then(done, done) } catch (e) { done() }
 }

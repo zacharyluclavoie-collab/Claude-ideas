@@ -40,7 +40,7 @@ const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
   // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
   probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
-  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false};
+  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1};
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
   async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
@@ -87,7 +87,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 05:20";
+const BUILD = "2026-11-27 05:55";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1092,7 +1092,7 @@ function open(snap,cat,plan,risk,sec,usd,t,checks,agentId){const pf=S.pf,k=snap.
   if(!f.ok){pf.cash-=f.gas;pf.realized-=f.gas;pf.feesPaid+=f.gas;pf.cool[k]=t+(CFG.keep.on?0:900);pf.exec.failed++;{const x=FX();x.buyFail++;x.burnBuy+=f.gas}S.trades.unshift(tr);feedAdd(snap,cat,"failed","tx failed: "+f.why,{checks,score:plan.score,risk});ev("warn","buy_failed",snap.sym,f.why);talk("trader","risk",2,"warn",snap,"Buy failed: "+f.why);return save()}
   pf.cash-=f.usd+f.gas;pf.feesPaid+=f.fee+f.gas;pf.entries.push(t);pf.exec.buys++;FX().buyOk++;pf.exec.slipSum+=f.slip;pf.exec.slipN++;if(f.mev)pf.exec.mev++;pf.entries=pf.entries.filter(x=>t-x<86400);
   S.lastOpenAt=t;pf.positions[k]={agent:agentId||"launch",scout:FILL,id:snap.sym+"-"+Math.floor(t),chain:snap.chain,addr:snap.addr,sym:snap.sym,cat,opened:t,entry:snap.price,qty:f.qty,qty0:f.qty,cost:f.usd+f.gas,
-    stop:snap.price*(1-plan.stop/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail,peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
+    stop:snap.price*(1-plan.stop*(+(CFG.money||{}).stopMul||1)/100),tp1:snap.price*(1+plan.tp1/100),tp2:snap.price*(1+plan.tp2/100),trail:plan.trail*(+(CFG.money||{}).trailMul||1),peak:snap.price,last:snap.price,entryLiq:snap.liq,lastLiq:snap.liq,
     size0:f.usd,cost0:Math.round((f.usd+f.gas)*100)/100,out:0,lastPx:0,alog:[],sm:OPENX.sm||1,mem:OPENX.mem||0,pre:OPENX.pre||"",profK:OPENX.profK||"",prof:OPENX.prof||null,truth:truthOf(snap),why:plan.reason,score:plan.score,risk:risk,chk:t,sellTax:sec.sellTax??3,tp1Done:false,tp2Done:false,real:0,fees:f.fee+f.gas,stale:0,attempts:0,emergency:"",risk0:f.usd*plan.stop/100,pair:snap.pair,fx:lessonFx(snap,t,AG[agentId]),v3:OPENX.v3||null,buyTax:sec.buyTax||0};
   stats.bought++;if(SCAM.has(truthOf(snap)))stats.scamBought++;feedAdd(snap,cat,"bought",`${fmt(f.usd,0)} · score ${plan.score.toFixed(0)} · risk ${risk.toFixed(0)}`,{checks,score:plan.score,risk});S.trades.unshift(tr);talk("trader","watcher",2,"buy",snap,`Bought ${fmt(f.usd,f.usd<10?2:0)}. Watch it: stop -${(+plan.stop).toFixed(1)}%, first target +${(+plan.tp1).toFixed(0)}%`);ev("info","buy",snap.sym,`[${cat}] ${fmt(f.usd,0)} @ ${f.px.toPrecision(4)} slip ${f.slip.toFixed(2)}% score ${plan.score.toFixed(0)} risk ${risk.toFixed(0)} · ${f.why}`);save()}
 // write-off prevention ladder (Money 3, on by default): failed sell #2 widens the slippage limit by the slider, #4 sells at any price, #6 alerts the Risk manager
@@ -1253,6 +1253,8 @@ function v3Manage(p, s, t) {
   if (MN.warn && t >= (V.q || 0)) { V.q = t + 900; const pr = P().probe ? P().probe(p.chain, p.addr) : null, thr = (+MN.probeTax || 10) * (m.v3s.gov ? 0.5 : 1);
     if (pr && (pr.blocked || pr.tax > thr)) { m.enemy.warn++; V.warned = true; talk("watcher", "risk", 2, "warn", p, `Sell starting to block on ${p.sym} — exiting what we can now`); ev("crit", "sell_block_warning", p.sym, pr.blocked ? "sell quote blocked" : `sell tax ${pr.tax.toFixed(0)}%`);
       sellPos(p, s, 0.25, "sell_block_warning", true, t); if (S.pf.positions[key] && !p.emergency) p.emergency = "sell test failing: exiting"; return true } }
+  if (MN.pyramid && !V.pyr && s.price >= p.entry * 1.5 && p.stop > p.entry) { V.pyr = true; const pr = P().probe ? P().probe(p.chain, p.addr) : null;   // Idea C1: add to a proven winner once, after a fresh sell test
+    if (!pr || (!pr.blocked && pr.tax <= (+MN.probeTax || 10))) { const add = v3c(Math.min(p.size0 * 0.4, S.pf.cash * 0.5)); if (add >= 1 && v3Add(p, s, add, t)) { m.pyr = (m.pyr || 0) + 1; V.pyrAdd = add; ev("info", "pyramid", p.sym, `winner +${Math.round((s.price / p.entry - 1) * 100)}%: added ${fmt(add)}`) } } return true }
   if (MN.dead && (t - p.opened) / 3600 >= (+MN.deadH || 6) && Math.abs(s.price / p.entry - 1) < 0.02) { sellPos(p, s, 1, "dead_money", false, t); return true }
   if (MN.trailLadder) { const g = p.peak / p.entry - 1, tr = g >= 0.5 ? 0.05 : g >= 0.25 ? 0.06 : g >= 0.10 ? 0.04 : 0;
     if (tr) p.stop = Math.max(p.stop, p.peak * (1 - tr)); if (g >= 0.5 && !V.bank50) { V.bank50 = true; sellPos(p, s, 0.25, "ladder_bank", false, t); return true } }
@@ -1270,6 +1272,8 @@ function v3Closed(p, reason, t) {
   if (m.autoN % 200 === 0) { const L = {}; let tot = 0; for (const [g, x] of m.win) if (x < 0) { L[g] = (L[g] || 0) + x; tot += x } for (const [g, x] of Object.entries(L)) if (tot < 0 && x / tot > 0.4) { const sh = Math.round(100 * x / tot); m.auto.push({ t, g, share: sh, loss: v3c(x), n: m.win.length }); if (m.auto.length > 50) m.auto.shift(); ev("warn", "autopsy", "", `${g} exits = ${sh}% of losses in the last 200 trades`); talk("risk", "committee", 2, "warn", null, `Autopsy: ${g} exits caused ${sh}% of losses in the last 200 trades`) } }
   if (/writeoff/.test(reason)) { v3block(addr, p.sym, p.chain, "written off", t, V.fp, pnl); m.enemy.blocks.push({ sym: p.sym, chain: p.chain, t, loss: pnl, proven: !!m.prov[addr], size: v3c(p.cost0) }); if (m.enemy.blocks.length > 200) m.enemy.blocks.shift() }
   else if (V.warned) { m.enemy.warnLoss = v3c(m.enemy.warnLoss + Math.min(0, pnl)); v3block(addr, p.sym, p.chain, "sell started to block", t, V.fp, pnl) }
+  if (reason === "stop_loss" && MOCK && MOCK.toks) { (m.sw || (m.sw = [])).push({ a: addr, px: p.lastPx || p.last, t }); if (m.sw.length > 300) m.sw.shift() }   // stop-loss autopsy: does the coin recover after we exit?
+  if (V.pyrAdd) { const P2 = m.pyrG || (m.pyrG = { n: 0, w: 0, pnl: 0 }); P2.n++; if (win) P2.w++; P2.pnl = v3c(P2.pnl + pnl) }
   if (reason === "dead_money") { m.dead.n++; m.dead.pnl = v3c(m.dead.pnl + pnl) }
   if (V.reent) { m.re.n++; if (win) m.re.w++; m.re.pnl = v3c(m.re.pnl + pnl) }
   if (MN.reentry && p.tp1Done && !V.reent) { m.reent[addr] = t + 3600; S.pf.cool[p.chain + ":" + addr] = t }
@@ -1279,11 +1283,11 @@ function v3Closed(p, reason, t) {
 // the Master's hourly message (shared memory from other desks, coin holdings, portfolio size factor)
 function v3Apply(msg) { const m = M3(); for (const e of msg.mem || []) { if (e.k === "blk" && !m.blk[e.addr]) { m.blk[e.addr] = { sym: e.sym, chain: e.chain, why: e.why, t: e.t }; if (e.fp) { m.fps.push({ sym: e.sym, fp: e.fp }); if (m.fps.length > 200) m.fps.shift() } } else if (e.k === "prov") m.prov[e.addr] = 1 }
   m.v3s = { f: msg.f || 1, gov: !!msg.gov, held: msg.held || {}, bal: msg.bal || 0 } }
-function v3Drain() { const m = M3(), o = m.out; m.out = []; const held = {}; for (const p of Object.values(S.pf.positions)) held[String(p.addr).toLowerCase()] = v3c(pv(p)); return { out: o, held, eq: Math.round(totalEquity() * 100) } }
+function v3Drain() { const m = M3(), o = m.out; if (m.sw && typeof MOCK !== "undefined" && MODE === "mock") { const now0 = vnow, A = m.swA || (m.swA = { n: 0, up10: 0, sum: 0 }); m.sw = m.sw.filter(x => { if (now0 - x.t < 7200) return true; const tk = MOCK.toks[x.a]; if (tk && x.px > 0) { const r = MOCK.price(tk) / x.px - 1; A.n++; A.sum += r; if (r > 0.10) A.up10++ } return false }) } m.out = []; const held = {}; for (const p of Object.values(S.pf.positions)) held[String(p.addr).toLowerCase()] = v3c(pv(p)); return { out: o, held, eq: Math.round(totalEquity() * 100) } }
 // form (Idea 11): rolling expectancy over the last 20 / 50 / 200 trades and the last 50 results for a sparkline
 function v3Form() { const c = S.pf.closed, e = n => { const x = c.slice(-n); return x.length ? v3c(x.reduce((a, y) => a + y.pnl, 0) / x.length) : null }; return { e20: e(20), e50: e(50), e200: e(200), spark: c.slice(-50).map(x => v3c(x.pnl)) } }
 function v3Stats() { const m = M3(); return { hits: m.hits, enemy: { probeN: m.enemy.probeSkips.length, probe: m.enemy.probeSkips.slice(-12), blocks: m.enemy.blocks.slice(-20), warn: m.enemy.warn, warnLoss: m.enemy.warnLoss, instantFail: m.enemy.instantFail }, memN: Object.keys(m.blk).length, provN: Object.keys(m.prov).length, fpsN: m.fps.length,
-  sb: m.sb, sbc: m.sbc, hour: m.hour, age: m.age, auto: m.auto.slice(-10), streak: m.streak, brakeLog: m.brakeLog.slice(-20), cold2: { f: m.cold2.f, log: m.cold2.log.slice(-20) }, dead: m.dead, re: m.re, largest: m.largest, capBreach: m.capBreach.slice(-10), form: v3Form(), v3s: { f: m.v3s.f, gov: m.v3s.gov } } }
+  sw: m.swA || null, pyr: m.pyr || 0, pyrG: m.pyrG || null, sb: m.sb, sbc: m.sbc, hour: m.hour, age: m.age, auto: m.auto.slice(-10), streak: m.streak, brakeLog: m.brakeLog.slice(-20), cold2: { f: m.cold2.f, log: m.cold2.log.slice(-20) }, dead: m.dead, re: m.re, largest: m.largest, capBreach: m.capBreach.slice(-10), form: v3Form(), v3s: { f: m.v3s.f, gov: m.v3s.gov } } }
 
 /* V3 portfolio hour: once every simulated hour the Master collects what each desk learned (blocked / proven coins), what each
  * holds, and the total balance; it sends every desk the same message. Used by the app (run.js) and by the test runner, so both
