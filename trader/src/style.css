@@ -467,3 +467,13 @@ html.nomotion .hm-ring .rg-fg{transition:none}
 body.phone[data-ph=more] #hmaster > [data-ph=more]{display:block!important}
 .hm-chart,.hm-chart svg{height:110px}.hm-dc{min-height:72px;padding:10px}.hm-dc b{font-size:15px}.hm-row{padding:12px}.hm-wl{font-size:19px}.hm-desks{gap:8px;margin-top:10px}.hm-chart{margin-top:10px}.hm-row{margin-top:10px}
 body.phone[data-ph=home] main{display:none}
+/* V5 looks: profit as hero, card language, scan edges, report cards */
+.hm-hero{font-size:40px;font-weight:800;letter-spacing:-.025em;line-height:1.05;white-space:nowrap}.hm-sub2{font-size:13px;color:var(--mut);margin-top:3px;white-space:nowrap}.hm-sub2 .num{color:var(--tx);font-weight:600}
+.hm-top{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--accent) 30%,var(--card)) 0%,var(--card) 60%);border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line))}
+.hm-row,.hm-chart,.hm-dc{box-shadow:0 4px 18px rgba(0,0,0,.18);border:1px solid var(--line)}
+.hm-wl.pw{animation:pw .5s ease-out}.hm-wl.pl{animation:pl .5s ease-out}@keyframes pw{from{text-shadow:0 0 14px var(--g);transform:scale(1.04)}}@keyframes pl{from{text-shadow:0 0 14px var(--r);transform:scale(1.04)}}
+.fin{border-left:3px solid transparent;padding-left:9px}.fin.win{border-left-color:var(--g)}.fin.loss{border-left-color:var(--r)}
+.repcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:8px 0 12px}.repcards div{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.repcards span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.repcards b{font-size:20px;font-variant-numeric:tabular-nums}.repcards i{font-style:normal;font-size:11px;color:var(--mut)}
+body.phone .panel{border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18)}body.phone h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.phfade{animation:phs .22s cubic-bezier(.2,.8,.2,1)}@keyframes phs{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+html.nomotion .hm-wl{animation:none!important}

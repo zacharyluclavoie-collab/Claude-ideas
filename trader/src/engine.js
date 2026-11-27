@@ -146,7 +146,8 @@ async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions),shs=Objec
     if(p.emergency){if(p.attempts>=CFG.em.maxAttempts){ev("crit","writeoff",p.sym,"cannot sell after "+p.attempts+" attempts"+(CFG.money.ladder?" (ladder ran: wider slippage, any price, escalated)":"")+": written off");p.qty=0;closePos(p,"writeoff_unsellable",0,t)}
       else sellPos(p,s,1,"EMERGENCY: "+p.emergency,true,t);continue}
     if(v3Manage(p,s,t))continue;adjustStop(p,s);const px=s.price,held=(t-p.opened)/3600,maxHold=p.cat==="new"?CFG.nw.maxHoldH:CFG.tr.maxHoldH;
-    if(px<=p.stop)sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
+    {const sc=+(CFG.money||{}).stopConfirm||0;if(px>p.stop)p.stopSince=0;else if(sc>0&&p.stop<=p.entry&&!p.stopSince)p.stopSince=t;}   // V5: a stop-loss (not a trailing stop) can wait N minutes for the breach to hold
+    if(px<=p.stop&&!(+(CFG.money||{}).stopConfirm>0&&p.stop<=p.entry&&t-p.stopSince<(+(CFG.money||{}).stopConfirm)*60))sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
     else if(!p.tp1Done&&px>=p.tp1){if(sellPos(p,s,CFG.tp1Frac,"take_profit_1",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp1Done=true}
     else if(p.tp1Done&&!p.tp2Done&&px>=p.tp2){if(sellPos(p,s,CFG.tp2Frac,"take_profit_2",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp2Done=true}
     else if(held>=maxHold&&!p.tp1Done)sellPos(p,s,1,"time_stop",false,t)

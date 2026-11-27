@@ -43,6 +43,7 @@ function v3Size(usd, snap, ag, t, com) {
   if (MN.cold2) { f *= v3cold2(t).f }
   if (MN.expSize) { const sb = m.sb[ag.id]; if (sb && sb.n >= 30) { const e = sb.pnl / sb.n; const b = e >= 2 ? 1.5 : e >= 0.5 ? 1 : e >= 0 ? 0.5 : (com && com.ok >= CFG.committeeMin + 2 ? 0.5 : 0); if (!b) return { usd: 0, why: `setup expectancy ${fmt(e)} below $0: skipped` }; f *= b } }
   if (MN.stair || MN.governor) f *= m.v3s.f || 1;
+  if (+MN.sizeMul && +MN.sizeMul !== 1) f *= +MN.sizeMul;   // V5 lever 1: position size multiplier
   if (MN.reentry && m.reent[addr] > t) { f *= 0.5; notes.push("re-entry") }
   usd = Math.min(usd * f, S.pf.cash * 0.95);
   const proven = !!m.prov[addr] && !needProbe; let probe = null;
@@ -77,6 +78,7 @@ function v3Manage(p, s, t) {
   if (MN.warn && t >= (V.q || 0)) { V.q = t + 900; const pr = P().probe ? P().probe(p.chain, p.addr) : null, thr = (+MN.probeTax || 10) * (m.v3s.gov ? 0.5 : 1);
     if (pr && (pr.blocked || pr.tax > thr)) { m.enemy.warn++; V.warned = true; talk("watcher", "risk", 2, "warn", p, `Sell starting to block on ${p.sym} — exiting what we can now`); ev("crit", "sell_block_warning", p.sym, pr.blocked ? "sell quote blocked" : `sell tax ${pr.tax.toFixed(0)}%`);
       sellPos(p, s, 0.25, "sell_block_warning", true, t); if (S.pf.positions[key] && !p.emergency) p.emergency = "sell test failing: exiting"; return true } }
+  if (MN.tp100 && !V.tp100 && s.price >= p.entry * 2) { V.tp100 = true; sellPos(p, s, 0.5, "take_profit_100", false, t); return true }   // V5 lever 4: at +100% sell half, the rest trails
   if (MN.pyramid && !V.pyr && s.price >= p.entry * 1.5 && p.stop > p.entry) { V.pyr = true; const pr = P().probe ? P().probe(p.chain, p.addr) : null;   // Idea C1: add to a proven winner once, after a fresh sell test
     if (!pr || (!pr.blocked && pr.tax <= (+MN.probeTax || 10))) { const add = v3c(Math.min(p.size0 * 0.4, S.pf.cash * 0.5)); if (add >= 1 && v3Add(p, s, add, t)) { m.pyr = (m.pyr || 0) + 1; V.pyrAdd = add; ev("info", "pyramid", p.sym, `winner +${Math.round((s.price / p.entry - 1) * 100)}%: added ${fmt(add)}`) } } return true }
   if (MN.dead && (t - p.opened) / 3600 >= (+MN.deadH || 6) && Math.abs(s.price / p.entry - 1) < 0.02) { sellPos(p, s, 1, "dead_money", false, t); return true }
