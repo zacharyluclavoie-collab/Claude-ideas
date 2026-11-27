@@ -49,8 +49,8 @@ Same engine and same desks as the app, run without the screen. The app's control
 | Failed-sell cost control | −$325.71 | +$211.96 | mixed: not proven |
 | Bank the day ($150 target) | $0.00 (never triggered) | $0.00 (never triggered) | no effect: desks make about $40–70 a day each |
 | Bank the day ($40 target, extra attempt) | −$264.94 | −$484.57 | **loses** |
-| Coin pattern memory | $0.00 (0 decisions changed) | MEMORY777 | no effect |
-| Cold-desk size steps | +$457.72 | −$306.32 | COLD31337 |
+| Coin pattern memory | $0.00 (0 decisions changed) | not run (it changed 0 decisions on seed 424242 and in the app run) | no effect |
+| Cold-desk size steps | +$457.72 | −$306.32 | seed 31337: +$231.36. Better on 2 of 3 seeds: **promising, not proven** |
 
 Control profits: seed 424242 +$2,944.94, seed 777 +$3,148.98, seed 31337 +$3,266.83.
 
@@ -65,7 +65,7 @@ Rule: recommend ON only if it beats control on BOTH expectancy and total profit,
 - **M5 Exit breakdown: ON** (it only measures). In the control run, trailing stops made +$4,564.01 over 1,464 trades. Stop-losses lost −$1,332.79 over 338. Write-offs lost −$285.73 over 7.
 - **M6 Bank the day: keep OFF.** At $150 it never triggers. At $40 it lost money on both seeds.
 - **M7 Pattern memory: keep OFF.** It never changed a single buy decision: in Lots of trades mode the committee is never exactly at its pass line.
-- **M8 Cold-desk size steps: keep OFF.** COLD_VERDICT
+- **M8 Cold-desk size steps: keep OFF for now.** It did better on 2 of 3 seeds (+$457.72, −$306.32, +$231.36), with lower drawdown on 2 of them. It lost on one seed, so it does not pass the rule. It is the most promising feature: test more seeds before turning it on.
 - **M9 Money dashboard: ON.** It shows expectancy, profit factor, max drawdown, fees as % of gross profit, write-off loss as % of gross losses, and best/worst day.
 
 **Bottom line: no money feature passed the proof rule.** The defaults stay as they are. The biggest remaining loss is coins that turn unsellable after the bot buys them ("stealth honeypots" in the demo market). They are 14–19% of all losses. No sell rule can fix them; only spotting them before buying could. Nothing tested here did that reliably.
@@ -81,7 +81,7 @@ Rule: recommend ON only if it beats control on BOTH expectancy and total profit,
 | E2 bottom bar = main panel | 20/20 (same snapshot id) |
 | F2 one speed number | 20/20 (same measurement id everywhere) |
 | G2 V1 regression | B speed honest (within 8% over the same 10 s), C one clock 10/10, D 60 s pause identical, E No-new-trades 0 buys, F 10/10, Run Until exact + "Test complete" + report |
-| H2 400px vs 1920px | H2_RESULT |
+| H2 400px vs 1920px | 400px **1,304x** vs 1920px **1,251x** at 10,000x selected (gap 1.04x, inside the 2x band; quiet computer) |
 | I2 tab lock | pass: second tab blocked; read-only never saves; Take over pauses and saves the first tab, then continues |
 | J2 write-off ladder | 3 forced unsellable coins: every step logged (normal → wider slippage → any price → alert → write-off at 12), full audit; 3 forced flaky coins sold by the any-price step. Rate 3.8 per 1,000 trades vs V1 3.6: **not cut**. Target (−50%) **not met** |
 | K2 money runs | see the money table |
