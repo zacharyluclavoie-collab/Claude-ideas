@@ -87,7 +87,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 19:55";
+const BUILD = "2026-11-27 21:19";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1210,7 +1210,8 @@ function v3Gate(snap, sec, k, src, t, ag, plan, v, com) {
     if (best && bs >= (+MN.fingerSim || 0.8)) { m.hits.finger++; return skip(`Looks ${Math.round(bs * 100)}% like ${best.sym}, a coin that blocked sells: skipped`, "fingerprint", 3600) } }
   if (MN.sameCoin) { const h = m.v3s.held[addr]; if (h && h.n >= 2) { m.hits.same++; return skip(`Already held by ${h.n} desks: skipped (same-coin guard)`, "same coin", 1800) }
     if (h && m.v3s.bal && h.usd > m.v3s.bal * (+MN.sameCoinPct || 5) / 100) { m.hits.same++; return skip(`Exposure to this coin is already ${fmt(h.usd)}: skipped`, "same coin", 1800) } }
-  if (MN.loserKeys && MN.loserKeys.length) { const ab = snap.ageMin == null ? "?" : snap.ageMin < 60 ? "<1h" : snap.ageMin < 360 ? "1–6h" : snap.ageMin < 1440 ? "6–24h" : ">24h", key = ag.id + "|" + ab;   // T3 loser filter (trained on seeds 424242 + 777 only)
+  if ((MN.loserKeys && MN.loserKeys.length) || (MN.loserSkip && MN.loserSkip.length)) { const ab = snap.ageMin == null ? "?" : snap.ageMin < 60 ? "<1h" : snap.ageMin < 360 ? "1–6h" : snap.ageMin < 1440 ? "6–24h" : ">24h", key = ag.id + "|" + ab;   // T3 loser filter (trained on seeds 424242 + 777 only)
+    if ((MN.loserSkip || []).includes(key)) return skip(`${key} made under $1 a trade in training (large sample): skipped`, "loser filter", 300);
     if (MN.loserKeys.includes(key) && com && com.ok < CFG.committeeMin + 1) return skip(`${key} lost money in training: needs one more confirming vote`, "loser filter", 300) }
   if (MN.sigWeight) { const sb = m.sb[ag.id]; if (sb && sb.n >= 100 && sb.pnl < 0 && com && com.ok < CFG.committeeMin + 1) return skip(`${AG[ag.id] ? AG[ag.id].name : ag.id} has lost money over ${sb.n} trades: needs one more vote`, "signal down-weighted", 300) }
   return true;
