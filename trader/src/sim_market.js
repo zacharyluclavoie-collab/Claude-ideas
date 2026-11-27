@@ -149,7 +149,7 @@ const MOCK = {
       this.majorHist.push(bm); if (this.majorHist.length > 61) this.majorHist.shift();
       const sc = CFG.simScale || 1;   // market size: 1 = original demo (~470 new coins a day), bigger = closer to the real market (tens of thousands a day)
       for (const [ch, rate] of Object.entries(this.cfg.newPerMin)) if (CFG.chains.includes(ch)) { if (sc === 1) { if (mrng() < rate) this.spawn(false, ch) } else { let k = Math.floor(rate * sc); if (mrng() < rate * sc - k) k++; for (let i = 0; i < k; i++) this.spawn(false, ch) } }
-      if (sc > 1 && this.G % 60 === 0) for (const k of Object.keys(this.toks)) { const t = this.toks[k]; if (!t.est && this.G - t.genG > 2880 && !(S && S.pf && S.pf.positions[t.chain + ":" + t.addr.toLowerCase()])) delete this.toks[k] }   // big markets: forget new coins after 2 days (most are dead by then)
+      if (this.G % 60 === 0) for (const k of Object.keys(this.toks)) { const t = this.toks[k]; if (!t.est && this.G - t.genG > 2880 && !(S && S.pf && S.pf.positions[t.chain + ":" + t.addr.toLowerCase()])) delete this.toks[k] }   // big markets: forget new coins after 2 days (most are dead by then)
       for (const t of Object.values(this.toks)) this.step(t);
     }
     if (mins) for (const k of Object.keys(this.toks)) { const t = this.toks[k]; if (t.dead && (this.G - t.genG) > 600 && !(S && S.pf && S.pf.positions[t.chain + ":" + t.addr.toLowerCase()])) delete this.toks[k] }

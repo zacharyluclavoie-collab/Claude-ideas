@@ -430,3 +430,6 @@ html.oled{--bg:#000!important;--card:#050505!important}html.oled body{background
 .donebar.bad{background:#3a0d06;color:#ffb4a4;border:1px solid #ff5a3c}
 .firstrun .rep{max-width:420px}.dgdet{margin:8px 0}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.mcol,.panel{min-width:0}.tblw{max-width:100%;-webkit-overflow-scrolling:touch}body.dens-dense .ftbl{font-size:11px}body.dens-dense .ftbl th,body.dens-dense .ftbl td{padding:4px 5px}
+.alertbar{background:#3a0d06;color:#ffd0c4;border:2px solid #ff2a00;font-weight:600;animation:alarm .5s 3}html.nomotion *,html.nomotion *::before,html.nomotion *::after{animation:none!important;transition:none!important}
+@media (max-width:520px){#h_fail .ftbl{white-space:normal}#h_fail .ftbl th{font-size:11px}#h_fail .ftbl td .sub{display:none}}

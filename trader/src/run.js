@@ -196,11 +196,12 @@ function finishSave(ok, err) {
 }
 let handState = null;   // the state a tab that takes over should continue in
 function runRecord(sv) {
-  return { v: 2, sid: sv.id, g: sv.g, stamp: sv.stamp, saves: SAVES.slice(-3), g0: CLK.g0, seed: CLK.seed, speed: CLK.speed, state: handState || CLK.state, until: CLK.until, untilMode: CLK.untilMode, done: CLK.done, startedAt: CLK.startedAt, realRun: CLK.realRun, nd: NDESK,
+  return { v: 2, ver: 3, sid: sv.id, g: sv.g, stamp: sv.stamp, saves: SAVES.slice(-3), g0: CLK.g0, seed: CLK.seed, speed: CLK.speed, state: handState || CLK.state, until: CLK.until, untilMode: CLK.untilMode, done: CLK.done, startedAt: CLK.startedAt, realRun: CLK.realRun, nd: NDESK,
     v3st: sv.keep.v3st, pendm: sv.keep.pendm, v3log: sv.keep.v3log, days: sv.keep.days, dstate: sv.keep.dstate, dd: sv.keep.dd, money: sv.keep.money, modelog: sv.keep.modelog, alloc: sv.keep.alloc, alloclog: sv.keep.alloclog, savedAt: Date.now(), bal: sv.stamp.eq / 100, trades: sv.stamp.trades, setlog: SETLOG.slice(0, 300), actlog: ACTLOG.slice(0, 60) } }
 function writeRun(sv) { if (leaving || readOnly) return; try { localStorage.setItem(RUNK, JSON.stringify(runRecord(sv))) } catch (e) { diag("storage", "could not write the save record: " + e.message) } }
 setInterval(() => { if ((CLK.state === "running" || CLK.state === "nonew") && !restoreWait && !readOnly) CLK.realRun += 1000 }, 1000);
 function startOver(cap) {
+  try { if (CLK.until && !CLK.done) localStorage.setItem("pt_host_until", JSON.stringify({ d: (CLK.until - CLK.g0) / 86400, m: CLK.untilMode })); else localStorage.removeItem("pt_host_until") } catch (e) {}   // the Run until target carries over to the new run
   leaving = true; CLK.state = "paused";
   try { localStorage.removeItem(RUNK); localStorage.removeItem("pt_host_hist2"); for (let i = 1; i <= 25; i++) { localStorage.setItem("d" + i + "_pt_cap", String(cap)); localStorage.setItem("d" + i + "_pt_reset_pending", "1") } } catch (e) {}
   const done = () => location.reload(); try { IDB.clear().then(done, done) } catch (e) { done() }
@@ -227,7 +228,7 @@ function drawRestore() {
   const go = $h("rs_go"); if (go) go.onclick = () => { restoreWait = false; el.hidden = true; const s0 = RUNSV.state === "emergency" ? "paused" : (RUNSV.done ? "paused" : (RUNSV.state || "running")); CLK.state = "paused"; lastSaveTrades = (RUNSV.stamp || {}).trades || 0; setState(s0 === "paused" ? "paused" : s0, "resume"); setLog("Restore", "", `resumed save #${RUNSV.sid}${restoreCheck && restoreCheck.ok ? " (verified)" : " (NOT verified)"}`); drawRun() };
   const rt = $h("rs_retry"); if (rt) rt.onclick = () => location.reload();
   const pv = $h("rs_prev"); if (pv) pv.onclick = () => { const p = SAVES[SAVES.length - 2]; try { localStorage.setItem(RUNK, JSON.stringify(Object.assign({}, RUNSV, { sid: p.id, g: p.g, stamp: p.stamp, saves: SAVES.slice(0, -1) }, p.keep || {}))) } catch (e) {} location.reload() };
-  let arm = 0; $h("rs_new").onclick = e => { if (!arm) { arm = 1; e.target.textContent = "Tap again: delete the saved run"; setTimeout(() => { arm = 0; e.target.textContent = "Start over" }, 4000); return } startOver(+(localStorage.getItem("d1_pt_cap") || 2000)) };
+  $h("rs_new").onclick = e => armTap(e.target, "Tap again: delete the saved run", () => startOver(+(localStorage.getItem("d1_pt_cap") || 2000)));
 }
 
 /* ---- one live tab (Fix 11): heartbeat lock; a second tab is blocked until Take over (which pauses and saves this one) or Read-only ---- */
