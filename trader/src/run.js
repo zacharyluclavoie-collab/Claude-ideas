@@ -10,7 +10,7 @@ const PEND = {}, ACK = {}, READY = {}, DIAG = [], SETLOG = [], ACTLOG = [], SPD 
 const RESTORE = window.__ptRestore || null;
 const DCFG = {};
 let SNAPT = { g: CLK.g, real: Date.now() }, SNAP = null, NEXT = null, snapId = 0, saving = null, lastSave = 0, lastSaveTrades = 0, skipTo = 0, budget = 0, stepAt = performance.now(), bootAt = Date.now(), waitN = 0, stepN = 0, drawTimer = 0;
-let saveBad = 0, saveOkAt = 0, v3LastHour = 0, lastSig = "", restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
+let lastCommitReal = 0, saveBad = 0, saveOkAt = 0, v3LastHour = 0, lastSig = "", restoreWait = !!RESTORE || tabBlocked, lastDayN = 0, maxTrades = 0, todayPrev = null, fpsNow = 0, drawAt = 0, lastCommitG = 0, restoreCheck = null;
 const KEEP = (RESTORE && RUNSV) ? RUNSV : {};
 let DAYS = KEEP.days || {}, DSTATE = KEEP.dstate || {}, DD = KEEP.dd || { peak: 0, peakG: 0, max: 0, pct: 0, from: 0, to: 0 }, SID = KEEP.sid || 0, SAVES = KEEP.saves || [], MODELOG = KEEP.modelog || {}, ALLOC = KEEP.alloc || {}, ALLOCLOG = KEEP.alloclog || [];
 const V3DEF = { probe: true, probeTax: 10, probeFirst: false, instant: false, warn: true, finger: true, fingerSim: 0.8, lossCap: false, capUsd: 15, sigWeight: false, phase: false, brake: false, expSize: false, cold2: false, trailLadder: false, reentry: false, dead: false, deadH: 6, sameCoin: false, sameCoinPct: 5, stair: false, governor: false };
@@ -24,7 +24,7 @@ function isoOfDay(n) { return isoDay(CLK.g0 + (n - 1) * 86400) }
 function hhmm(g) { const s = ((g - HSIM0) % 86400 + 86400) % 86400; return String(Math.floor(s / 3600)).padStart(2, "0") + ":" + String(Math.floor(s % 3600 / 60)).padStart(2, "0") }
 function simLabel(g) { return CLK.done && CLK.until && g >= CLK.until && (g - CLK.g0) % 86400 === 0 ? `End of Day ${dayN(g) - 1}` : `Day ${dayN(g)} · ${hhmm(g)}` }
 function dateLabel(g) { return new Date(g * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", timeZone: "UTC" }) }
-function stepQ(sp) { return sp >= 30000 ? 60 : sp >= 3000 ? 30 : sp >= 1000 ? 15 : 10 }
+function stepQ(sp) { return 30 }   // one tick size (30 simulated seconds) at EVERY speed: the same seed then gives the same run at 1x, 1,000x or 10,000x
 const D$ = c => money(c / 100), SG$ = c => sg(c / 100);   // display only: money lives in integer cents
 function diag(kind, msg) { DIAG.unshift({ t: Date.now(), g: CLK.g, kind, msg }); if (DIAG.length > 300) DIAG.length = 300; if (kind === "invariant" || kind === "error") drawDiag() }
 function actLog(msg) { ACTLOG.unshift({ t: Date.now(), g: CLK.g, msg }); if (ACTLOG.length > 80) ACTLOG.length = 80; drawActLog() }
@@ -112,14 +112,14 @@ function afterCommit(sn, rr) {
   const g = sn.g, t = sn.tot, trades = t.wn + t.ln, dN = dayN(g), dg = Math.max(0, g - (lastCommitG || g)); lastCommitG = g;
   if (CLK.state === "running" || CLK.state === "nonew") SPD.push([performance.now(), g]);
   // time spent in each run state per simulated day: the reason a quiet day was quiet (Fix 3)
-  if (dg > 0) { const k = isoDay(g - 1), st = skipTo > g - dg ? "skip" : CLK.state, x = DSTATE[k] || (DSTATE[k] = {}); x[st] = (x[st] || 0) + dg }
+  { const rn = performance.now(); if (dg > 0) { const k = isoDay(g - 1), st = skipTo > g - dg ? "skip" : CLK.state, x = DSTATE[k] || (DSTATE[k] = {}); x[st] = (x[st] || 0) + dg; if (lastCommitReal && rn - lastCommitReal < 5000) { x.realMs = (x.realMs || 0) + (rn - lastCommitReal); x.simS = (x.simS || 0) + dg } } lastCommitReal = rn }   // speed BY DAY (simulated seconds per real second, each day)
   // max drawdown of the balance, on every snapshot (Money 9)
-  if (t.eq > DD.peak) { DD.peak = t.eq; DD.peakG = g } else if (DD.peak - t.eq > DD.max) { DD.max = DD.peak - t.eq; DD.pct = (DD.peak - t.eq) / DD.peak * 100; DD.from = DD.peakG; DD.to = g }
+  if (Object.keys(rr).length >= NDESK && t.eq > DD.peak) { DD.peak = t.eq; DD.peakG = g } else if (Object.keys(rr).length >= NDESK && DD.peak - t.eq > DD.max) { DD.max = DD.peak - t.eq; DD.pct = (DD.peak - t.eq) / DD.peak * 100; DD.from = DD.peakG; DD.to = g }
   // a new simulated day: the finished day's end balance and its parts are written down once, at exactly midnight
   if (!lastDayN) lastDayN = dN;
   if (dN > lastDayN) { const pd = isoDay(g - 1); DAYS[pd] = { eod: t.eq, open: t.openPl, bb: t.bb, y: t.y, scanned: t.scanned, nonew: (DSTATE[pd] || {}).nonew || 0, skip: (DSTATE[pd] || {}).skip || 0 };
     const y = sn.days[pd] || { n: 0, made: 0, lost: 0 }; actLog(`New simulated day ${dN} (${dateLabel(g)}): daily counters reset. Day ${dN - 1}: ${y.n} trades, net ${SG$(y.made + y.lost)}, ended at ${D$(t.eq)}`);
-    diag("day", `Day ${dN - 1} closed at ${D$(t.eq)}; "today" counters reset for Day ${dN}`); lastDayN = dN; todayPrev = null; onMidnight(sn, rr, pd) }
+    diag("day", `Day ${dN - 1} closed at ${D$(t.eq)}; "today" counters reset for Day ${dN}`); lastDayN = dN; todayPrev = null; onMidnight(sn, rr, pd); if (typeof FA !== "undefined" && FA) for (const [d, r] of Object.entries(rr)) if (r.shutdown) { post(+d, { ptcmd: "rearm" }); faNote(`${DN[d - 1]}: new day, restarted after yesterday's stop`) } }
   if (!DAYS.__start && Object.keys(rr).length >= NDESK) DAYS.__start = { eod: t.start, open: 0, bb: 0, y: 0 };   // only once every desk is in: the run's real starting balance
   checkInvariants(sn, rr, trades); histSampleSnap(sn);
   if (CLK.until && !CLK.done && g >= CLK.until) finishRun();
@@ -210,6 +210,7 @@ function verifyRestore() {
   if (!RESTORE || restoreCheck || !RUNSV) return; const ds = readyDesks(); if (ds.length < NDESK || !SNAP || SNAP.g !== RUNSV.g) return;
   const st = RUNSV.stamp || { g: RUNSV.g, eq: Math.round((RUNSV.bal || 0) * 100), trades: RUNSV.trades }, sn = SNAP, now = stampOf(sn, R), diff = [];
   if (now.g !== st.g) diff.push(`clock ${simLabel(now.g)} vs saved ${simLabel(st.g)}`); if (now.eq !== st.eq) diff.push(`balance ${D$(now.eq)} vs saved ${D$(st.eq)}`); if (now.trades !== st.trades) diff.push(`trades ${now.trades} vs saved ${st.trades}`);
+  if (RUNSV.dd && (DD.max !== RUNSV.dd.max || DD.peak !== RUNSV.dd.peak)) diff.push(`max drawdown ${D$(DD.max)} vs saved ${D$(RUNSV.dd.max)}`);   // the drawdown state is part of the save
   if (st.open != null && now.open !== st.open) diff.push(`open coins ${now.open} vs saved ${st.open}`); if (st.pos && now.pos !== st.pos) diff.push("open positions differ");
   restoreCheck = { ok: !diff.length, diff, sid: RUNSV.sid }; diag(restoreCheck.ok ? "storage" : "invariant", restoreCheck.ok ? `restore of save #${RUNSV.sid} verified: balance, trades, clock and positions match` : `restore of save #${RUNSV.sid} does NOT match: ${diff.join("; ")}`); if (!restoreCheck.ok) WARN.inv++;
   drawRestore();

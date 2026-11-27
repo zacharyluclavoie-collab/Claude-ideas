@@ -439,6 +439,12 @@ body.dens-dense #h_desks .dcard{padding:6px 10px}body.dens-dense #h_desks .dcard
 body.dens-dense .themesw,body.dens-compact .themesw{display:none}body.dens-dense .spdline{display:none}body.dens-dense .spdchips .chip{min-height:32px;padding:4px 8px}
 body.dens-dense .hero-sub{font-size:11px}body.dens-dense #h_asof{display:none}body.dens-dense .runtop .clockbig b{font-size:15px}
 html,body{overflow-x:hidden}
+html.oled{--bg:#000!important;--card:#050505!important}html.oled body{background:#000!important}
+.runprog{position:relative;height:16px;border-radius:8px;background:var(--soft);margin:6px 0;overflow:hidden}.runprog i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.55}.runprog span{position:relative;font-size:11px;padding-left:8px;line-height:16px}
+.enemy.alarm{animation:alarm .5s 3;border-left-color:#ff2a00}@keyframes alarm{0%,100%{transform:none;box-shadow:none}25%{transform:translateX(-4px);box-shadow:0 0 0 3px #ff2a0066}75%{transform:translateX(4px)}}
+.donebar.bad{background:#3a0d06;color:#ffb4a4;border:1px solid #ff5a3c}
+.firstrun .rep{max-width:420px}.dgdet{margin:8px 0}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 </style>
 </head>
@@ -564,8 +570,8 @@ let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")|
 const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 // money features (Spec V2, Part 3). The Master owns these and sends them to every desk. Only the ladder is on by default (it only protects).
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
-  // V3 Tier 1: the sell-block war (Ideas 1–6) ships ON; every other V3 money feature is OFF until proven
-  probe:true,probeTax:10,probeFirst:true,instant:true,warn:true,finger:true,fingerSim:0.8,lossCap:true,capUsd:15,
+  // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
+  probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
   sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false};
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
@@ -613,7 +619,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 02:43";
+const BUILD = "2026-11-27 04:22";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1643,7 +1649,7 @@ function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLow
   if(!recovered&&p.qty<=1e-12&&/writeoff|stale/.test(reason))talk("watcher","risk",2,"loss",p,"Could not sell it: written off");
   const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth,opened:p.opened,entry:p.entry,exit:p.lastPx||null,in:p.cost0??p.size0,out:p.out??null,failN:p.failN||0,sm:p.sm||1,mem:p.mem||0,pre:p.pre||""});dayTrade(t,p.real);pf.failClosed=(pf.failClosed||0)+(p.failN||0);
   {const ex=pf.exits||(pf.exits={}),rk=/writeoff/.test(reason)?"write_off":/stale/.test(reason)?"stale_data":String(reason).startsWith("EMERGENCY")?"hard_exit":p.tp1Done&&reason!=="trailing_stop"&&reason!=="take_profit_2"?reason:reason,e=ex[rk]||(ex[rk]={n:0,w:0,pnl:0});e.n++;if(p.real>0)e.w++;e.pnl=Math.round((e.pnl+p.real)*100)/100}
-  if(p.alog&&p.alog.length){const a={sym:p.sym,chain:p.chain,entry:p.entry,in:p.cost0??p.size0,opened:p.opened,t,reason,attempts:p.alog,burned:Math.round(p.alog.reduce((x,y)=>x+(y.gas||0),0)*100)/100,loss:p.real,rule:/writeoff/.test(reason)?`written off after ${p.attempts} failed sells (${CFG.money.ladder?"full ladder: wider slippage, any price, escalated":"no ladder"})`:"sold after failures"};const W=pf.audits||(pf.audits=[]);W.push(a);if(W.length>40)W.shift();if(/writeoff/.test(reason)){pf.woN=(pf.woN||0)+1;pf.woLoss=Math.round(((pf.woLoss||0)+p.real)*100)/100;(pf.woProf||(pf.woProf=[])).push(p.prof||null);if(pf.woProf.length>30)pf.woProf.shift()}}
+  if(p.alog&&p.alog.length){const a={sym:p.sym,chain:p.chain,entry:p.entry,in:p.cost0??p.size0,opened:p.opened,t,reason,attempts:p.alog,burned:Math.round(p.alog.reduce((x,y)=>x+(y.gas||0),0)*100)/100,loss:p.real,rule:/writeoff/.test(reason)?`written off after ${p.attempts} failed sells (${CFG.money.ladder?"full ladder: wider slippage, any price, escalated":"no ladder"})`:"sold after failures"};const W=pf.audits||(pf.audits=[]);W.push(a);if(W.length>40)W.shift();if(/writeoff/.test(reason)){(pf.woAudits||(pf.woAudits=[])).push(a);pf.woN=(pf.woN||0)+1;pf.woLoss=Math.round(((pf.woLoss||0)+p.real)*100)/100;(pf.woProf||(pf.woProf=[])).push(p.prof||null);if(pf.woProf.length>30)pf.woProf.shift()}}
   if(p.profK){const M=pf.mem||(pf.mem={}),m=M[p.profK]||(M[p.profK]={w:0,l:0});if(p.real>0)m.w++;else m.l+=/writeoff/.test(reason)?3:1}
   {const G=pf.memG||(pf.memG={}),g=p.mem>0?"liked":p.mem<0?"disliked":"none",x=G[g]||(G[g]={n:0,w:0,pnl:0});x.n++;if(p.real>0)x.w++;x.pnl=Math.round((x.pnl+p.real)*100)/100}
   if(p.sm&&p.sm!==1){pf.smN=(pf.smN||0)+1}pf.flatEst=Math.round(((pf.flatEst||0)+p.real/(p.sm||1))*100)/100;{const c=pf.closed[pf.closed.length-1];if(!pf.best||c.pnl>pf.best.pnl)pf.best=c;if(!pf.worst||c.pnl<pf.worst.pnl)pf.worst=c}if(pf.closed.length>500)pf.closed.shift();
@@ -2160,7 +2166,7 @@ function deskSnap(){const pf=S.pf,T=pf.tot||{w:0,wn:0,l:0,ln:0},d0=new Date(now(
     lastTrade:lc?{sym:lc.sym,reason:lc.reason,pnl:lc.pnl,t:lc.t}:null,v3:v3Stats(),m3h:v3Drain(),posKey:Object.values(pf.positions).map(p=>p.sym+"@"+(+p.entry).toPrecision(6)+":"+(+p.qty).toPrecision(6)).sort().join(","),
     mc:(()=>{const C=x=>Math.round((x||0)*100),ps=Object.values(pf.positions);let pvS=0,openC=0;for(const p of ps){pvS+=pv(p);openC+=C(p.real)-C(p.cost)}const pvC=C(pvS);openC+=pvC;const fx=pf.fx||{};return{eq:C(pf.cash)+pvC,start:C(pf.start),w:C(T.w),l:C(T.l),open:openC,bb:C(fx.burnBuy),bs:C(fx.burnSell),y:C(pf.yieldEarned),wo:C(pf.woLoss),flat:C(pf.flatEst)}})(),
     dayc:Object.fromEntries(Object.entries(pf.days||{}).map(([k,x])=>[k,{n:x.n,w:x.w,l:x.l,made:Math.round(x.made*100),lost:Math.round(x.lost*100)}])),
-    exits:pf.exits||{},audits:(pf.audits||[]).slice(-12),woN:pf.woN||0,memG:pf.memG||{},memInfl:stats.memInfl||0,memFlip:stats.memFlip||0,preSkip:stats.preSkip||0,preHalf:stats.preHalf||0,
+    exits:pf.exits||{},audits:(pf.audits||[]).slice(-12),woAudits:pf.woAudits||[],woN:pf.woN||0,memG:pf.memG||{},memInfl:stats.memInfl||0,memFlip:stats.memFlip||0,preSkip:stats.preSkip||0,preHalf:stats.preHalf||0,
     money:{step:CFG.money.cold?coldStep():null,alloc:CFG.money.alloc,bank:pf.bank||null,bankLog:(pf.bankLog||[]).slice(-20),ftcUntil:pf.ftcUntil||0,ftcN:pf.ftcN||0,ftcLog:(pf.ftcLog||[]).slice(-20),coldLog:(pf.coldLog||[]).slice(-20),smN:pf.smN||0,cfg:CFG.money},best:pf.best?{sym:pf.best.sym,pnl:pf.best.pnl,reason:pf.best.reason,t:pf.best.t,opened:pf.best.opened??pf.best.t-pf.best.held*3600,entry:pf.best.entry??null,exit:pf.best.exit??null}:null,worst:pf.worst?{sym:pf.worst.sym,pnl:pf.worst.pnl,reason:pf.worst.reason,t:pf.worst.t,opened:pf.worst.opened??pf.worst.t-pf.worst.held*3600,entry:pf.worst.entry??null,exit:pf.worst.exit??null}:null,
     tail:pf.closed.slice(-8).map(c=>({sym:c.sym,chain:c.chain,pnl:c.pnl,reason:c.reason,t:c.t,opened:c.opened??(c.t-c.held*3600),entry:c.entry??null,exit:c.exit??null,in:c.in??c.size,out:c.out??null})),
     pos:Object.values(pf.positions).map(p=>({sym:p.sym,chain:p.chain,pnl:p.real+pv(p)-p.cost,pct:(p.real+pv(p)-p.cost)/(p.cost0||p.size0||p.cost||1)*100,val:pv(p),held:(now()-p.opened)/3600,exit:!!p.emergency,att:p.attempts||0,failN:p.failN||0})),failClosed:pf.failClosed||0}}
@@ -2186,7 +2192,7 @@ function applyMasterRisk(){let r=null;try{r=JSON.parse(LS.get("pt_mrisk")||"null
   if(r.size){R.perTradePct*=r.size;R.posNew*=r.size;R.posTrend*=r.size}if(r.stop){CFG.quick.stop=r.stop}if(r.tp1){CFG.quick.tp1=Math.max(r.tp1,CFG.quick.stop*0.8);CFG.quick.tp2=Math.max(CFG.quick.tp2,r.tp1*2.5)}
   if(r.maxPos)R.maxPos=r.maxPos;if(r.dailyLoss)R.dailyLoss=r.dailyLoss}
 applyMasterRisk();
-CFG.simScale=+LS.get("pt_simscale")||5;   // demo market size (1x = the original small demo, 20x is closest to the real number of new coins)
+CFG.simScale=+LS.get("pt_simscale")||(DESK?1:5);   // demo market size (1x = the original small demo, 20x is closest to the real number of new coins)
 // personal selling rules (Settings > Selling and holding), applied on top of the mode
 const EXK=[["stop","Sell a losing coin at (-%)",2,25,0.5,()=>CFG.quick.stop],["tp1","First take-profit at (+%)",3,50,1,()=>CFG.quick.tp1],["frac","Share sold at the first take-profit (%)",10,100,5,()=>Math.round(CFG.tp1Frac*100)],
   ["tp2","Final take-profit at (+%)",5,200,1,()=>CFG.quick.tp2],["trail","Trailing stop after the first take-profit (%)",1,25,0.5,()=>CFG.quick.trail],["hold","Sell anything held longer than (hours)",0.5,48,0.5,()=>CFG.nw.maxHoldH]];

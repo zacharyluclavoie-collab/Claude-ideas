@@ -424,3 +424,9 @@ body.dens-dense #h_desks .dcard{padding:6px 10px}body.dens-dense #h_desks .dcard
 body.dens-dense .themesw,body.dens-compact .themesw{display:none}body.dens-dense .spdline{display:none}body.dens-dense .spdchips .chip{min-height:32px;padding:4px 8px}
 body.dens-dense .hero-sub{font-size:11px}body.dens-dense #h_asof{display:none}body.dens-dense .runtop .clockbig b{font-size:15px}
 html,body{overflow-x:hidden}
+html.oled{--bg:#000!important;--card:#050505!important}html.oled body{background:#000!important}
+.runprog{position:relative;height:16px;border-radius:8px;background:var(--soft);margin:6px 0;overflow:hidden}.runprog i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.55}.runprog span{position:relative;font-size:11px;padding-left:8px;line-height:16px}
+.enemy.alarm{animation:alarm .5s 3;border-left-color:#ff2a00}@keyframes alarm{0%,100%{transform:none;box-shadow:none}25%{transform:translateX(-4px);box-shadow:0 0 0 3px #ff2a0066}75%{transform:translateX(4px)}}
+.donebar.bad{background:#3a0d06;color:#ffb4a4;border:1px solid #ff5a3c}
+.firstrun .rep{max-width:420px}.dgdet{margin:8px 0}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

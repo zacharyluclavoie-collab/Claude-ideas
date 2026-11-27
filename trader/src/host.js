@@ -184,11 +184,11 @@ function faLive() {   // real-market checks: small balances, failing data, quiet
 function faTick() {
   faLive();
   if (FA) for (let i = 1; i <= NDESK; i++) { const f = document.querySelectorAll(".hframe")[i - 1]; if (f && faSeen[i] && Date.now() - faSeen[i] > 60000 && faEvery("heal" + i, 120000)) { f.srcdoc = deskDoc(i); faSeen[i] = Date.now(); faNote(`${DN[i - 1]}: stopped responding, restarted it`) } }
-  if (!FA) return; if (!autoSize) { autoSize = true; try { localStorage.setItem("pt_host_autosize", "1") } catch (e) {} }
+  if (!FA) return;   // Full Auto no longer switches Market size to Auto: Auto follows the screen's frame rate, which would make the same seed give a different market
   if (AP.on) { AP.on = false; apSave() }   // Full Auto replaces the Autopilot (which could move desks off the best mode)
   for (let i = 1; i <= NDESK; i++) { const r = R[i]; if (!r) continue; const nm = DN[i - 1];
     if ((r.mode !== "lots" && !MONEY.tournament) || r.custom) { sendTo(i, "fullauto"); faNote(`${nm}: back to ★ Lots of trades with the tested settings`) }
-    if (r.shutdown && faDay[i] && r.day && r.day !== faDay[i]) { sendTo(i, "rearm"); faNote(`${nm}: new day, restarted after yesterday's stop`) }
+    // restarting a desk that stopped itself now happens exactly at simulated midnight (run.js), not on a real-time timer
     faDay[i] = r.day; sendTo(i, "fa", FA) }
 }
 setInterval(faTick, 10000); setTimeout(faTick, 4000);
@@ -280,14 +280,14 @@ function apDraw() { const el = $h("ap_log"); if (!el) return; el.innerHTML = AP.
   document.querySelectorAll("#ap_sel .chip").forEach(b => b.classList.toggle("on", (b.dataset.v === "1") === AP.on)) }
 setInterval(apTick, 5000);
 /* ---- Auto market size: the biggest demo market this device runs smoothly (more coins = more trades), checked every 20 s ---- */
-const SIZES = [1, 5, 10, 20]; let autoSize = true, lastFps = 0, fpsOk = 0; try { autoSize = localStorage.getItem("pt_host_autosize") !== "0" } catch (e) {}
+const SIZES = [1, 5, 10, 20]; let autoSize = false, lastFps = 0, fpsOk = 0; try { autoSize = localStorage.getItem("pt_host_autosize") === "1" } catch (e) {}   // fixed size by default (same seed = same market)
 function measureFps(ms) { return new Promise(res => { let n = 0; const t0 = performance.now(); const f = t => { n++; if (t - t0 < ms) requestAnimationFrame(f); else res(Math.round(n * 1000 / (t - t0))) }; requestAnimationFrame(f) }) }
 setInterval(async () => { if (!autoSize || document.hidden || Object.values(R).some(r => r.live) || CLK.state === "paused" || CLK.state === "emergency" || restoreWait) return; lastFps = await measureFps(1500); const cur = (Object.values(R)[0] || {}).simScale || 5, k = SIZES.indexOf(cur);
   if (lastFps >= 52) { if (++fpsOk >= 2 && k >= 0 && k < SIZES.length - 1) { send("simscale", SIZES[k + 1]); fpsOk = 0; setLog("Market size (Auto)", cur + "x", SIZES[k + 1] + "x because the screen ran at " + lastFps + " fps"); actLog(`Market size Auto: ${cur}x → ${SIZES[k + 1]}x (screen smooth at ${lastFps} fps)`) } } else { fpsOk = 0; if (lastFps < 35 && k > 0) { send("simscale", SIZES[k - 1]); setLog("Market size (Auto)", cur + "x", SIZES[k - 1] + "x because the screen dropped to " + lastFps + " fps"); actLog(`Market size Auto: ${cur}x → ${SIZES[k - 1]}x (screen slowed to ${lastFps} fps)`) } } }, 20000);
 /* ---- theme: dark "pro" look by default, Light or match-device on request; desks follow the Master ---- */
 let theme = "dark"; try { theme = localStorage.getItem("pt_host_theme") || "dark" } catch (e) {}
 const themed = {};
-function applyTheme() { if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme; send("theme", theme); document.querySelectorAll("#themesw button").forEach(b => b.classList.toggle("on", b.dataset.v === theme)) }
+function applyTheme() { document.documentElement.classList.toggle("oled", theme === "black"); if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme === "black" ? "dark" : theme; send("theme", theme); document.querySelectorAll("#themesw button").forEach(b => b.classList.toggle("on", b.dataset.v === theme)) }
 $h("themesw").onclick = e => { const b = e.target.closest("button"); if (!b) return; theme = b.dataset.v; try { localStorage.setItem("pt_host_theme", theme) } catch (e) {} applyTheme() };
 window.addEventListener("message", e => { const m = e.data; if (m && m.pt && m.desk && !themed[m.desk]) { themed[m.desk] = 1; sendTo(m.desk, "theme", theme) } });
 applyTheme();

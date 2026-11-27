@@ -38,8 +38,8 @@ let MODE=DEMO_ONLY?"mock":(LS.get("pt_mode")||"live"),SPEED=+LS.get("pt_speed")|
 const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 // money features (Spec V2, Part 3). The Master owns these and sends them to every desk. Only the ladder is on by default (it only protects).
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
-  // V3 Tier 1: the sell-block war (Ideas 1–6) ships ON; every other V3 money feature is OFF until proven
-  probe:true,probeTax:10,probeFirst:true,instant:true,warn:true,finger:true,fingerSim:0.8,lossCap:true,capUsd:15,
+  // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
+  probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
   sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false};
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
@@ -87,7 +87,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 02:43";
+const BUILD = "2026-11-27 04:22";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1117,7 +1117,7 @@ function closePos(p,reason,recovered,t){const pf=S.pf,k=p.chain+":"+p.addr.toLow
   if(!recovered&&p.qty<=1e-12&&/writeoff|stale/.test(reason))talk("watcher","risk",2,"loss",p,"Could not sell it: written off");
   const r=p.risk0?p.real/p.risk0:0;lessonAdd(p.fx,r);{const T=pf.tot||(pf.tot={w:0,wn:0,l:0,ln:0});if(p.real>0){T.w+=p.real;T.wn++}else{T.l+=p.real;T.ln++}}pf.closed.push({agent:p.agent,sym:p.sym,chain:p.chain,cat:p.cat,pnl:p.real,r,reason,held:(t-p.opened)/3600,t,size:p.size0,truth:p.truth,opened:p.opened,entry:p.entry,exit:p.lastPx||null,in:p.cost0??p.size0,out:p.out??null,failN:p.failN||0,sm:p.sm||1,mem:p.mem||0,pre:p.pre||""});dayTrade(t,p.real);pf.failClosed=(pf.failClosed||0)+(p.failN||0);
   {const ex=pf.exits||(pf.exits={}),rk=/writeoff/.test(reason)?"write_off":/stale/.test(reason)?"stale_data":String(reason).startsWith("EMERGENCY")?"hard_exit":p.tp1Done&&reason!=="trailing_stop"&&reason!=="take_profit_2"?reason:reason,e=ex[rk]||(ex[rk]={n:0,w:0,pnl:0});e.n++;if(p.real>0)e.w++;e.pnl=Math.round((e.pnl+p.real)*100)/100}
-  if(p.alog&&p.alog.length){const a={sym:p.sym,chain:p.chain,entry:p.entry,in:p.cost0??p.size0,opened:p.opened,t,reason,attempts:p.alog,burned:Math.round(p.alog.reduce((x,y)=>x+(y.gas||0),0)*100)/100,loss:p.real,rule:/writeoff/.test(reason)?`written off after ${p.attempts} failed sells (${CFG.money.ladder?"full ladder: wider slippage, any price, escalated":"no ladder"})`:"sold after failures"};const W=pf.audits||(pf.audits=[]);W.push(a);if(W.length>40)W.shift();if(/writeoff/.test(reason)){pf.woN=(pf.woN||0)+1;pf.woLoss=Math.round(((pf.woLoss||0)+p.real)*100)/100;(pf.woProf||(pf.woProf=[])).push(p.prof||null);if(pf.woProf.length>30)pf.woProf.shift()}}
+  if(p.alog&&p.alog.length){const a={sym:p.sym,chain:p.chain,entry:p.entry,in:p.cost0??p.size0,opened:p.opened,t,reason,attempts:p.alog,burned:Math.round(p.alog.reduce((x,y)=>x+(y.gas||0),0)*100)/100,loss:p.real,rule:/writeoff/.test(reason)?`written off after ${p.attempts} failed sells (${CFG.money.ladder?"full ladder: wider slippage, any price, escalated":"no ladder"})`:"sold after failures"};const W=pf.audits||(pf.audits=[]);W.push(a);if(W.length>40)W.shift();if(/writeoff/.test(reason)){(pf.woAudits||(pf.woAudits=[])).push(a);pf.woN=(pf.woN||0)+1;pf.woLoss=Math.round(((pf.woLoss||0)+p.real)*100)/100;(pf.woProf||(pf.woProf=[])).push(p.prof||null);if(pf.woProf.length>30)pf.woProf.shift()}}
   if(p.profK){const M=pf.mem||(pf.mem={}),m=M[p.profK]||(M[p.profK]={w:0,l:0});if(p.real>0)m.w++;else m.l+=/writeoff/.test(reason)?3:1}
   {const G=pf.memG||(pf.memG={}),g=p.mem>0?"liked":p.mem<0?"disliked":"none",x=G[g]||(G[g]={n:0,w:0,pnl:0});x.n++;if(p.real>0)x.w++;x.pnl=Math.round((x.pnl+p.real)*100)/100}
   if(p.sm&&p.sm!==1){pf.smN=(pf.smN||0)+1}pf.flatEst=Math.round(((pf.flatEst||0)+p.real/(p.sm||1))*100)/100;{const c=pf.closed[pf.closed.length-1];if(!pf.best||c.pnl>pf.best.pnl)pf.best=c;if(!pf.worst||c.pnl<pf.worst.pnl)pf.worst=c}if(pf.closed.length>500)pf.closed.shift();
