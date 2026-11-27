@@ -10,7 +10,7 @@ export async function runV3({ seed = 424242, days = 14, money = {}, harsh = fals
   const ctxs = DESKS.map((D, i) => { const d = i + 1, ctx = makeCtx();
     ev(ctx, `MODE="mock";SEED=(${seed}+${d}*101)|0;rng=mulberry(SEED);load();S=newState(2000);seedPretrained();last={};stats=freshStats();regime="unknown";vnow=SIM0;
       applyPreset('lots');CFG.chains=${JSON.stringify(D.chains)};CFG.onlyTrend=${!!D.trend};${D.trend ? "CFG.tr.enabled=true;" : ""}CFG.core.on=false;CFG.simScale=1;CFG.tick=${step};
-      Object.assign(CFG.money,${JSON.stringify(money)});${harsh ? "MOCK.cfg.signal=0;" : ""}MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]];`); return ctx });
+      Object.assign(CFG.money,${JSON.stringify(money)});${harsh === "bear" ? "MOCK.cfg.signal=-0.3;MOCK.cfg.crashPerMin=1/1500;" : harsh ? "MOCK.cfg.signal=0;" : ""}MOCK.init();regimeOk=vnow;S.curve=[[vnow,totalEquity()]];`); return ctx });
   const st = {}, logs = [], curve = []; let pk = 0, dd = 0;
   for (let hr = 1; hr <= days * 24; hr++) {
     const reps = []; for (const ctx of ctxs) { await ev(ctx, `__run(${3600 / step},${step})`); reps.push(JSON.parse(ev(ctx, "JSON.stringify(v3Drain())"))) }
@@ -32,8 +32,8 @@ const v3HourSrc = "0"; let v3HourFn;
 { const src = fs.readFileSync(new URL("../src/v3hour.js", import.meta.url), "utf8"); v3HourFn = new Function(src + "\nreturn v3Hour;")() }
 export const fmtLine = (lab, t) => `${lab.padEnd(26)} profit ${(t.profit / 100).toFixed(2).padStart(9)} | trades ${String(t.n).padStart(5)} | win ${(100 * t.wr).toFixed(0)}% | exp ${(t.exp / 100).toFixed(3)} | PF ${t.pf ? t.pf.toFixed(2) : "-"} | maxDD ${(t.dd / 100).toFixed(2)} | fees ${((t.bb + t.bs) / 100).toFixed(2)} | write-offs ${t.woN} (${(t.wo / 100).toFixed(2)}) | block loss ${(t.blockLoss / 100).toFixed(2)} | probe skips ${t.probeN} mem ${t.memHits} fp ${t.fingerHits} | largest ${t.largest ? t.largest.pnl.toFixed(2) + " " + t.largest.sym + " " + t.largest.reason : "-"} | ident ${t.ident}`;
 if (process.argv[1] && process.argv[1].endsWith("v3_run.mjs")) {
-  const [seed, days, mj, lab, harsh, out] = [+(process.argv[2] || 424242), +(process.argv[3] || 14), process.argv[4] || "{}", process.argv[5] || "run", process.argv[6] === "harsh", process.argv[7]];
+  const [seed, days, mj, lab, harsh, out] = [+(process.argv[2] || 424242), +(process.argv[3] || 14), process.argv[4] || "{}", process.argv[5] || "run", process.argv[6] === "bear" ? "bear" : process.argv[6] === "harsh", process.argv[7]];
   const money = mj === "V2" ? V2 : mj === "LEAN" ? LEAN : mj === "COLD2" ? Object.assign({}, LEAN, { cold2: true }) : mj === "GOV" ? Object.assign({}, LEAN, { governor: true }) : JSON.parse(mj), t0 = Date.now(), r = await runV3({ seed, days, money, harsh });
-  console.log(fmtLine(`${lab} s${seed}${harsh ? " harsh" : ""}`, r.t), `| ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+  console.log(fmtLine(`${lab} s${seed}${harsh ? " " + (harsh === "bear" ? "bear" : "harsh") : ""}`, r.t), `| ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   if (out) fs.writeFileSync(out, JSON.stringify({ seed, days, harsh, lab, money, t: Object.assign({}, r.t), desks: r.desks.map(d => Object.assign({}, d, { v3: Object.assign({}, d.v3, { form: undefined }) })) }));
 }
