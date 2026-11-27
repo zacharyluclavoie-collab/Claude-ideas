@@ -1,0 +1,2 @@
+ctrl2 s424242              profit   4777.64 | trades  1775 | win 57% | exp 2.583 | PF 2.19 | maxDD 88.13 | fees 26.16 | write-offs 1 (-52.38) | block loss -52.38 | probe skips 6 mem 1 fp 21 | largest -94.34 BOMEKING6 EMERGENCY: liquidity down 95% vs entry | ident 0 | 4951 s
+ctrl2 s777                 profit   6076.87 | trades  1811 | win 60% | exp 3.347 | PF 2.63 | maxDD 75.03 | fees 28.49 | write-offs 0 (0.00) | block loss 0.00 | probe skips 6 mem 3 fp 34 | largest -62.38 CATMAX2 EMERGENCY: liquidity down 95% vs entry | ident 0 | 4977 s
