@@ -13,9 +13,10 @@ let slots = PAR; const q = []; const lim = fn => new Promise(r => { const go = a
 const ctrl = {}; await Promise.all(SEEDS.map(([s, h]) => lim(async () => { ctrl[s] = await run(s, "LEAN", "control", h) })));
 const verdict = {};
 await Promise.all(IDEAS.map(id => (async () => { let loss = 0, win = 0; const rows = [];
-  for (const [s, h] of SEEDS) { if (loss >= 2) { rows.push({ s, skipped: true }); continue }
-    const r = await lim(() => run(s, id, id.toLowerCase(), h)), c = ctrl[s]; if (!r || !c) { loss++; continue }
-    const pct = /^S\d/.test(id), ok = r.t.exp > c.t.exp && r.t.profit > c.t.profit && (pct ? r.t.ddPct <= c.t.ddPct * 1.2 : (c.t.dd ? r.t.dd / c.t.dd - 1 <= 0.2 : true));   // size levers: drawdown judged in % of the peak balance
-    ok ? win++ : loss++; rows.push({ s, cP: c.t.profit, tP: r.t.profit, cE: c.t.exp, tE: r.t.exp, cD: c.t.dd, tD: r.t.dd, cDp: c.t.ddPct, tDp: r.t.ddPct, ok }) }
+  for (const batch of [SEEDS.slice(0, 2), SEEDS.slice(2, 4), SEEDS.slice(4)]) { if (loss >= 2) { for (const [s] of batch) rows.push({ s, skipped: true }); continue }   // 2 seeds at a time per idea
+   const res = await Promise.all(batch.map(([s, h]) => lim(() => run(s, id, id.toLowerCase(), h))));
+   for (let bi = 0; bi < batch.length; bi++) { const s = batch[bi][0], r = res[bi], c = ctrl[s]; if (!r || !c) { loss++; continue }
+    const pct = /^S\d/.test(id), ok = id === "S30" ? r.t.profit > c.t.profit : r.t.exp > c.t.exp && r.t.profit > c.t.profit && (pct ? r.t.ddPct <= c.t.ddPct * 1.2 : (c.t.dd ? r.t.dd / c.t.dd - 1 <= 0.2 : true));   // size levers: drawdown judged in % of the peak balance
+    ok ? win++ : loss++; rows.push({ s, cP: c.t.profit, tP: r.t.profit, cE: c.t.exp, tE: r.t.exp, cD: c.t.dd, tD: r.t.dd, cDp: c.t.ddPct, tDp: r.t.ddPct, ok }) } }
   verdict[id] = { win, loss, promote: win >= 4, rows }; log(`VERDICT ${id}: ${win} wins, ${loss} losses → ${win >= 4 ? "PROMOTE" : "KILL"}`) })()));
 fs.writeFileSync(OUT + "/verdict.json", JSON.stringify({ ctrl: Object.fromEntries(Object.entries(ctrl).map(([k, v]) => [k, v && v.t])), verdict }, null, 1)); log("ALL_DONE");

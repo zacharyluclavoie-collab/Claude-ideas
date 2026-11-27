@@ -40,7 +40,7 @@ const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
   // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
   probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
-  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1,sizeMul:2,stopConfirm:0,tp100:false};   // 2x position size is the default (promoted on profit, 5-seed test)
+  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1,sizeMul:2,stopConfirm:0,tp100:false,crashGuard:false};   // 2x position size is the default (promoted on profit, 5-seed test)
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
   async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
@@ -87,7 +87,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 19:11";
+const BUILD = "2026-11-27 19:55";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -1210,6 +1210,8 @@ function v3Gate(snap, sec, k, src, t, ag, plan, v, com) {
     if (best && bs >= (+MN.fingerSim || 0.8)) { m.hits.finger++; return skip(`Looks ${Math.round(bs * 100)}% like ${best.sym}, a coin that blocked sells: skipped`, "fingerprint", 3600) } }
   if (MN.sameCoin) { const h = m.v3s.held[addr]; if (h && h.n >= 2) { m.hits.same++; return skip(`Already held by ${h.n} desks: skipped (same-coin guard)`, "same coin", 1800) }
     if (h && m.v3s.bal && h.usd > m.v3s.bal * (+MN.sameCoinPct || 5) / 100) { m.hits.same++; return skip(`Exposure to this coin is already ${fmt(h.usd)}: skipped`, "same coin", 1800) } }
+  if (MN.loserKeys && MN.loserKeys.length) { const ab = snap.ageMin == null ? "?" : snap.ageMin < 60 ? "<1h" : snap.ageMin < 360 ? "1–6h" : snap.ageMin < 1440 ? "6–24h" : ">24h", key = ag.id + "|" + ab;   // T3 loser filter (trained on seeds 424242 + 777 only)
+    if (MN.loserKeys.includes(key) && com && com.ok < CFG.committeeMin + 1) return skip(`${key} lost money in training: needs one more confirming vote`, "loser filter", 300) }
   if (MN.sigWeight) { const sb = m.sb[ag.id]; if (sb && sb.n >= 100 && sb.pnl < 0 && com && com.ok < CFG.committeeMin + 1) return skip(`${AG[ag.id] ? AG[ag.id].name : ag.id} has lost money over ${sb.n} trades: needs one more vote`, "signal down-weighted", 300) }
   return true;
 }
@@ -1255,6 +1257,8 @@ function v3Manage(p, s, t) {
   if (MN.warn && t >= (V.q || 0)) { V.q = t + 900; const pr = P().probe ? P().probe(p.chain, p.addr) : null, thr = (+MN.probeTax || 10) * (m.v3s.gov ? 0.5 : 1);
     if (pr && (pr.blocked || pr.tax > thr)) { m.enemy.warn++; V.warned = true; talk("watcher", "risk", 2, "warn", p, `Sell starting to block on ${p.sym} — exiting what we can now`); ev("crit", "sell_block_warning", p.sym, pr.blocked ? "sell quote blocked" : `sell tax ${pr.tax.toFixed(0)}%`);
       sellPos(p, s, 0.25, "sell_block_warning", true, t); if (S.pf.positions[key] && !p.emergency) p.emergency = "sell test failing: exiting"; return true } }
+  if (MN.crashGuard) { const H = V.cgh || (V.cgh = []); H.push([t, s.price]); while (H.length && t - H[0][0] > 900) H.shift(); const hi = Math.max(...H.map(x => x[1]));   // M2 crash guard: -30% within 15 simulated minutes = exit now
+    if (hi > 0 && s.price <= hi * 0.7) { p.emergency = `crash guard: down ${Math.round((1 - s.price / hi) * 100)}% in 15 min`; ev("crit", "emergency", p.sym, p.emergency); m.cgN = (m.cgN || 0) + 1; sellPos(p, s, 1, "EMERGENCY: " + p.emergency, true, t); return true } }
   if (MN.tp100 && !V.tp100 && s.price >= p.entry * 2) { V.tp100 = true; sellPos(p, s, 0.5, "take_profit_100", false, t); return true }   // V5 lever 4: at +100% sell half, the rest trails
   if (MN.pyramid && !V.pyr && s.price >= p.entry * 1.5 && p.stop > p.entry) { V.pyr = true; const pr = P().probe ? P().probe(p.chain, p.addr) : null;   // Idea C1: add to a proven winner once, after a fresh sell test
     if (!pr || (!pr.blocked && pr.tax <= (+MN.probeTax || 10))) { const add = v3c(Math.min(p.size0 * 0.4, S.pf.cash * 0.5)); if (add >= 1 && v3Add(p, s, add, t)) { m.pyr = (m.pyr || 0) + 1; V.pyrAdd = add; ev("info", "pyramid", p.sym, `winner +${Math.round((s.price / p.entry - 1) * 100)}%: added ${fmt(add)}`) } } return true }
@@ -1269,6 +1273,7 @@ function v3Closed(p, reason, t) {
   const ck = (p.agent || "launch") + " + " + (p.cat || "?") + (p.mem ? " + memory" : ""), sc = m.sbc[ck] || (m.sbc[ck] = { n: 0, w: 0, pnl: 0 }); sc.n++; if (win) sc.w++; sc.pnl = v3c(sc.pnl + pnl);
   const h = new Date(p.opened * 1000).getUTCHours(), H = m.hour[h] || (m.hour[h] = { n: 0, pnl: 0 }); H.n++; H.pnl = v3c(H.pnl + pnl);
   const ab = V.ageMin == null ? "?" : V.ageMin < 60 ? "<1h" : V.ageMin < 360 ? "1–6h" : V.ageMin < 1440 ? "6–24h" : ">24h", A = m.age[ab] || (m.age[ab] = { n: 0, pnl: 0 }); A.n++; A.pnl = v3c(A.pnl + pnl);
+  { const k2 = (p.agent || "launch") + "|" + ab, Q = (m.sba || (m.sba = {}))[k2] || (m.sba[k2] = { n: 0, w: 0, pnl: 0 }); Q.n++; if (win) Q.w++; Q.pnl = v3c(Q.pnl + pnl); const hb = (t - p.opened) < 1800 ? "<30m" : (t - p.opened) < 7200 ? "30m–2h" : ">2h", lq = (p.entryLiq || 0) < 20000 ? "<$20k" : (p.entryLiq || 0) < 100000 ? "$20–100k" : ">$100k", HL = (m.hl || (m.hl = {}))[hb + " · " + lq] || (m.hl[hb + " · " + lq] = { n: 0, w: 0, pnl: 0 }); HL.n++; if (win) HL.w++; HL.pnl = v3c(HL.pnl + pnl) }   // T1 loss autopsy: signal × coin age, hold time × liquidity
   const was = m.streak; m.streak = win ? 0 : m.streak + 1; if (MN.brake && !win && (m.streak === 5 || m.streak === 8)) { m.brakeLog.push({ t, streak: m.streak, f: m.streak >= 8 ? 0.25 : 0.5 }); ev("warn", "brake", "", `${m.streak} losses in a row: new buys at ${m.streak >= 8 ? "quarter" : "half"} size`) } else if (MN.brake && win && was >= 5) m.brakeLog.push({ t, streak: 0, f: 1 });
   const grp = /writeoff/.test(reason) ? "write_off" : String(reason).startsWith("EMERGENCY") ? "hard_exit" : reason;
   m.win.push([grp, pnl]); if (m.win.length > 200) m.win.shift(); m.autoN = (m.autoN || 0) + 1;
@@ -1290,7 +1295,7 @@ function v3Drain() { const m = M3(), o = m.out; if (m.sw && typeof MOCK !== "und
 // form (Idea 11): rolling expectancy over the last 20 / 50 / 200 trades and the last 50 results for a sparkline
 function v3Form() { const c = S.pf.closed, e = n => { const x = c.slice(-n); return x.length ? v3c(x.reduce((a, y) => a + y.pnl, 0) / x.length) : null }; return { e20: e(20), e50: e(50), e200: e(200), spark: c.slice(-50).map(x => v3c(x.pnl)) } }
 function v3Stats() { const m = M3(); return { hits: m.hits, enemy: { probeN: m.enemy.probeSkips.length, probe: m.enemy.probeSkips.slice(-12), blocks: m.enemy.blocks.slice(-20), warn: m.enemy.warn, warnLoss: m.enemy.warnLoss, instantFail: m.enemy.instantFail }, memN: Object.keys(m.blk).length, provN: Object.keys(m.prov).length, fpsN: m.fps.length,
-  sw: m.swA || null, pyr: m.pyr || 0, pyrG: m.pyrG || null, sb: m.sb, sbc: m.sbc, hour: m.hour, age: m.age, auto: m.auto.slice(-10), streak: m.streak, brakeLog: m.brakeLog.slice(-20), cold2: { f: m.cold2.f, log: m.cold2.log.slice(-20) }, dead: m.dead, re: m.re, largest: m.largest, capBreach: m.capBreach.slice(-10), form: v3Form(), v3s: { f: m.v3s.f, gov: m.v3s.gov } } }
+  sba: m.sba || {}, hl: m.hl || {}, sw: m.swA || null, pyr: m.pyr || 0, pyrG: m.pyrG || null, sb: m.sb, sbc: m.sbc, hour: m.hour, age: m.age, auto: m.auto.slice(-10), streak: m.streak, brakeLog: m.brakeLog.slice(-20), cold2: { f: m.cold2.f, log: m.cold2.log.slice(-20) }, dead: m.dead, re: m.re, largest: m.largest, capBreach: m.capBreach.slice(-10), form: v3Form(), v3s: { f: m.v3s.f, gov: m.v3s.gov } } }
 
 /* V3 portfolio hour: once every simulated hour the Master collects what each desk learned (blocked / proven coins), what each
  * holds, and the total balance; it sends every desk the same message. Used by the app (run.js) and by the test runner, so both
