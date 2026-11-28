@@ -494,3 +494,4 @@ body.phone #hbots .panel,body.phone #hbots .bcard{border-radius:16px}
 .hm-dc.fl-big{animation:flbig .9s ease-out}@keyframes flbig{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--g) 70%,transparent),inset 0 0 0 60px color-mix(in srgb,var(--g) 35%,transparent);transform:scale(1.05)}100%{box-shadow:0 0 0 14px transparent;transform:none}}
 html.nomotion .hm-float,html.nomotion .hm-dc.fl-big{animation:none!important}
 .hero-goal{max-width:420px}
+.armcd{display:inline-block;margin-left:8px;font-size:12px;color:var(--y);font-variant-numeric:tabular-nums}

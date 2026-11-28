@@ -312,8 +312,12 @@ async function runDetTest() {
   ov.querySelector("#fr_go").onclick = () => { setSpeed(sp); CLK.until = CLK.g0 + day * 86400; CLK.untilMode = "freeze"; CLK.done = false; setLog("Run until", "off", `end of Day ${day}, freeze (first run)`); setState("running"); done(); drawRun() }; ov.querySelector("#fr_skip").onclick = done } }
 
 // two-tap confirm with a 10-second window and a visible countdown (Start over / delete)
-function armTap(b, label, fn) { if (b.dataset.armUntil && Date.now() < +b.dataset.armUntil) { clearInterval(+b.dataset.armT); delete b.dataset.armUntil; b.textContent = b.dataset.lab0; fn(); return }
-  b.dataset.lab0 = b.dataset.lab0 || b.textContent; b.dataset.armUntil = Date.now() + 10000; const upd = () => { const s = Math.ceil((+b.dataset.armUntil - Date.now()) / 1000); if (s <= 0) { clearInterval(+b.dataset.armT); delete b.dataset.armUntil; b.textContent = b.dataset.lab0; return } b.textContent = `${label} (${s}s)` }; upd(); b.dataset.armT = setInterval(upd, 250) }
+const ARMS = {};   // G3: the armed button keeps the same text and size for the whole 10 s window (the countdown sits beside it), and the state lives by button id
+function armTap(b, label, fn) { const id = b.id || (b.id = "arm" + Math.random().toString(36).slice(2, 8)), A = ARMS[id];
+  const cd = () => { let c = $h(id + "_cd"); const el = $h(id); if (!c && el) { c = document.createElement("span"); c.id = id + "_cd"; c.className = "armcd"; el.insertAdjacentElement("afterend", c) } return c };
+  if (A && Date.now() < A.until) { clearInterval(A.t); delete ARMS[id]; const el = $h(id); if (el) el.textContent = A.lab0; const c = $h(id + "_cd"); if (c) c.remove(); fn(); return }
+  const st = ARMS[id] = { until: Date.now() + 10000, lab0: b.textContent, t: 0 }; b.textContent = label;
+  const upd = () => { const el = $h(id), s = Math.ceil((st.until - Date.now()) / 1000); if (s <= 0) { clearInterval(st.t); delete ARMS[id]; if (el) el.textContent = st.lab0; const c = $h(id + "_cd"); if (c) c.remove(); return } if (el && el.textContent !== label) el.textContent = label; const c = cd(); if (c) c.textContent = `${s}s to confirm` }; upd(); st.t = setInterval(upd, 250) }
 // Run until carried over from Start over
 try { const u = JSON.parse(localStorage.getItem("pt_host_until") || "null"); if (u && !RESTORE) { CLK.until = CLK.g0 + Math.round(u.d * 86400); CLK.untilMode = u.m || "freeze"; CLK.done = false; localStorage.removeItem("pt_host_until"); setLog("Run until carried over", "", untilLab(CLK.until) + (CLK.untilMode === "sell" ? ", sell all" : ", freeze")); actLog("Run until carried over: " + untilLab(CLK.until)); drawRun() } } catch (e) {}
 // legacy save: a run saved by an older version (before V3) is labelled wherever its report is shown
