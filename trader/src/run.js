@@ -29,7 +29,9 @@ const D$ = c => money(c / 100), SG$ = c => sg(c / 100);   // display only: money
 function diag(kind, msg) { DIAG.unshift({ t: Date.now(), g: CLK.g, kind, msg }); if (DIAG.length > 300) DIAG.length = 300; if (kind === "invariant" || kind === "error") drawDiag() }
 function actLog(msg) { ACTLOG.unshift({ t: Date.now(), g: CLK.g, rid: CLK.startedAt, msg }); if (ACTLOG.length > 80) ACTLOG.length = 80; drawActLog() }
 function setLog(name, a, b) { SETLOG.unshift({ t: Date.now(), g: CLK.g, name, a: String(a), b: String(b) }); if (SETLOG.length > 300) SETLOG.length = 300; drawSetLog(); drawDiag(); if (CLK.state === "paused" && !restoreWait && name !== "Export") setTimeout(() => doSave("setting changed"), 50) }   // a change made while paused is saved too
-function toast(msg) { const el = $h("htoast"); if (!el) return; el.textContent = msg; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 3200) }
+function toast(msg) { const el = $h("htoast"); if (!el) return; el.textContent = msg; el.classList.add("on"); toast.at = Date.now(); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2200) }
+setInterval(() => { const el = $h("htoast"); if (el && el.classList.contains("on") && Date.now() - (toast.at || 0) > 2500) el.classList.remove("on") }, 1000);   /* F13: a toast never stays up, even if a timer was delayed */
+document.addEventListener("visibilitychange", () => { const el = $h("htoast"); if (el && !document.hidden && Date.now() - (toast.at || 0) > 2500) el.classList.remove("on") });
 const post = (d, o) => { const f = document.querySelectorAll(".hframe")[d - 1]; try { f.contentWindow.postMessage(o, "*") } catch (e) {} };
 const readyDesks = () => { const a = []; for (let i = 1; i <= NDESK; i++) if (READY[i]) a.push(i); return a };
 

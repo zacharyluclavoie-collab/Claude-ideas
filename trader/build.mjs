@@ -89,6 +89,7 @@ ${hostBody}
 <script>
 "use strict";
 const HOST_SW = true;
+const APP_BUILD = ${J("V8 · build " + BUILD + " UTC")};
 const APP_DOC = ${J(appLive)};
 ${hostJs}
 </script>
@@ -108,6 +109,7 @@ ${hostBody}
 "use strict";
 document.body.classList.add("hostbody");
 const HOST_SW = false;
+const APP_BUILD = ${J("V8 · build " + BUILD + " UTC")};
 const APP_DOC = ${J(appDemo)};
 const ENGINE_SRC = ${J(engine)};   // for the determinism self-test (replays a day in background workers)
 ${hostJs}

@@ -508,6 +508,7 @@ body.phone #hbots .panel,body.phone #hbots .bcard{border-radius:16px}
 .hm-wl{position:relative}.hm-float{position:absolute;right:0;top:-6px;font-weight:800;font-size:18px;color:var(--g);opacity:0;pointer-events:none}.hm-float.go{animation:flo 1.4s ease-out}@keyframes flo{0%{opacity:0;transform:translateY(8px)}15%{opacity:1}100%{opacity:0;transform:translateY(-26px)}}
 .hm-dc.fl-big{animation:flbig .9s ease-out}@keyframes flbig{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--g) 70%,transparent),inset 0 0 0 60px color-mix(in srgb,var(--g) 35%,transparent);transform:scale(1.05)}100%{box-shadow:0 0 0 14px transparent;transform:none}}
 html.nomotion .hm-float,html.nomotion .hm-dc.fl-big{animation:none!important}
+.hero-goal{max-width:420px}
 
 </style>
 </head>
@@ -682,7 +683,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-28 05:28";
+const BUILD = "2026-11-28 05:30";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
