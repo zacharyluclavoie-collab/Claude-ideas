@@ -40,7 +40,7 @@ const SIM0=1759968000;   // 2025-10-09 00:00 UTC
 CFG.money={ladder:true,slipPlus:1,prebuy:false,ftc:false,bank:false,bankTarget:150,memory:false,cold:false,smart:false,alloc:1,
   // V3: sell test (1), sell-block warning (4), fingerprints (5) and shared memory (7) ship ON (proven on 5 seeds); probe-first (2), instant 10% sell (3) and the loss cap (6) cost money in the proof runs, so they are OFF; every other V3 money feature is OFF until proven
   probe:true,probeTax:10,probeFirst:false,instant:false,warn:true,finger:true,fingerSim:0.8,lossCap:false,capUsd:15,
-  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1,sizeMul:2,stopConfirm:0,tp100:false,crashGuard:false};   // 2x position size is the default (promoted on profit, 5-seed test)
+  sigWeight:false,phase:false,brake:false,expSize:false,cold2:false,trailLadder:false,reentry:false,dead:false,deadH:6,sameCoin:false,sameCoinPct:5,stair:false,governor:false,pyramid:false,trailMul:1,stopMul:1,sizeMul:2,stopConfirm:0,tp100:false,crashGuard:false,fixedBase:false,stopShield:false,dipAdd:false};   // 2x position size is the default (promoted on profit, 5-seed test)
 // small IndexedDB key/value store for saving a run (localStorage is too small for 5 desks); every call fails soft
 const IDB={db:null,open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("papertrader",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
   async tx(mode,fn){const db=this.db||(this.db=await this.open());return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),r=fn(st);t.oncomplete=()=>res(r&&"result" in r?r.result:true);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
@@ -87,7 +87,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-27 21:19";
+const BUILD = "2026-11-28 00:32";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
@@ -188,7 +188,7 @@ function approve(snap,cat,risk,plan,t,agentId){const R=CFG.risk,pf=S.pf,no=r=>({
   if(pf.positions[k])return no("already held");if(NOT_TRADABLE.has(snap.sym.toLowerCase()))return no("base asset or stablecoin");if(Object.values(pf.positions).some(p=>p.sym.toLowerCase()===snap.sym.toLowerCase()))return no("same symbol already held (clone risk)");if(t<(pf.cool[k]||0))return no("re-entry cooldown");
   if(!K&&pf.entries.filter(x=>t-x<3600).length>=R.perHour)return no("hourly entry limit");if(!K&&pf.entries.filter(x=>t-x<86400).length>=R.perDay)return no("daily entry limit");
   if(Object.keys(pf.positions).length>=R.maxPos)return no("max positions");if(!FILL&&risk>R.maxRisk)return no("risk score "+risk.toFixed(0));if(plan.rr<R.minRR)return no("reward/risk");
-  const eq=equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100*growth()/(R.worstCase&&cat==="new"?1:plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1)*(FILL?CFG.keep.sizeMult:1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
+  const eq=(CFG.money||{}).fixedBase?S.pf.start:equity(),ex=exposure(),caps={share:eq*R.totalExp/100/R.maxPos*1.6,risk:eq*R.perTradePct/100*growth()/(R.worstCase&&cat==="new"?1:plan.stop/100)*riskMult()*clamp(1-(risk-R.riskFull)/(R.maxRisk-R.riskFull)*0.75,0.25,1)*(FILL?CFG.keep.sizeMult:1),pos:eq*(cat==="new"?R.posNew:R.posTrend)/100,
     liq:snap.liq*R.liqFrac,total:eq*R.totalExp/100-ex,cash:pf.cash-eq*R.cashReserve/100,chain:eq*R.chainExp/100-(expBy(p=>p.chain)[snap.chain]||0)};
   {const lim=agentId?agentLimit(agentId,t):"";if(lim)return no(lim)}
   if(agentId)caps.agent=eq*R.totalExp/100*agentShare(agentId)*1.6-agentExposure(agentId);
@@ -1142,7 +1142,7 @@ async function monitor(t){const pf=S.pf,ps=Object.values(pf.positions),shs=Objec
       else sellPos(p,s,1,"EMERGENCY: "+p.emergency,true,t);continue}
     if(v3Manage(p,s,t))continue;adjustStop(p,s);const px=s.price,held=(t-p.opened)/3600,maxHold=p.cat==="new"?CFG.nw.maxHoldH:CFG.tr.maxHoldH;
     {const sc=+(CFG.money||{}).stopConfirm||0;if(px>p.stop)p.stopSince=0;else if(sc>0&&p.stop<=p.entry&&!p.stopSince)p.stopSince=t;}   // V5: a stop-loss (not a trailing stop) can wait N minutes for the breach to hold
-    if(px<=p.stop&&!(+(CFG.money||{}).stopConfirm>0&&p.stop<=p.entry&&t-p.stopSince<(+(CFG.money||{}).stopConfirm)*60))sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
+    if(px<=p.stop&&!((CFG.money||{}).stopShield&&p.stop<=p.entry&&t-p.opened<1800&&px>p.entry*0.75)&&!(+(CFG.money||{}).stopConfirm>0&&p.stop<=p.entry&&t-p.stopSince<(+(CFG.money||{}).stopConfirm)*60))sellPos(p,s,1,p.stop>p.entry?"trailing_stop":"stop_loss",false,t);
     else if(!p.tp1Done&&px>=p.tp1){if(sellPos(p,s,CFG.tp1Frac,"take_profit_1",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp1Done=true}
     else if(p.tp1Done&&!p.tp2Done&&px>=p.tp2){if(sellPos(p,s,CFG.tp2Frac,"take_profit_2",false,t)&&pf.positions[p.chain+":"+p.addr.toLowerCase()])p.tp2Done=true}
     else if(held>=maxHold&&!p.tp1Done)sellPos(p,s,1,"time_stop",false,t)
@@ -1258,6 +1258,8 @@ function v3Manage(p, s, t) {
   if (MN.warn && t >= (V.q || 0)) { V.q = t + 900; const pr = P().probe ? P().probe(p.chain, p.addr) : null, thr = (+MN.probeTax || 10) * (m.v3s.gov ? 0.5 : 1);
     if (pr && (pr.blocked || pr.tax > thr)) { m.enemy.warn++; V.warned = true; talk("watcher", "risk", 2, "warn", p, `Sell starting to block on ${p.sym} — exiting what we can now`); ev("crit", "sell_block_warning", p.sym, pr.blocked ? "sell quote blocked" : `sell tax ${pr.tax.toFixed(0)}%`);
       sellPos(p, s, 0.25, "sell_block_warning", true, t); if (S.pf.positions[key] && !p.emergency) p.emergency = "sell test failing: exiting"; return true } }
+  if (MN.dipAdd && !V.dip && s.price <= p.entry * 0.9 && (s.buys1h || 0) > (s.sells1h || 0)) { V.dip = true; const pr = P().probe ? P().probe(p.chain, p.addr) : null;   // N3 dip add-on: down 10%+, sell test passes, buyers still ahead
+    if (!pr || (!pr.blocked && pr.tax <= (+MN.probeTax || 10))) { const add = v3c(Math.min(p.size0 * 0.5, S.pf.cash * 0.5)); if (add >= 1 && v3Add(p, s, add, t)) { m.dipN = (m.dipN || 0) + 1; V.dipAdd = add } } return true }
   if (MN.crashGuard) { const H = V.cgh || (V.cgh = []); H.push([t, s.price]); while (H.length && t - H[0][0] > 900) H.shift(); const hi = Math.max(...H.map(x => x[1]));   // M2 crash guard: -30% within 15 simulated minutes = exit now
     if (hi > 0 && s.price <= hi * 0.7) { p.emergency = `crash guard: down ${Math.round((1 - s.price / hi) * 100)}% in 15 min`; ev("crit", "emergency", p.sym, p.emergency); m.cgN = (m.cgN || 0) + 1; sellPos(p, s, 1, "EMERGENCY: " + p.emergency, true, t); return true } }
   if (MN.tp100 && !V.tp100 && s.price >= p.entry * 2) { V.tp100 = true; sellPos(p, s, 0.5, "take_profit_100", false, t); return true }   // V5 lever 4: at +100% sell half, the rest trails
