@@ -682,7 +682,7 @@ function applyExit(k) { const sc = k === "scalp"; CFG.scalp = sc; if (sc) { CFG.
 const UNVERIFIED = { unverified: true, honeypot: false, buyTax: 3, sellTax: 3, openSource: true, proxy: false, mintable: false, hiddenOwner: false, takeBack: false, ownerBal: false, pausable: false, cannotSellAll: false, cooldown: false, blacklist: false, slipMod: false, selfdestruct: false, extCall: false, creatorHP: false, inDex: true, holders: null, top10: null, creator: null, owner: null, lpLocked: null };
 let uniMedian = null;
 function applySecMode(m){CFG.secMode=["strict","balanced","loose"].includes(m)?m:"balanced";const L={strict:[15000,100000],balanced:[8000,50000],loose:[5000,25000]}[CFG.secMode];CFG.sec.liqNew=L[0];CFG.sec.liqTrend=L[1]}
-const BUILD = "2026-11-28 00:35";
+const BUILD = "2026-11-28 04:40";
 
 /* one-tap presets. "protect" is what the testing supports: small, selective, agents on probation until they prove a positive record */
 function applyPreset(k) {
