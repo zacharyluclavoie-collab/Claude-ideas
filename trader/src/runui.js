@@ -19,7 +19,7 @@ function buildRun() {
     <div class="chips spdchips" id="rn_speed">${SP.map(s => `<button class="chip" data-v="${s}">${s >= 30000 ? "Max" : s.toLocaleString() + "x"}</button>`).join("")}</div>
     <div class="fullonly rununtil"><span><b>Run until</b></span><select id="rn_umode" aria-label="Run until"><option value="day">end of simulated Day</option><option value="for">for this many more days</option></select><input type="number" id="rn_un" min="1" max="365" value="14" inputmode="numeric" aria-label="Day number"><select id="rn_usell" aria-label="At the end"><option value="freeze">then freeze open coins</option><option value="sell">then sell every open coin</option></select><button class="chip" id="rn_uset">Set</button><button class="chip" id="rn_uoff">Off</button></div><div class="sub fullonly" id="rn_ustat"></div>
     <details class="fullonly hud" id="rn_hud"><summary>Speed and performance</summary><div class="kv" id="rn_hudkv"></div></details>
-    <div class="fullonly chips runbtns"><button class="chip" id="rn_report">📋 Run report</button><button class="chip" id="rn_export">⬇ Export</button><button class="chip" id="rn_import">⬆ Import</button><input type="file" id="rn_file" accept=".json,application/json" hidden></div>
+    <div class="fullonly chips runbtns"><button class="chip" id="rn_report">📋 Run report</button><button class="chip" id="rn_export">⬇ Export</button>${HOST_SW ? '<button class="chip" id="rn_import">⬆ Import</button>' : ""}<input type="file" id="rn_file" accept=".json,application/json" hidden></div>
     <div class="fullonly actlog" id="rn_log"></div>`;
   $h("rn_state").onclick = e => { const b = e.target.closest("button"); if (!b) return; const s = b.dataset.s; if (CLK.state === "emergency" && s !== "paused") { emergencyResume(); return } if (s === "running" && CLK.done) { toast("The run reached its target. Change or turn off 'Run until' to keep going."); return } if (restoreWait) { toast("Choose Resume or Start over on the restore banner first."); return } setState(s) };
   $h("rn_speed").onclick = e => { const b = e.target.closest("button"); if (b) setSpeed(+b.dataset.v) };
@@ -27,7 +27,7 @@ function buildRun() {
   $h("rn_uoff").onclick = () => { if (!CLK.until) return; setLog("Run until", untilLab(CLK.until), "off"); CLK.until = 0; CLK.done = false; drawRun() };
   $h("rn_report").onclick = () => openReport(false);
   $h("rn_export").onclick = () => exportRun();
-  $h("rn_import").onclick = () => $h("rn_file").click();
+  if ($h("rn_import")) $h("rn_import").onclick = () => $h("rn_file").click();
   $h("rn_file").onchange = e => { const f = e.target.files && e.target.files[0]; if (f) importRun(f) };
   drawRun(); drawActLog();
 }
@@ -40,7 +40,7 @@ function drawRun() {
   const live = isLive(); $h("rn_clock").textContent = live ? "Live prices · real time" : simLabel(SNAPT.g); $h("rn_date").textContent = live ? "" : " · " + endDate(SNAPT.g) + " (simulated)";
   const em = $h("rn_emer"); em.hidden = CLK.state !== "emergency"; if (!em.hidden) em.innerHTML = "🛑 <b>Emergency stop</b>: everything is frozen and nothing was sold. Tap <b>▶ Run</b> twice to continue.";
   const rec = SNAP ? reconcile(SNAP) : { unexplained: 0 }, dn = $h("h_done"); dn.hidden = !CLK.done; if (CLK.done) dn.innerHTML = rec.unexplained === 0 && woCheck().ok && !WARN.inv ? `✅ <b>Test complete — reached ${untilLab(CLK.until)}.</b> Everything is paused and the report reconciles to the cent. <button class="chip" id="dn_rep">Open run report</button>` : `⚠️ <b>Reached ${untilLab(CLK.until)}, but the report does NOT reconcile</b> (unexplained ${SG$(rec.unexplained)}). <button class="chip" id="dn_rep">Open run report</button>`; const dr = $h("dn_rep"); if (dr) dr.onclick = () => openReport(false);
-  { const b = $h("rn_save"); if (b) { b.className = "savebadge" + (saveBad ? " bad" : ""); b.textContent = isLive() ? "" : saveBad ? `⚠ Last save failed ${Math.round((Date.now() - saveBad) / 1000)}s ago — previous save #${SID} still safe` : SID ? `💾 Saved · save #${SID.toLocaleString()} · verified ${Math.max(0, Math.round((Date.now() - saveOkAt) / 1000))}s ago` : "💾 Not saved yet" } }
+  { const b = $h("rn_save"); if (b) { b.className = "savebadge" + (saveBad ? " bad" : ""); b.textContent = isLive() ? "" : saveBad ? `⚠ Last save failed ${Math.round((Date.now() - saveBad) / 1000)}s ago — previous save #${SID} still safe` : SID ? `💾 Saved · save #${SID.toLocaleString()} · verified ${saveOkAt ? fmtReal(Math.max(0, Date.now() - saveOkAt)) + " ago" : "on restore"}` : "💾 Not saved yet" } }
   { const h = $h("h_honest"); if (h) h.textContent = `Demo market · paper money · seed ${CLK.seed} · Past demo results do not predict real results. · Paper Trader V7` }
   const lim = limiting(), sel = CLK.speed >= 30000 ? "Max (30,000x)" : CLK.speed.toLocaleString() + "x", sl = $h("rn_speedline"); sl.dataset.spd = SPEEDV.id;
   sl.innerHTML = live ? "Live prices run in real time; the demo speed does not apply." :
@@ -384,3 +384,5 @@ function shareCard() { const D = reportData(), c = document.createElement("canva
   const rows = [["Win rate", wrS(D.t.wn, D.t.ln)], ["Trades", D.n.toLocaleString()], ["Expectancy", SG$(Math.round(D.m.exp)) + "/trade"], ["Max drawdown", D.m.ddPct.toFixed(2) + "%"]]; rows.forEach(([k, v], i) => { const yy = 580 + Math.floor(i / 2) * 170, xx = 80 + (i % 2) * 470; x.fillStyle = "#1c2240"; x.fillRect(xx, yy - 70, 440, 140); x.fillStyle = "#8b93b8"; x.font = "600 30px -apple-system,sans-serif"; x.fillText(k, xx + 30, yy - 20); x.fillStyle = "#fff"; x.font = "800 52px -apple-system,sans-serif"; x.fillText(v, xx + 30, yy + 45) });
   T(`Seed ${CLK.seed} · position size ${+MONEY.sizeMul || 1}x · paper money`, 960, 28, "#8b93b8"); T("Demo results do not predict real results.", 1005, 28, "#8b93b8");
   c.toBlob(b => { if (b) download("paper-trader-result.png", b, "image/png") }, "image/png") }
+// F8 (Master): a chip in Master settings / money features shows as selected at once; the desks' reports then confirm it
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("#h_set .chips button, #h_money .chips button"); if (!b || b.disabled || (FA && b.closest(".fa-lock"))) return; const g = b.parentElement; if (g.dataset.multi) b.classList.toggle("on"); else g.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)) }, true);

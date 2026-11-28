@@ -116,7 +116,7 @@ function draw() {
   $h("h_sub").innerHTML = n ? `<b class="num">${money(t.eq)}</b> balance · <span class="${t.today >= 0 ? "g" : "r"}">${sg(t.today)}</span> today · ${n} of ${NDESK} desks · ${isLive() ? "live prices" : simLabel(SNAPT.g) + " · " + STATEN[CLK.state].toLowerCase()}` : "Starting " + NDESK + " desks…";
   anim("h_tot", pl, v => sg(v)); $h("h_tot").classList.toggle("g", pl >= 0); $h("h_tot").classList.toggle("r", pl < 0);
   { const wr = t.wn + t.ln ? t.wn / (t.wn + t.ln) : 0, C = 2 * Math.PI * 15.5, ring = $h("h_ring"); if (ring) { ring.style.strokeDasharray = (wr * C).toFixed(1) + " " + C.toFixed(1) } $h("h_ringlab").textContent = t.wn + t.ln ? "win rate " + Math.round(wr * 100) + "% · " + (t.wn + t.ln) + " trades" : "win rate –" }
-  if (SNAP) $h("h_kv").dataset.snap = SNAP.id; drawWL(t); drawSumbar(); drawFinished(); drawFailed(); drawDash(); drawV3(); drawRun(); if (typeof brDrawStage === "function" && brStageVis) brDrawStage(); if (Date.now() - tickAt > 3000) { tickAt = Date.now(); drawTicker() }   // every live label from this same snapshot
+  if (SNAP) $h("h_kv").dataset.snap = SNAP.id; drawWL(t); drawSumbar(); drawFinished(); try { drawHome() } catch (e) {}   /* F11: W-L, counters and the finished list update in the same frame */ drawFailed(); drawDash(); drawV3(); drawRun(); if (typeof brDrawStage === "function" && brStageVis) brDrawStage(); if (Date.now() - tickAt > 3000) { tickAt = Date.now(); drawTicker() }   // every live label from this same snapshot
   anim("hk_w", t.w, v => sg(v)); anim("hk_l", t.l, v => sg(v)); anim("hk_o", t.openPl, v => sg(v), 0); $h("hk_o").className = "num " + (t.openPl >= 0 ? "g" : "r");
   const pc = (k, w) => k + (k === 1 ? " " + w : " " + w + "s");
   $h("hk_wn").textContent = pc(t.wn, "coin"); $h("hk_ln").textContent = pc(t.ln, "coin"); $h("hk_on").textContent = pc(t.open, "coin");
@@ -217,7 +217,7 @@ function buildSet() {
     <button class="btn red" id="qa_kill">Emergency stop: freeze everything (sells nothing)</button>
     <button class="btn" id="qa_rearm">Restart all desks after a stop</button></div>`;
   const MR = { mr_size: 0, mr_stop: 0, mr_tp1: 0, mr_max: 0, mr_dl: 0 }; try { Object.assign(MR, JSON.parse(localStorage.getItem("pt_host_mr") || "{}")) } catch (e) {}
-  const lab = id => { const el = $h(id), v = MR[id]; $h(id + "_v").textContent = v ? (id === "mr_size" ? "x" + (+v).toFixed(1) : id === "mr_max" ? String(v) : v + "%") : "auto"; if (v) el.value = v; el.classList.toggle("off", !v) };
+  const lab = id => { const el = $h(id), v = MR[id]; $h(id + "_v").textContent = v ? (id === "mr_size" ? "x" + (+v).toFixed(1) : id === "mr_max" ? String(v) : v + "%") : "auto"; el.value = v || el.defaultValue; el.classList.toggle("off", !v) };   /* Reset puts the slider back to its default too */
   for (const id in MR) { lab(id); $h(id).oninput = e => { MR[id] = +e.target.value; lab(id) } }
   document.querySelectorAll("[data-off]").forEach(b => b.onclick = () => { MR[b.dataset.off] = 0; lab(b.dataset.off) });
   const pack = () => ({ size: MR.mr_size || 0, stop: MR.mr_stop || 0, tp1: MR.mr_tp1 || 0, maxPos: MR.mr_max || 0, dailyLoss: MR.mr_dl || 0 });
@@ -228,7 +228,7 @@ function buildSet() {
   const two = (id, label, fn) => { const b = $h(id), o = b.textContent; let arm = 0; b.onclick = () => { if (arm) { arm = 0; b.textContent = o; fn(); return } arm = 1; b.textContent = label; setTimeout(() => { arm = 0; b.textContent = o }, 4000) } };
   two("qa_close", "Tap again to sell every open coin", () => send("closeall"));
   two("qa_kill", "Tap again: freeze everything now", () => setState("emergency", "emergency stop"));
-  $h("qa_rearm").onclick = () => send("rearm");
+  $h("qa_rearm").onclick = () => { const st = Object.entries(R).filter(([, r]) => r.shutdown); if (!st.length) { toast("No desk is stopped — nothing to restart"); return } send("rearm"); setLog("Restart desks", "", st.map(([d]) => DN[d - 1]).join(", ")); toast("Restarted " + st.length + " desk" + (st.length > 1 ? "s" : "")) };   /* F10 */
   $h("hs_n").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v && +v !== NDESK) { confirmBox("Change the number of desks?", `Going from ${NDESK} to ${v} desks starts a new run from Day 1 (the current run is deleted). Export it first if you want to keep it.`, "Start a new run").then(ok => { if (!ok) return; try { localStorage.setItem("pt_host_n", v) } catch (e) {} startOver(capPick) }) } };
   { let arm = 0; const b = $h("rtest_go"); b.onclick = () => { if (!HOST_SW) return; if (!arm) { arm = 1; b.textContent = "Tap again: every desk restarts with $100 on real prices"; setTimeout(() => { arm = 0; b.textContent = "Start the real-price test" }, 4000); return } startRealTest() } }
   { let arm = 0; $h("setupS").onclick = e => { const b = e.target.closest("button"); if (!b) return; const c = b.dataset.c;
@@ -240,7 +240,7 @@ function buildSet() {
   $h("hs_speed").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) setSpeed(+v) };
   $h("hs_pause").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (!v) return; if (CLK.state === "emergency" && v !== "paused") { emergencyResume(); return } if (restoreWait) { toast("Choose Resume or Start over on the restore banner first."); return } setState(v) };
   $h("hs_cap").onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { capPick = +v; mark() } };
-  $h("hs_reset").onclick = () => { if (Date.now() - resetArm > 10000) { resetArm = Date.now(); $h("hs_reset").textContent = "Tap again within 10 s: new run" + (CLK.until ? " (Run until carries over)" : "") + ", " + NDESK + " desks × $" + capPick.toLocaleString(); return } resetArm = 0; setLog("Start over", "", NDESK + " desks × $" + capPick.toLocaleString()); startOver(capPick) };
+  $h("hs_reset").onclick = e => armTap(e.currentTarget, "Tap again: new run" + (CLK.until ? " (Run until carries over)" : "") + ", " + NDESK + " desks × $" + capPick.toLocaleString(), () => { setLog("Start over", "", NDESK + " desks × $" + capPick.toLocaleString()); startOver(capPick) });   /* real-time 10 s window with a countdown, paused or not */
   mark();
 }
 function mark() {
