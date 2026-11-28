@@ -1,0 +1,32 @@
+control s31337             profit   3575.46 | trades  1870 | win 62% | exp 1.877 | PF 2.92 | maxDD 54.19 | fees 21.62 | write-offs 1 (-44.36) | block loss -44.36 | probe skips 5 mem 0 fp 4 | largest -44.36 WHALEFI2 writeoff_unsellable | ident 0 | 1372 s
+control s424242            profit   4195.93 | trades  2019 | win 59% | exp 2.048 | PF 3.05 | maxDD 29.54 | fees 22.13 | write-offs 0 (0.00) | block loss 0.00 | probe skips 10 mem 1 fp 5 | largest -8.04 HAMSTER2 stop_loss | ident 0 | 1377 s
+control s9001              profit   3445.92 | trades  1799 | win 59% | exp 1.883 | PF 2.96 | maxDD 35.82 | fees 20.45 | write-offs 0 (0.00) | block loss 0.00 | probe skips 3 mem 0 fp 0 | largest -9.19 SLERFX2 stop_loss | ident 0 | 1378 s
+control s777               profit   4187.48 | trades  2040 | win 62% | exp 2.008 | PF 2.92 | maxDD 33.20 | fees 23.06 | write-offs 1 (-28.02) | block loss -28.02 | probe skips 5 mem 3 fp 4 | largest -28.02 GOATX2 writeoff_unsellable | ident 0 | 1383 s
+control s555 bear          profit   1258.54 | trades   676 | win 64% | exp 1.838 | PF 2.97 | maxDD 41.74 | fees 5.17 | write-offs 0 (0.00) | block loss 0.00 | probe skips 0 mem 0 fp 0 | largest -8.44 GIGAPRO stop_loss | ident 0 | 1148 s
+trt s424242                profit   3934.09 | trades  1955 | win 61% | exp 2.009 | PF 2.99 | maxDD 21.38 | fees 25.96 | write-offs 0 (0.00) | block loss 0.00 | probe skips 9 mem 1 fp 0 | largest -8.35 PONKEGPT stop_loss | ident 0 | 1353 s
+pyr s424242                profit   3413.14 | trades  1963 | win 59% | exp 1.695 | PF 2.56 | maxDD 39.81 | fees 25.52 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 0 fp 3 | largest -40.52 MOONWIF4 EMERGENCY: liquidity down 95% vs entry | ident 0 | 1365 s
+trl s424242                profit   2805.73 | trades  1859 | win 56% | exp 1.454 | PF 2.41 | maxDD 31.53 | fees 19.70 | write-offs 0 (0.00) | block loss 0.00 | probe skips 5 mem 2 fp 27 | largest -10.86 ZEUSGPT6 stop_loss | ident 0 | 1387 s
+exp s424242                profit   4495.43 | trades  1964 | win 59% | exp 2.243 | PF 2.96 | maxDD 36.76 | fees 22.50 | write-offs 0 (0.00) | block loss 0.00 | probe skips 10 mem 1 fp 7 | largest -12.83 GOATSUN stop_loss | ident 0 | 1390 s
+stw s424242                profit   3370.62 | trades  1850 | win 58% | exp 1.809 | PF 2.56 | maxDD 38.16 | fees 19.29 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 0 fp 7 | largest -24.65 SHIBPRO3 EMERGENCY: liquidity down 95% vs entry | ident 0 | 1321 s
+cold2 s424242              profit   4165.61 | trades  2017 | win 59% | exp 2.035 | PF 3.07 | maxDD 29.01 | fees 21.46 | write-offs 0 (0.00) | block loss 0.00 | probe skips 10 mem 1 fp 5 | largest -7.99 HAMSTER2 stop_loss | ident 0 | 1315 s
+dead s424242               profit   4070.98 | trades  2028 | win 60% | exp 1.986 | PF 2.94 | maxDD 26.08 | fees 26.57 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 1 fp 6 | largest -9.61 CHADFI3 stop_loss | ident 0 | 1308 s
+same s424242               profit   4174.72 | trades  2052 | win 60% | exp 1.998 | PF 2.99 | maxDD 33.73 | fees 22.02 | write-offs 0 (0.00) | block loss 0.00 | probe skips 10 mem 1 fp 6 | largest -9.02 BABYLAMBO3 stop_loss | ident 0 | 1325 s
+trt s777                   profit   4273.49 | trades  1930 | win 62% | exp 2.208 | PF 3.12 | maxDD 20.94 | fees 25.37 | write-offs 0 (0.00) | block loss -0.27 | probe skips 10 mem 3 fp 26 | largest -9.31 MOGKING stop_loss | ident 0 | 1284 s
+pyr s777                   profit   3556.46 | trades  1983 | win 61% | exp 1.768 | PF 2.69 | maxDD 45.85 | fees 25.28 | write-offs 0 (0.00) | block loss 0.00 | probe skips 5 mem 1 fp 5 | largest -10.72 MOONX stop_loss | ident 0 | 1291 s
+VERDICT PYR: 0 wins, 2 losses → KILL
+trl s777                   profit   3722.75 | trades  1887 | win 59% | exp 1.892 | PF 2.96 | maxDD 47.77 | fees 21.91 | write-offs 0 (0.00) | block loss 0.00 | probe skips 12 mem 1 fp 12 | largest -10.21 KOALA stop_loss | ident 0 | 1282 s
+VERDICT TRL: 0 wins, 2 losses → KILL
+exp s777                   profit   4612.75 | trades  1901 | win 62% | exp 2.352 | PF 3.03 | maxDD 29.85 | fees 21.39 | write-offs 0 (0.00) | block loss -2.70 | probe skips 6 mem 2 fp 7 | largest -16.05 TOSHICOIN stop_loss | ident 0 | 1279 s
+stw s777                   profit   3085.90 | trades  1890 | win 60% | exp 1.610 | PF 2.43 | maxDD 28.42 | fees 29.03 | write-offs 0 (0.00) | block loss -3.34 | probe skips 7 mem 3 fp 24 | largest -9.08 BABYGIGA stop_loss | ident 0 | 1295 s
+VERDICT STW: 0 wins, 2 losses → KILL
+cold2 s777                 profit   4001.96 | trades  1949 | win 62% | exp 2.029 | PF 3.00 | maxDD 22.98 | fees 19.00 | write-offs 0 (0.00) | block loss 0.00 | probe skips 8 mem 1 fp 0 | largest -8.51 BEARSUN2 stop_loss | ident 0 | 1284 s
+VERDICT COLD2: 0 wins, 2 losses → KILL
+dead s777                  profit   3761.68 | trades  1959 | win 61% | exp 1.892 | PF 2.91 | maxDD 33.64 | fees 21.21 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 2 fp 23 | largest -8.30 SNEKFI2 trailing_stop | ident 0 | 1282 s
+VERDICT DEAD: 0 wins, 2 losses → KILL
+same s777                  profit   4187.48 | trades  2040 | win 62% | exp 2.008 | PF 2.92 | maxDD 33.20 | fees 23.06 | write-offs 1 (-28.02) | block loss -28.02 | probe skips 5 mem 3 fp 4 | largest -28.02 GOATX2 writeoff_unsellable | ident 0 | 1285 s
+VERDICT SAME: 0 wins, 2 losses → KILL
+trt s31337                 profit   3377.41 | trades  1681 | win 63% | exp 1.987 | PF 3.13 | maxDD 21.76 | fees 17.60 | write-offs 0 (0.00) | block loss 0.00 | probe skips 5 mem 0 fp 0 | largest -7.33 KOALAINU stop_loss | ident 0 | 1173 s
+VERDICT TRT: 1 wins, 2 losses → KILL
+exp s31337                 profit   3379.93 | trades  1914 | win 61% | exp 1.728 | PF 2.77 | maxDD 55.43 | fees 25.28 | write-offs 1 (-37.84) | block loss -37.84 | probe skips 3 mem 2 fp 0 | largest -37.84 LAMBOAI5 writeoff_unsellable | ident 0 | 1179 s
+VERDICT EXP: 1 wins, 2 losses → KILL
+ALL_DONE

@@ -1,0 +1,147 @@
+Small-balance tests: one Solana desk, Lots of trades, demo market 5x, 2 simulated days, seeds 1-6 (test/small.mjs)
+
+== $10, older coins allowed
+{"eq":10.03604397812098,"trades":1,"open":0,"win":1,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 6011; committee: not chasing, real buyers, eno 19"}
+{"eq":10.021183016741535,"trades":1,"open":0,"win":1,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5118; committee: two-sided flow, real buyers,  506"}
+{"eq":10.001643875580786,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 5672; committee: two-sided flow, real buyers,  321"}
+{"eq":10.001643875580786,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 6260; committee: not chasing, real buyers, eno 21"}
+{"eq":9.857948266605893,"trades":1,"open":0,"win":0,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5204; committee: two-sided flow, real buyers,  719"}
+{"eq":10.001643875580786,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 5782; committee: two-sided flow, real buyers,  6"}
+start $10, 2 days, 6 seeds: mean return -0.13%  trades/run 0.5
+
+== $10, 45% per coin
+{"eq":9.638730764442528,"trades":1,"open":0,"win":1,"chains":"solana","veto":"daily loss limit reached 8671; network fees #% of a #$ trade are too hi 4748"}
+{"eq":10.451084603999238,"trades":7,"open":0,"win":4,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 4901; market regime danger 2342"}
+{"eq":9.430757150262767,"trades":1,"open":0,"win":0,"chains":"solana","veto":"daily loss limit reached 10388; network fees #% of a #$ trade are too hi 3900"}
+{"eq":9.76377598017364,"trades":1,"open":2,"win":0,"chains":"solana","veto":"daily loss limit reached 10244; market regime danger 6604"}
+{"eq":10.096549967550668,"trades":4,"open":0,"win":2,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5316; re-entry cooldown 717"}
+{"eq":9.726534252246386,"trades":1,"open":0,"win":0,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 4946; committee: two-sided flow, real buyers,  786"}
+start $10, 2 days, 6 seeds: mean return -1.49%  trades/run 2.5
+
+== $10, older coins + 35% per coin
+{"eq":10.08422009684516,"trades":1,"open":0,"win":1,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 6011; committee: not chasing, real buyers, eno 19"}
+{"eq":10.05998070355251,"trades":1,"open":0,"win":1,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5118; committee: two-sided flow, real buyers,  506"}
+{"eq":10.001643875580786,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 5672; committee: two-sided flow, real buyers,  321"}
+{"eq":10.001643875580786,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 6260; committee: not chasing, real buyers, eno 21"}
+{"eq":9.61018136681562,"trades":1,"open":0,"win":0,"chains":"solana","veto":"daily loss limit reached 7484; network fees #% of a #$ trade are too hi 3855"}
+{"eq":10.001643875580786,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 5782; committee: two-sided flow, real buyers,  6"}
+start $10, 2 days, 6 seeds: mean return -0.40%  trades/run 0.5
+
+== $25
+{"eq":24.444304997857895,"trades":7,"open":0,"win":3,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 4902; market regime danger 830"}
+{"eq":19.928859075585326,"trades":4,"open":0,"win":1,"chains":"solana","veto":"daily loss limit reached 9091; network fees #% of a #$ trade are too hi 18"}
+{"eq":24.160825172673746,"trades":1,"open":0,"win":0,"chains":"solana","veto":"daily loss limit reached 10051; network fees #% of a #$ trade are too hi 4653"}
+{"eq":23.502107268996284,"trades":5,"open":1,"win":1,"chains":"solana","veto":"daily loss limit reached 9536; market regime danger 1680"}
+{"eq":25.278550469274855,"trades":9,"open":0,"win":6,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5034; re-entry cooldown 892"}
+{"eq":24.46941429230666,"trades":16,"open":0,"win":9,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 3597; market regime danger 3002"}
+start $25, 2 days, 6 seeds: mean return -5.48%  trades/run 7.0
+
+== $50
+{"eq":42.498709726292766,"trades":56,"open":0,"win":26,"chains":"solana","veto":"daily loss limit reached 18698; re-entry cooldown 694"}
+{"eq":44.232246422186186,"trades":40,"open":0,"win":19,"chains":"solana","veto":"daily loss limit reached 24705; market regime danger 2688"}
+{"eq":45.06485010695185,"trades":44,"open":0,"win":22,"chains":"solana","veto":"daily loss limit reached 25875; size # below min (agent) 65"}
+{"eq":44.34810859481737,"trades":61,"open":0,"win":26,"chains":"solana","veto":"daily loss limit reached 23006; size # below min (agent) 90"}
+{"eq":41.41105866804501,"trades":26,"open":0,"win":11,"chains":"solana","veto":"daily loss limit reached 26586; market regime danger 2136"}
+{"eq":44.99967951465438,"trades":48,"open":0,"win":19,"chains":"solana","veto":"daily loss limit reached 17351; market regime danger 5330"}
+start $50, 2 days, 6 seeds: mean return -12.48%  trades/run 45.8
+
+== $100
+{"eq":117.37125375016521,"trades":108,"open":7,"win":57,"chains":"solana","veto":"daily loss limit reached 16118; re-entry cooldown 292"}
+{"eq":98.73290937104743,"trades":144,"open":3,"win":73,"chains":"solana","veto":"paused after losses 2076; daily loss limit reached 908"}
+{"eq":106.79661877550288,"trades":140,"open":3,"win":75,"chains":"solana","veto":"daily loss limit reached 9758; size # below min (agent) 329"}
+{"eq":98.9682767544818,"trades":99,"open":0,"win":47,"chains":"solana","veto":"daily loss limit reached 16871; paused after losses 2226"}
+{"eq":115.71988004140447,"trades":216,"open":0,"win":111,"chains":"solana","veto":"re-entry cooldown 4984; daily loss limit reached 3374"}
+{"eq":95.67879173157185,"trades":106,"open":2,"win":50,"chains":"solana","veto":"daily loss limit reached 8364; market regime danger 6734"}
+start $100, 2 days, 6 seeds: mean return 5.54%  trades/run 135.5
+
+== $200
+{"eq":283.164964826742,"trades":170,"open":1,"win":92,"chains":"solana","veto":"market regime danger 2510; paused after losses 1298"}
+{"eq":229.8085087812627,"trades":136,"open":4,"win":68,"chains":"solana","veto":"daily loss limit reached 7058; market regime danger 3672"}
+{"eq":237.41481789753894,"trades":201,"open":0,"win":101,"chains":"solana","veto":"market regime danger 4490; daily loss limit reached 2549"}
+{"eq":171.0886719099242,"trades":48,"open":0,"win":15,"chains":"solana","veto":"daily loss limit reached 17998; paused after losses 1296"}
+{"eq":215.28835791633333,"trades":152,"open":3,"win":71,"chains":"solana","veto":"daily loss limit reached 13735; paused after losses 2148"}
+{"eq":294.168364169459,"trades":161,"open":0,"win":86,"chains":"solana","veto":"daily loss limit reached 5402; paused after losses 2232"}
+start $200, 2 days, 6 seeds: mean return 19.24%  trades/run 144.7
+
+== $50, 40% per coin
+{"eq":45.750480965350185,"trades":47,"open":1,"win":24,"chains":"solana","veto":"daily loss limit reached 24965; paused after losses 480"}
+{"eq":60.99824848738421,"trades":108,"open":0,"win":56,"chains":"solana","veto":"daily loss limit reached 11705; market regime danger 1632"}
+{"eq":43.915929869545266,"trades":32,"open":0,"win":15,"chains":"solana","veto":"daily loss limit reached 29110; paused after losses 720"}
+{"eq":35.84748990729275,"trades":15,"open":0,"win":3,"chains":"solana","veto":"daily loss limit reached 26571; re-entry cooldown 121"}
+{"eq":66.59482770810149,"trades":168,"open":0,"win":89,"chains":"solana","veto":"paused after losses 3150; market regime danger 3110"}
+{"eq":36.80933334158454,"trades":33,"open":0,"win":17,"chains":"solana","veto":"size -# below min (total) 39; size # below min (agent) 30"}
+start $50, 2 days, 6 seeds: mean return -3.36%  trades/run 67.2
+
+== $25, 50% per coin
+{"eq":22.070433517531836,"trades":26,"open":0,"win":11,"chains":"solana","veto":"daily loss limit reached 25534; paused after losses 480"}
+{"eq":20.756275270029857,"trades":28,"open":0,"win":14,"chains":"solana","veto":"daily loss limit reached 29181; re-entry cooldown 834"}
+{"eq":22.168321925693668,"trades":19,"open":0,"win":9,"chains":"solana","veto":"daily loss limit reached 25734; market regime danger 3576"}
+{"eq":21.90917659571433,"trades":4,"open":0,"win":0,"chains":"solana","veto":"daily loss limit reached 33501; network fees #% of a #$ trade are too hi 9"}
+{"eq":18.896287360106456,"trades":16,"open":0,"win":9,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 61; size -# below min (total) 13"}
+{"eq":20.42753152127088,"trades":22,"open":0,"win":9,"chains":"solana","veto":"daily loss limit reached 29342; network fees #% of a #$ trade are too hi 124"}
+start $25, 2 days, 6 seeds: mean return -15.85%  trades/run 19.2
+
+== $25, 2.5% fee cap
+{"eq":25.00410968895196,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 4784; committee: two-sided flow, real buyers,  340"}
+{"eq":25.00410968895196,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 5369; committee: two-sided flow, real buyers,  714"}
+{"eq":25.026524155333743,"trades":1,"open":0,"win":1,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 4637; committee: two-sided flow, real buyers,  215"}
+{"eq":25.377930375728063,"trades":4,"open":1,"win":2,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5138; market regime danger 3532"}
+{"eq":25.00410968895196,"trades":0,"open":0,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 5172; committee: two-sided flow, real buyers,  69"}
+{"eq":24.859779811641282,"trades":0,"open":1,"win":0,"chains":"","veto":"network fees #% of a #$ trade are too hi 4500; market regime danger 2500"}
+start $25, 2 days, 6 seeds: mean return 0.18%  trades/run 0.8
+
+== $50, 2.5% fee cap
+{"eq":49.72060033818102,"trades":6,"open":1,"win":4,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 4330; market regime danger 2018"}
+{"eq":49.14133395301298,"trades":9,"open":0,"win":5,"chains":"solana","veto":"market regime danger 3062; network fees #% of a #$ trade are too hi 2785"}
+{"eq":48.77744749694845,"trades":1,"open":0,"win":0,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5409; committee: not chasing, real buyers, eno 51"}
+{"eq":49.24604971878282,"trades":1,"open":0,"win":0,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5677; committee: two-sided flow, real buyers,  305"}
+{"eq":50.17015635981168,"trades":4,"open":0,"win":2,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 4673; market regime danger 1552"}
+{"eq":49.39670298419936,"trades":2,"open":0,"win":1,"chains":"solana","veto":"network fees #% of a #$ trade are too hi 5876; committee: not chasing, real buyers, eno 3"}
+start $50, 2 days, 6 seeds: mean return -1.18%  trades/run 3.8
+
+== $100, 2.5% fee cap
+{"eq":90.70905241155488,"trades":25,"open":0,"win":7,"chains":"solana","veto":"daily loss limit reached 21046; paused after losses 1910"}
+{"eq":98.64355125469005,"trades":92,"open":0,"win":45,"chains":"solana","veto":"daily loss limit reached 18128; re-entry cooldown 2349"}
+{"eq":92.72460468291743,"trades":28,"open":0,"win":12,"chains":"solana","veto":"daily loss limit reached 19822; network fees #% of a #$ trade are too hi 417"}
+{"eq":103.03542656738801,"trades":121,"open":0,"win":63,"chains":"solana","veto":"daily loss limit reached 2808; re-entry cooldown 1755"}
+{"eq":92.10707608352314,"trades":38,"open":0,"win":17,"chains":"solana","veto":"daily loss limit reached 14860; network fees #% of a #$ trade are too hi 628"}
+{"eq":89.40053158765812,"trades":15,"open":1,"win":5,"chains":"solana","veto":"daily loss limit reached 7520; market regime danger 3392"}
+start $100, 2 days, 6 seeds: mean return -5.56%  trades/run 53.2
+
+== round 8 Lots of trades (Max trades + scam filters)
+
+== $100
+{"eq":173.23842633007243,"trades":222,"open":5,"win":109,"chains":"solana","veto":"paused after losses 4104; re-entry cooldown 787"}
+{"eq":79.45162958380877,"trades":75,"open":0,"win":33,"chains":"solana","veto":"paused after losses 948; size # below min (agent) 100"}
+{"eq":81.53903794957118,"trades":79,"open":0,"win":35,"chains":"solana","veto":"daily loss limit reached 21536; paused after losses 720"}
+{"eq":171.6417983612743,"trades":203,"open":0,"win":103,"chains":"solana","veto":"paused after losses 1322; re-entry cooldown 1173"}
+{"eq":87.17389327988269,"trades":128,"open":3,"win":56,"chains":"solana","veto":"daily loss limit reached 10432; paused after losses 3780"}
+{"eq":104.60132756804371,"trades":145,"open":2,"win":70,"chains":"solana","veto":"daily loss limit reached 15116; market regime danger 2138"}
+start $100, 2 days, 6 seeds: mean return 16.27%  trades/run 142.0
+
+== $200
+{"eq":216.66550168622132,"trades":75,"open":4,"win":35,"chains":"solana","veto":"daily loss limit reached 25359; paused after losses 1248"}
+{"eq":311.7414353625768,"trades":249,"open":3,"win":129,"chains":"solana","veto":"paused after losses 3038; re-entry cooldown 1299"}
+{"eq":299.2759860052381,"trades":229,"open":4,"win":116,"chains":"solana","veto":"daily loss limit reached 4316; re-entry cooldown 3167"}
+{"eq":314.5497573995568,"trades":146,"open":3,"win":79,"chains":"solana","veto":"market regime danger 6770; daily loss limit reached 2246"}
+{"eq":268.5284715991816,"trades":64,"open":4,"win":32,"chains":"solana","veto":"daily loss limit reached 22772; paused after losses 2676"}
+{"eq":238.45083089408132,"trades":155,"open":0,"win":80,"chains":"solana","veto":"market regime danger 4036; daily loss limit reached 3076"}
+start $200, 2 days, 6 seeds: mean return 37.43%  trades/run 153.0
+
+== $100, at most 50% invested
+{"eq":89.70141422038412,"trades":58,"open":0,"win":20,"chains":"solana","veto":"daily loss limit reached 21070; paused after losses 2496"}
+{"eq":152.4983993221949,"trades":198,"open":1,"win":94,"chains":"solana","veto":"paused after losses 5508; re-entry cooldown 633"}
+{"eq":104.7533034402363,"trades":107,"open":1,"win":49,"chains":"solana","veto":"daily loss limit reached 16130; paused after losses 648"}
+{"eq":122.61258111874793,"trades":201,"open":0,"win":97,"chains":"solana","veto":"daily loss limit reached 5450; paused after losses 3723"}
+{"eq":120.42896516968021,"trades":196,"open":0,"win":86,"chains":"solana","veto":"daily loss limit reached 7304; paused after losses 2028"}
+{"eq":96.88646096145897,"trades":58,"open":3,"win":23,"chains":"solana","veto":"daily loss limit reached 18746; market regime danger 5064"}
+start $100, 2 days, 6 seeds: mean return 14.48%  trades/run 136.3
+
+== $200, at most 50% invested
+{"eq":184.10754513806194,"trades":27,"open":4,"win":12,"chains":"solana","veto":"daily loss limit reached 21738; size # below min (agent) 121"}
+{"eq":300.99778406613484,"trades":184,"open":1,"win":89,"chains":"solana","veto":"paused after losses 2160; re-entry cooldown 1052"}
+{"eq":399.67626007220673,"trades":188,"open":3,"win":100,"chains":"solana","veto":"paused after losses 1644; size # below min (agent) 397"}
+{"eq":215.6908939419565,"trades":204,"open":0,"win":87,"chains":"solana","veto":"paused after losses 4992; daily loss limit reached 4862"}
+{"eq":258.93492578854364,"trades":187,"open":2,"win":98,"chains":"solana","veto":"paused after losses 3246; re-entry cooldown 1089"}
+{"eq":287.3691707717332,"trades":194,"open":5,"win":96,"chains":"solana","veto":"paused after losses 5232; market regime danger 2222"}
+start $200, 2 days, 6 seeds: mean return 37.23%  trades/run 164.0

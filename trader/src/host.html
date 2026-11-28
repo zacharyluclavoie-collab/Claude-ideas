@@ -1,0 +1,98 @@
+<div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="hmaster" class="hpane">
+  <div class="home" id="h_home"></div>
+  <div class="hero"><div class="hero-top"><span class="hero-lab">Profit · all desks</span><span class="hero-ctl"><span class="viewsw" id="densw" title="How much fits on the screen"><button data-d="comfortable">Roomy</button><button data-d="compact">Compact</button><button data-d="dense">Dense</button></span><span class="viewsw" id="viewsw"><button data-v="simple">Simple</button><button data-v="full">Full</button></span><span class="themesw" id="themesw"><button data-v="dark" aria-label="Dark theme">🌙</button><button data-v="light" aria-label="Light theme">☀️</button><button data-v="auto" aria-label="Match device">A</button><button data-v="black" aria-label="True black (OLED)">⚫</button></span></span></div><div class="eq" id="h_eq">$0</div><div class="hero-sub" id="h_sub">Starting desks…</div><div class="hm-goal hero-goal" id="h_goal"><i></i><span></span></div><div class="hero-pills"><div class="hero-pct" id="h_pct"></div><div class="hero-auto fa" id="h_fa"></div><div class="hero-auto" id="h_auto"></div><div class="bestchk" id="h_best"></div></div></div>
+  <div class="tipbar restorebar" id="h_restore" hidden></div>
+  <div class="tipbar alertbar" id="h_alert" hidden></div>
+  <div class="panel runp" id="h_run"></div>
+  <div class="tipbar" id="fa_tip" hidden></div>
+  <div class="panel rtest" id="h_rtest" hidden></div>
+  <details class="guide" id="guide"><summary>👋 New here? How it works</summary>
+    <div class="gbody">
+      <p><b>What it does.</b> The bot looks at thousands of new crypto coins, skips scams and weak ones, buys the few that look strong, and sells them by itself. All money here is <b>pretend (paper) money</b>: nothing real is bought.</p>
+      <p><b>Desks.</b> Each desk is its own copy of the bot with its own $2,000, trading one part of the market (Solana, Base, BSC, Arbitrum, or big established coins). This board adds them all up.</p>
+      <p><b>Best mode.</b> ★ <b>Lots of trades</b> is the best setting found in testing (on 8 demo markets it never saw: about +7.5% a day, every one made money). The badge on the blue card tells you if every desk uses it.</p>
+      <p><b>🤖 Full Auto</b> (on by default) runs everything for you: it keeps every desk on the best mode with the tested settings, uses the biggest market your device handles, restarts desks after a bad day, and restarts a desk that freezes. On the real market it also warns about failing data and quiet desks, and tells you when your balance is too small to split across desks. You do not need to change any settings.</p>
+      <p><b>Wins and losses.</b> About half the coins lose a little: that is normal. The bot sells a loser at about −4.5% (stop-loss), sells 30% of a winner at +6% and lets the rest run up to +30%, so wins are bigger than losses. Watch <b>Avg win / avg loss</b> and the <b>Total profit</b>, not single coins.</p>
+      <p><b>Safety checks.</b> Every coin is checked for scam signs (can't sell, hidden owner powers, fake trading, too few real buyers). Trades whose fees would eat too much are skipped. If a desk loses too much in a day it stops until tomorrow.</p>
+      <p><b>Numbers.</b> <i>Open now</i>: profit on coins still held. <i>Per hour / per day</i>: average so far. <i>Market size</i>: how many coins the demo creates (Auto picks the biggest your device runs smoothly). <i>Live scanner</i>: what the desks are checking right now.</p>
+      <p><b>Small balances.</b> Every trade pays network and exchange fees (on new Solana coins about $0.17 for a buy plus a sell). On a $2 trade that is 8%, so with $10 the bot almost never buys. In tests $25–$50 came out about even and <b>$100 or more</b> made money. Start with $100 of pretend money: Full view → Master settings → Small start.</p>
+      <p><b>Demo vs live.</b> Demo is a realistic simulated market and can run fast. Live (laptop version) uses real coin prices in real time, still with pretend money. Results on real coins will likely be lower than in the demo. To find out, run the <b>real-price test</b> on a laptop: double-click START REAL-PRICE TEST in the folder (or Full view → Master settings → Start the real-price test) and judge it after 100+ trades and 1-2 weeks.</p>
+      <button class="chip" id="guide_hide">Got it, hide this</button>
+    </div></details>
+  <div class="ticker" id="ticker"><div class="tk-track" id="tk_track"></div></div>
+  <main><div class="mgrid"><div class="mcol">
+    <div class="panel dash" style="margin-top:12px"><div class="row"><div class="totl"><svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" class="rg-bg"/><circle cx="18" cy="18" r="15.5" class="rg-fg" id="h_ring"/></svg><div><b>Total profit / loss</b><div class="sub" id="h_ringlab">win rate –</div></div></div><b id="h_tot" class="dash-tot">$0</b></div><div class="wl" id="h_wl"></div><div class="sub asof" id="h_asof"></div>
+      <div class="kv" id="h_kv"></div><div class="kv kv2" id="h_rate"></div></div>
+    <h2>Money dashboard <small>what matters more than the balance</small></h2>
+    <div class="panel" id="h_dash"></div>
+    <h2>Enemy tracker <small>coins that block sells: the #1 money leak</small></h2>
+    <div class="panel enemy" id="h_enemy"></div>
+    <h2>Coins open right now <small id="h_opencount"></small></h2>
+    <div class="panel" id="h_open"></div>
+    <h2>Hall of fame <small>from this run</small></h2>
+    <div class="panel fame" id="h_fame"></div>
+    <h2>Finished trades <small id="h_fincount"></small></h2>
+    <div class="panel" id="h_fin"></div>
+    <div class="panel br-home"><div class="row"><b class="br-hh">🤖 Bot room <span class="livepill"><i></i>LIVE</span></b><button class="chip br-go" id="br_open">Full room →</button></div>
+      <div id="m_botslot"></div><div id="m_chat" class="m-chat"><div class="sub">The bots start talking as soon as the desks scan…</div></div></div>
+  </div><div class="mcol">
+    <h2 class="h2top">Live scanner <small id="h_rate2"></small></h2>
+    <div class="panel" id="h_feed"></div>
+    <h2>Profit / loss, all desks <small>live</small></h2>
+    <div class="panel"><div id="h_chart" style="height:110px"></div></div>
+    <h2 class="fullonly">Failed and retried <small>buys and sells that did not go through</small></h2>
+    <div class="panel fullonly" id="h_fail"></div>
+    <h2>Desks <small>tap one to open it</small></h2>
+    <div id="h_desks"></div>
+    <h2 class="fullonly">Signal scoreboard <small>every entry signal, live</small></h2>
+    <div class="panel fullonly" id="h_sigs"></div>
+    <h2 class="fullonly">Money features <small>each off until an A/B test proves it</small></h2>
+    <div class="panel fullonly" id="h_money"></div>
+    <h2 class="fullonly">Master settings <small>apply to every desk</small></h2>
+    <div class="panel fullonly" id="h_set"></div>
+    <details class="guide fullonly" id="h_how"><summary>📐 How the numbers work</summary><div class="gbody">
+      <p><b>One clock.</b> The Master runs one simulated clock (Day N · hh:mm). Every desk is always at exactly that time, so all desks turn over to a new day together, and every number on this page comes from the same simulated moment ("As of" under the total).</p>
+      <p><b>Trade.</b> A coin that was bought (the buy went through) and then sold (the sell went through) or written off by the logged rule. A failed buy is never a trade. Win rate = wins ÷ (wins + losses), rounded to a whole %.</p>
+      <p><b>Trades today / made / lost today.</b> Trades <i>closed</i> during the current simulated day (Day N, midnight to midnight on the one clock). They reset only at simulated midnight; each reset is written in the activity log.</p>
+      <p><b>Last hour / last 24 hours.</b> Change in balance over the last 1 / 24 simulated hours. <b>Per hour / per day.</b> Total profit divided by the simulated time the run has been going.</p>
+      <p><b>Open now.</b> Profit or loss on coins still held, including any part already sold. <b>Failed and retried.</b> Every buy and sell attempt; fees burned on failed ones are inside each desk's profit.</p>
+      <p><b>Speed.</b> "Selected" is the speed you chose; "actual" is measured: simulated seconds that really passed per real second over the last 10 seconds. All desks share one browser thread, so the actual speed depends on the device.</p>
+      <p><b>Paused vs No new trades.</b> Paused stops the clock: nothing on the page changes. No new trades keeps the clock running and lets open coins be sold, but buys nothing new. Emergency stop freezes everything (sells nothing) until you tap Run twice.</p>
+      <p><b>Check.</b> One coin looked at by a desk's scanner against the entry rules and the scam checks. "Coins checked a minute" counts these. In <b>No new trades</b> the scanners are off, so it shows <b>Off</b>, not 0.</p>
+      <p><b>Bot action.</b> One message between two bots on a desk (a vote, a report, an alert). Bot actions a minute = messages in the last 10 seconds, scaled to a minute. Position managers and risk managers keep working in No new trades; scanner bots show "Scanner off — No New Trades mode".</p>
+      <p><b>What stops in each mode.</b> Running: everything works. No new trades: clock runs, open coins are watched and sold, scanners and buyers are off. Paused: the clock stops and nothing changes. Emergency stop: everything is frozen, nothing is sold.</p>
+      <p><b>Money in cents.</b> Every amount is kept in whole cents, so desks add up to the totals exactly and the report's rounding line is always $0.00.</p>
+      <p><b>End-of-day balance.</b> Previous day's end + net of trades closed that day + change in open coins' profit/loss − fees on failed buys + cash interest. Fees on failed sells are inside the trades they belong to.</p>
+      <p><b>Glossary (one line each).</b> <b>Expectancy</b>: the average money one finished trade makes or loses. <b>Profit factor</b>: money won divided by money lost. <b>Drawdown</b>: how far the balance fell from its highest point. <b>Sell-block</b>: a coin that stops letting anyone sell it. <b>Write-off</b>: a coin we could not sell at all, counted as a total loss. <b>Sell test (probe)</b>: a tiny sell simulated before buying, to see if selling works. <b>Shared memory</b>: the list of blocked coins all desks share. <b>Fingerprint</b>: how a coin looked when bought, used to spot look-alikes. <b>Seed</b>: the number that sets up the demo market; the same seed gives the same market.</p>
+      <p><b>Expectancy.</b> Average result of a finished trade (money won + money lost) ÷ trades. <b>Profit factor.</b> Money won ÷ money lost. <b>Max drawdown.</b> Biggest fall of the total balance from its high.</p>
+      <p><b>Two size rules.</b> When Cold-desk size steps (Money 8) and Smart allocation (Money 1) are both on, Money 8 decides the size of new trades and Money 1 is ignored.</p>
+      <p><b>Saving.</b> One complete save (clock, balances, coins, counters, history, settings) every few seconds, after a trade closes (at most once a second), when you pause and when the page is hidden. Each save has a number; the last 3 are kept. After a reload the banner shows the save that will be loaded, and the restore is checked against it.</p>
+    </div></details>
+    <details class="panel fullonly diag" id="h_diag"><summary><b>🩺 Diagnostics</b> <span class="dgbadge" id="dg_badge"></span> <span class="sub">checks on every snapshot, settings log, speed, saving, errors</span></summary><div class="dgdet"><button class="chip" id="dg_detb">Verify determinism</button> <span id="dg_det" class="sub">Not run yet: replays Day 1 of this market twice in the background and compares to the cent.</span></div><div id="dg_body"></div></details>
+  </div></div>
+    <div class="sub" style="margin:14px 2px 0">Each desk is a full copy of the bot with its own paper account, settings and agents, trading one area of the market. All of them run at the same time; this board adds them up. Open a desk to change its mode (it starts on Lots of trades) or its starting balance.</div>
+  </main>
+</div>
+<div id="hbots" class="hpane" hidden>
+  <div class="br-head"><div><div class="hero-lab">Bot room</div><div class="br-title">Every bot, live <span class="livepill"><i></i>LIVE</span></div><div class="sub" id="br_sub">Starting the desks…</div></div></div>
+  <div class="br-grid"><div class="br-left"><div id="b_botslot"><div class="panel br-stage" id="br_stagewrap"><svg id="br_svg" viewBox="0 8 360 336" role="img" aria-label="Map of the bots: messages fly between them as they make decisions"></svg></div></div>
+  <h2>What each bot is doing <small>tap one to see only its messages</small></h2>
+  <div class="br-bots" id="br_bots"></div><div class="sub" id="br_bot_note"></div>
+  </div><div class="br-right">
+  <h2>Bot chat <small>real decisions, newest first</small></h2>
+  <div class="chips br-f" id="br_f"></div>
+  <div class="chips br-d" id="br_d"></div>
+  <div class="br-chat" id="br_chat"></div>
+  </div></div>
+  <div class="sub" style="margin:14px 2px 0">Every message is a real decision a bot in one of the desks just made: the Scanner finds coins, the Scam filter drops fakes, the Agents pick the ones they like, Security checks for scams, the Committee votes, the Risk manager sizes the trade, the Trader buys and sells, and the Watcher guards every coin you hold. Routine messages are sampled so you can read them; the counters show all the work. Pretend money only.</div>
+</div>
+<div id="hframes"></div>
+<div class="honesty" id="h_honest">Demo market · paper money · Past demo results do not predict real results.</div>
+<div class="sumbar" id="sumbar" hidden></div>
+<div class="deskbar" id="deskbar"></div>
+<nav class="phnav" id="phnav"><button data-p="home">🏠<span>Home</span></button><button data-p="desks">🗂<span>Desks</span></button><button data-p="trades">📈<span>Trades</span></button><button data-p="bots">🤖<span>Bots</span></button><button data-p="more">⚙️<span>More</span></button></nav>
+<div class="overlay" id="h_report" hidden></div>
+<div class="overlay tabblock" id="h_tab" hidden></div>
+<div class="overlay" id="h_modal" hidden></div>
+<div class="htoast" id="htoast" role="status"></div>

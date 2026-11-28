@@ -1,0 +1,160 @@
+{
+ "launch": {
+  "pick": "wide",
+  "tune": {
+   "quick": {
+    "stop": 4.5,
+    "tp1": 6,
+    "tp2": 12,
+    "trail": 3
+   }
+  },
+  "train": {
+   "n": 390,
+   "pnl": -27,
+   "win": 59,
+   "r": -0.04
+  },
+  "held": {
+   "n": 75,
+   "pnl": 28,
+   "win": 56,
+   "r": 0.17
+  }
+ },
+ "trend": {
+  "pick": "base",
+  "tune": {},
+  "train": {
+   "n": 0,
+   "pnl": 0,
+   "win": 0,
+   "r": 0
+  },
+  "held": null
+ },
+ "rider": {
+  "pick": "tight",
+  "tune": {
+   "quick": {
+    "stop": 2.5,
+    "tp1": 3,
+    "tp2": 6,
+    "trail": 1.5
+   }
+  },
+  "train": {
+   "n": 67,
+   "pnl": -28,
+   "win": 46,
+   "r": -0.42
+  },
+  "held": {
+   "n": 137,
+   "pnl": -22,
+   "win": 50,
+   "r": -0.18
+  }
+ },
+ "dip": {
+  "pick": "base",
+  "tune": {},
+  "train": {
+   "n": 0,
+   "pnl": 0,
+   "win": 0,
+   "r": 0
+  },
+  "held": null
+ },
+ "breakout": {
+  "pick": "base",
+  "tune": {},
+  "train": {
+   "n": 96,
+   "pnl": -55,
+   "win": 56,
+   "r": -0.51
+  },
+  "held": {
+   "n": 99,
+   "pnl": 24,
+   "win": 64,
+   "r": 0.22
+  }
+ },
+ "quality": {
+  "pick": "bp8",
+  "tune": {
+   "bp": 0.08
+  },
+  "train": {
+   "n": 129,
+   "pnl": 46,
+   "win": 65,
+   "r": 0.29
+  },
+  "held": {
+   "n": 113,
+   "pnl": 14,
+   "win": 53,
+   "r": 0.08
+  }
+ },
+ "whale": {
+  "pick": "tight",
+  "tune": {
+   "quick": {
+    "stop": 2.5,
+    "tp1": 3,
+    "tp2": 6,
+    "trail": 1.5
+   }
+  },
+  "train": {
+   "n": 16,
+   "pnl": 8,
+   "win": 81,
+   "r": 0.43
+  },
+  "held": {
+   "n": 29,
+   "pnl": -29,
+   "win": 69,
+   "r": -1
+  }
+ },
+ "gem": {
+  "pick": "base",
+  "tune": {},
+  "train": {
+   "n": 24,
+   "pnl": -5,
+   "win": 50,
+   "r": -0.19
+  },
+  "held": null
+ },
+ "reversal": {
+  "pick": "base",
+  "tune": {},
+  "train": {
+   "n": 14,
+   "pnl": 14,
+   "win": 57,
+   "r": 0.55
+  },
+  "held": null
+ },
+ "range": {
+  "pick": "base",
+  "tune": {},
+  "train": {
+   "n": 34,
+   "pnl": 35,
+   "win": 71,
+   "r": 0.56
+  },
+  "held": null
+ }
+}

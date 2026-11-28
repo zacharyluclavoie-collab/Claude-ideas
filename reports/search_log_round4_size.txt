@@ -1,0 +1,5 @@
+lots now ret/day 2.442% open 4.6 trades/day 151 mdd 2.59% losing 0/6 score 2.054
+{"per":1,"pos":1.63,"tot":50,"maxPos":30} ret/day 2.442% open 4.6 trades/day 151 mdd 2.59% losing 0/6 score 2.054
+{"per":1,"pos":1.63,"tot":75,"maxPos":60} ret/day 2.054% open 4.5 trades/day 147 mdd 2.58% losing 0/6 score 1.666
+{"per":1,"pos":1.63,"tot":95,"maxPos":60} ret/day 2.442% open 4.6 trades/day 151 mdd 2.59% losing 0/6 score 2.054
+{"per":1.4,"pos":2.28,"tot":50,"maxPos":30} ret/day 2.104% open 6.1 trades/day 186 mdd 3.28% losing 0/6 score 1.612

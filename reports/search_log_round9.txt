@@ -1,0 +1,20 @@
+Round 9: fine-tuning the round-8 Lots of trades one setting at a time. Demo market 5x, 2 simulated days, training markets (seeds 1501-1504).
+No variant beat the current setting, so nothing was changed (no unseen-market check needed).
+
+Training markets (seeds 1501-1504, 5x, 2 days)
+base               ret/day 9.39% worst 7.19 trades/day 189 win 54% scams 31 mdd 1.14% beats base on 0/4
+stop 4             ret/day 8.51% worst 7.40 trades/day 184 win 54% scams 24 mdd 1.20% beats base on 2/4
+stop 5.5           ret/day 4.97% worst 0.97 trades/day 162 win 55% scams 32 mdd 1.80% beats base on 0/4
+sell 20% at tp1    ret/day 7.72% worst 5.57 trades/day 157 win 52% scams 34 mdd 1.64% beats base on 0/4
+sell 50% at tp1    ret/day 5.07% worst 4.01 trades/day 153 win 60% scams 26 mdd 1.24% beats base on 0/4
+tp1 +8             ret/day 6.68% worst 5.15 trades/day 164 win 55% scams 32 mdd 1.73% beats base on 0/4
+tp2 +45            ret/day 7.35% worst 3.89 trades/day 197 win 53% scams 34 mdd 1.49% beats base on 1/4
+trail 7            ret/day 6.09% worst -0.09 trades/day 173 win 47% scams 27 mdd 1.54% beats base on 0/4
+30 coins           ret/day 9.39% worst 7.19 trades/day 189 win 54% scams 31 mdd 1.14% beats base on 0/4
+1 agent enough     ret/day 9.39% worst 7.19 trades/day 189 win 54% scams 31 mdd 1.14% beats base on 0/4
+bigger trades      ret/day 5.01% worst 2.06 trades/day 180 win 52% scams 39 mdd 2.35% beats base on 1/4
+hold 3h            ret/day 9.23% worst 5.41 trades/day 180 win 56% scams 22 mdd 1.28% beats base on 2/4
+hold 10h           ret/day 8.92% worst 6.49 trades/day 199 win 54% scams 24 mdd 1.09% beats base on 1/4
+40 real buyers     ret/day 9.21% worst 3.34 trades/day 181 win 53% scams 18 mdd 1.02% beats base on 2/4
+cooldown 3h        ret/day 8.53% worst 4.26 trades/day 193 win 54% scams 39 mdd 1.40% beats base on 1/4
+

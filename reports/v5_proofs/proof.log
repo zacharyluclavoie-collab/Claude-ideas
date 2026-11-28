@@ -1,0 +1,21 @@
+control s31337             profit   3575.46 | trades  1870 | win 62% | exp 1.877 | PF 2.92 | maxDD 54.19 | fees 21.62 | write-offs 1 (-44.36) | block loss -44.36 | probe skips 5 mem 0 fp 4 | largest -44.36 WHALEFI2 writeoff_unsellable | ident 0 | 1621 s
+control s9001              profit   3445.92 | trades  1799 | win 59% | exp 1.883 | PF 2.96 | maxDD 35.82 | fees 20.45 | write-offs 0 (0.00) | block loss 0.00 | probe skips 3 mem 0 fp 0 | largest -9.19 SLERFX2 stop_loss | ident 0 | 1625 s
+control s777               profit   4187.48 | trades  2040 | win 62% | exp 2.008 | PF 2.92 | maxDD 33.20 | fees 23.06 | write-offs 1 (-28.02) | block loss -28.02 | probe skips 5 mem 3 fp 4 | largest -28.02 GOATX2 writeoff_unsellable | ident 0 | 1630 s
+control s424242            profit   4195.93 | trades  2019 | win 59% | exp 2.048 | PF 3.05 | maxDD 29.54 | fees 22.13 | write-offs 0 (0.00) | block loss 0.00 | probe skips 10 mem 1 fp 5 | largest -8.04 HAMSTER2 stop_loss | ident 0 | 1657 s
+control s555 bear          profit   1258.54 | trades   676 | win 64% | exp 1.838 | PF 2.97 | maxDD 41.74 | fees 5.17 | write-offs 0 (0.00) | block loss 0.00 | probe skips 0 mem 0 fp 0 | largest -8.44 GIGAPRO stop_loss | ident 0 | 1293 s
+s15 s424242                profit   4746.96 | trades  1853 | win 60% | exp 2.531 | PF 2.59 | maxDD 50.85 | fees 22.28 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 1 fp 23 | largest -14.93 WIFX stop_loss | ident 0 | 1496 s
+scf s424242                profit   3324.83 | trades  1967 | win 62% | exp 1.662 | PF 2.29 | maxDD 49.28 | fees 21.67 | write-offs 0 (0.00) | block loss 0.00 | probe skips 6 mem 1 fp 1 | largest -26.36 BULLDAO4 stop_loss | ident 0 | 1519 s
+weight s424242             profit   4080.45 | trades  1918 | win 61% | exp 2.096 | PF 2.99 | maxDD 49.56 | fees 21.72 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 1 fp 0 | largest -42.83 BABYPANDA2 EMERGENCY: liquidity down 96% vs entry | ident 0 | 1524 s
+s20 s424242                profit   4777.64 | trades  1775 | win 57% | exp 2.583 | PF 2.19 | maxDD 88.13 | fees 26.16 | write-offs 1 (-52.38) | block loss -52.38 | probe skips 6 mem 1 fp 21 | largest -94.34 BOMEKING6 EMERGENCY: liquidity down 95% vs entry | ident 0 | 1526 s
+tp100 s424242              profit   3343.37 | trades  1978 | win 59% | exp 1.644 | PF 2.58 | maxDD 26.52 | fees 23.36 | write-offs 0 (0.00) | block loss 0.00 | probe skips 10 mem 1 fp 55 | largest -8.54 MEWAI stop_loss | ident 0 | 1560 s
+scf s777                   profit   3369.35 | trades  1812 | win 65% | exp 1.839 | PF 2.46 | maxDD 47.04 | fees 23.99 | write-offs 1 (-40.58) | block loss -40.58 | probe skips 5 mem 3 fp 25 | largest -40.58 HAMSTERWIF2 writeoff_unsellable | ident 0 | 1561 s
+VERDICT SCF: 0 wins, 2 losses → KILL
+s15 s777                   profit   5665.23 | trades  1924 | win 61% | exp 2.875 | PF 2.90 | maxDD 87.02 | fees 23.94 | write-offs 1 (-46.76) | block loss -46.76 | probe skips 5 mem 2 fp 10 | largest -54.27 APEMAX5 EMERGENCY: liquidity down 95% vs entry | ident 0 | 1566 s
+VERDICT S15: 0 wins, 2 losses → KILL
+weight s777                profit   3657.66 | trades  2010 | win 59% | exp 1.785 | PF 2.59 | maxDD 20.60 | fees 20.68 | write-offs 0 (0.00) | block loss -0.52 | probe skips 10 mem 5 fp 24 | largest -11.70 MIGGLESX stop_loss | ident 0 | 1561 s
+VERDICT WEIGHT: 0 wins, 2 losses → KILL
+s20 s777                   profit   6076.87 | trades  1811 | win 60% | exp 3.347 | PF 2.63 | maxDD 75.03 | fees 28.49 | write-offs 0 (0.00) | block loss 0.00 | probe skips 6 mem 3 fp 34 | largest -62.38 CATMAX2 EMERGENCY: liquidity down 95% vs entry | ident 0 | 1322 s
+VERDICT S20: 0 wins, 2 losses → KILL
+tp100 s777                 profit   3822.46 | trades  2018 | win 61% | exp 1.863 | PF 2.76 | maxDD 30.44 | fees 22.60 | write-offs 0 (0.00) | block loss 0.00 | probe skips 8 mem 2 fp 21 | largest -8.47 BEARSUN2 stop_loss | ident 0 | 1337 s
+VERDICT TP100: 0 wins, 2 losses → KILL
+ALL_DONE

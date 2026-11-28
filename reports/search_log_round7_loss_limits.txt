@@ -1,0 +1,5 @@
+lots now                   ret/day 3.546% worst 1.849 mdd 2.68% (worst 5.00%) trades/day 157 losing 0/6 shutdowns 0
+daily loss stop 1.5%       ret/day 3.214% worst 1.742 mdd 2.58% (worst 4.29%) trades/day 156 losing 0/6 shutdowns 0
+daily loss stop 1%         ret/day 2.959% worst 1.483 mdd 2.32% (worst 3.95%) trades/day 159 losing 0/6 shutdowns 0
+shutdown at 5% drop        ret/day 3.548% worst 1.865 mdd 2.68% (worst 5.01%) trades/day 157 losing 0/6 shutdowns 0
+pause 2h after 3 losses    ret/day 1.777% worst 0.636 mdd 2.03% (worst 3.07%) trades/day 105 losing 0/6 shutdowns 0

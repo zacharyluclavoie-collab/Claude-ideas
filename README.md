@@ -73,3 +73,7 @@ GitHub Pages with the included workflow:
 4. Open `https://<user>.github.io/<repo>/`.
 
 Private repos need a plan that allows Pages. The workflow has not been run yet.
+
+## Paper Trader (iPhone web app)
+
+`trader/` is an installable web app: an autonomous crypto **paper** trader (simulated money only, no wallet). Up to 100 open positions, live-updating prices on independent loops, equity and drawdown chart, portfolio heat map, sortable positions, a scanner decision feed that shows every security check, stats, adjustable risk limits and a one-tap connection test for the live data sources. Open `/trader/` on the deployed site, then Share > Add to Home Screen. Source, tests and backtest tools are in `trader/` (see `trader/README.md`, findings in `trader/RESULTS.md`). The Python bot in `paper_trader/` follows the same rules but its simulator is simpler.

@@ -1,0 +1,3 @@
+HOLDOUT lots ret/day 1.417% med 1.460 worst -0.030 open 2.2 trades/day 50 mdd 1.12% losing 1/10 {"ref":"lots"}
+HOLDOUT #17 ret/day 0.820% med 1.037 worst -0.383 open 2.7 trades/day 59 mdd 1.37% losing 1/10 {"per":0.48,"pos":0.98,"tot":90,"maxPos":45,"stop":4.5,"tp1":8,"tp2":60,"trail":10,"frac":0.4,"hold":4,"com":1,"cool":0.5,"hourly":40,"on":["whale"]}
+DONE

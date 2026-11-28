@@ -1,0 +1,12 @@
+n3 s424242                 profit   5603.65 | trades  1862 | win 57% | exp 2.883 | PF 2.32 | maxDD 88.47 | fees 28.37 | write-offs 2 (-101.34) | block loss -101.34 | probe skips 4 mem 2 fp 36 | largest -52.38 BABYFROG2 writeoff_unsellable | ident 0 | 4724 s
+n1fix s424242              profit   4023.86 | trades  1723 | win 57% | exp 2.275 | PF 2.25 | maxDD 85.94 | fees 24.10 | write-offs 2 (-52.83) | block loss -52.83 | probe skips 3 mem 3 fp 22 | largest -36.42 PONKE2 writeoff_unsellable | ident 0 | 4725 s
+n1fix s777                 profit   4861.68 | trades  1765 | win 60% | exp 2.751 | PF 2.61 | maxDD 66.93 | fees 25.03 | write-offs 1 (-71.86) | block loss -71.86 | probe skips 6 mem 3 fp 39 | largest -71.86 MOONGPT4 writeoff_unsellable | ident 0 | 4741 s
+VERDICT N1FIX: 0 wins, 2 losses → KILL
+n2 s424242                 profit   3948.56 | trades  1753 | win 58% | exp 2.151 | PF 1.88 | maxDD 92.45 | fees 24.59 | write-offs 0 (0.00) | block loss 0.00 | probe skips 7 mem 2 fp 39 | largest -58.48 PONKEPRO2 EMERGENCY: liquidity down 98% vs entry | ident 0 | 4761 s
+n2 s777                    profit   4227.91 | trades  1660 | win 60% | exp 2.520 | PF 1.92 | maxDD 116.23 | fees 24.42 | write-offs 1 (-59.45) | block loss -59.45 | probe skips 9 mem 2 fp 44 | largest -67.70 GIGALORD4 EMERGENCY: liquidity down 99% vs entry | ident 0 | 4774 s
+VERDICT N2: 0 wins, 2 losses → KILL
+n3 s777                    profit   5693.53 | trades  1807 | win 60% | exp 3.139 | PF 2.55 | maxDD 81.00 | fees 28.02 | write-offs 0 (0.00) | block loss 0.00 | probe skips 4 mem 2 fp 17 | largest -86.03 SHIBAI5 EMERGENCY: liquidity down 97% vs entry | ident 0 | 4784 s
+n3 s9001                   profit   6811.97 | trades  1809 | win 60% | exp 3.769 | PF 2.97 | maxDD 60.47 | fees 30.13 | write-offs 0 (0.00) | block loss 0.00 | probe skips 4 mem 0 fp 0 | largest -19.99 PONKEFI stop_loss | ident 0 | 1437 s
+n3 s31337                  profit   7587.80 | trades  1772 | win 61% | exp 4.230 | PF 3.12 | maxDD 54.68 | fees 28.41 | write-offs 0 (0.00) | block loss 0.00 | probe skips 6 mem 0 fp 0 | largest -22.29 TURBOKING stop_loss | ident 0 | 1441 s
+VERDICT N3: 2 wins, 2 losses → KILL
+ALL_DONE

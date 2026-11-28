@@ -1,0 +1,30 @@
+#0 most ret/day 0.090% trades/day 12.4 mdd 0.35% losing 1/6 score 0.007
+#1 lots ret/day 0.288% trades/day 33.7 mdd 0.76% losing 1/6 score 0.145
+#2 lots ret/day -0.156% trades/day 5.8 mdd 0.77% losing 4/6 score -0.391
+#3 most ret/day -0.024% trades/day 3.4 mdd 0.22% losing 5/6 score -0.207
+#4 most ret/day 0.411% trades/day 13.5 mdd 0.72% losing 0/6 score 0.303
+#5 lots ret/day 0.971% trades/day 42.4 mdd 0.90% losing 0/6 score 0.836
+#6 most ret/day 0.487% trades/day 13.2 mdd 0.56% losing 0/6 score 0.402
+#7 lots ret/day -0.051% trades/day 6.8 mdd 0.42% losing 5/6 score -0.264
+#8 most ret/day 0.069% trades/day 11.0 mdd 0.50% losing 1/6 score -0.036
+#9 lots ret/day 0.484% trades/day 43.1 mdd 1.01% losing 1/6 score 0.303
+#10 lots ret/day 1.124% trades/day 46.4 mdd 1.11% losing 0/6 score 0.957
+#11 most ret/day 0.033% trades/day 12.3 mdd 0.39% losing 2/6 score -0.085
+#12 most ret/day 0.172% trades/day 13.0 mdd 0.74% losing 1/6 score 0.030
+#13 lots ret/day 0.157% trades/day 36.6 mdd 0.72% losing 1/6 score 0.019
+#14 lots ret/day 0.341% trades/day 44.1 mdd 0.53% losing 1/6 score 0.231
+#15 lots ret/day 0.762% trades/day 38.7 mdd 0.77% losing 1/6 score 0.616
+#16 most ret/day 0.407% trades/day 11.3 mdd 0.65% losing 1/6 score 0.279
+#17 lots ret/day -0.047% trades/day 2.3 mdd 0.23% losing 5/6 score -0.232
+#18 lots ret/day -0.038% trades/day 2.8 mdd 0.30% losing 5/6 score -0.233
+#19 most ret/day -0.043% trades/day 3.2 mdd 0.25% losing 5/6 score -0.230
+#20 lots ret/day 0.345% trades/day 42.8 mdd 1.27% losing 2/6 score 0.094
+#21 lots ret/day 0.847% trades/day 27.8 mdd 0.71% losing 0/6 score 0.740
+#22 lots ret/day 0.621% trades/day 38.4 mdd 0.68% losing 0/6 score 0.518
+#23 most ret/day 0.167% trades/day 13.0 mdd 0.42% losing 0/6 score 0.104
+HOLDOUT #10 {"base":"lots","per":0.74,"pos":1.45,"tot":70,"stop":4,"tp1":8,"tp2":24,"trail":6,"frac":0.5,"com":2,"hold":3,"flt":0,"les":0,"maxPos":30} ret/day 1.178% trades/day 39.6 mdd 1.18% losing 2/8
+HOLDOUT #5 {"base":"lots","per":0.35,"pos":1.09,"tot":40,"stop":5,"tp1":10,"tp2":32,"trail":8,"frac":0.6,"com":2,"hold":6,"flt":0,"les":0,"maxPos":30} ret/day 0.706% trades/day 41.7 mdd 1.10% losing 1/8
+HOLDOUT #21 {"base":"lots","per":0.67,"pos":1.51,"tot":60,"stop":5,"tp1":14,"tp2":32,"trail":4,"frac":0.8,"com":1,"hold":3,"flt":1,"les":1,"maxPos":30} ret/day 0.538% trades/day 31.8 mdd 1.24% losing 1/8
+HOLDOUT #1 {"base":"lots"} ret/day 0.113% trades/day 36.5 mdd 0.99% losing 4/8
+HOLDOUT #0 {"base":"most"} ret/day 0.163% trades/day 12.8 mdd 0.33% losing 1/8
+DONE
